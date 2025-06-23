@@ -37,6 +37,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'Adminapp',
+    'Managerapp',
+    'Waiterapp',
+    'Kitchenapp',
+    'Userapp',
+    'Deliveryboyapp',
+    'Accountapp',
 ]
 
 MIDDLEWARE = [
