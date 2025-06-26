@@ -114,12 +114,9 @@ class OfferTable(models.Model):
     def __str__(self):
         return self.name
     
-# No, you do not need separate tables for service and dish ratings.
-# Your current RatingTable is sufficient. It uses a 'rating_type' field to distinguish between service and dish ratings.
-# This is a normalized and scalable approach.
 
 class RatingTable(models.Model):
-    RATING_TYPE_CHOICES = [
+    RATING_TYPE_CHOICES =  [
         ('SERVICE', 'Service'),
         ('DISH', 'Dish'),
     ]
