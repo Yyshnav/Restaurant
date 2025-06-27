@@ -2,13 +2,21 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from Accountapp.models import UserRole
+
 LoginTable = get_user_model()
+
+class UserRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRole
+        fields = ['id', 'role']
 
 
 class LoginTableSerializer(serializers.ModelSerializer):
+    user_roles = UserRoleSerializer(many=True, read_only=True)
     class Meta:
         model = LoginTable
-        fields = ['id', 'phone', 'user_type', 'created_at', 'is_active']
+        fields = ['id', 'phone', 'user_roles', 'created_at', 'is_active']
 
 
 class RegisterSerializer(serializers.ModelSerializer):
