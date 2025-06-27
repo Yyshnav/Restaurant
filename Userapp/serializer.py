@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-from Accountapp.models import CartTable, ItemTable, ProfileTable, RatingTable
+from Accountapp.models import CartTable, ItemTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer
 
@@ -73,3 +73,20 @@ class CartTableSerializer(serializers.ModelSerializer):
             'updated_at',
             'total_price',
         ]
+
+class WishlistSerializer(serializers.ModelSerializer):
+    userid = LoginTableSerializer(read_only=True)
+    fooditem = ItemSerializer(read_only=True)
+
+    class Meta:
+        model = WishlistTable
+        fields = ['id', 'userid', 'fooditem', 'added_at']     
+
+   
+class OrderItemTableSerializer(serializers.ModelSerializer):
+    itemname = ItemSerializer(read_only=True)
+    addon = AddonSerializer(read_only=True)
+
+    class Meta:
+        model = OrderItemTable
+        fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']

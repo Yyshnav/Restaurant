@@ -2,21 +2,26 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-USER_TYPE_CHOICES = [
-    ('ADMIN', 'Admin'),
-    ('MANAGER', 'Manager'),
-    ('KITCHEN', 'Kitchen'),
-    ('WAITER', 'Waiter'),
-    ('DELIVERY', 'Delivery Boy'),
-    ('USER', 'User'),
-]
+class UserRole(models.Model):
+    ROLE_CHOICES = [
+        ('ADMIN', 'Admin'),
+        ('MANAGER', 'Manager'),
+        ('KITCHEN', 'Kitchen'),
+        ('WAITER', 'Waiter'),
+        ('DELIVERY', 'Delivery Boy'),
+        ('USER', 'User'),
+    ]
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, unique=True)
+
+    def __str__(self):
+        return self.role
 
 class LoginTable(AbstractUser):
     # Add phone and role info
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
+    user_roles = models.ManyToManyField(UserRole, related_name='users')
     created_at = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
@@ -265,24 +270,6 @@ class AddressTable(models.Model):
     def __str__(self):
         return f"{self.name} - {self.address_line1}, {self.city}"
 
-# class TableBookingTable(models.Model):
-#     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='table_bookings')
-#     name = models.CharField(max_length=100)
-#     phone = models.CharField(max_length=15)
-#     booking_date = models.DateField()
-#     booking_time = models.TimeField()
-#     number_of_people = models.CharField(max_length=100, null=True, blank=True)
-#     special_request = models.TextField(null=True, blank=True)
-#     status = models.CharField(max_length=20, choices=[
-#         ('PENDING', 'Pending'),
-#         ('CONFIRMED', 'Confirmed'),
-#         ('CANCELLED', 'Cancelled'),
-#         ('COMPLETED', 'Completed'),
-#     ], default='PENDING')
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-#     def __str__(self):
-#         return f"Table Booking by {self.name} on {self.booking_date} at {self.booking_time}"
 
 class CouponTable(models.Model):
     code = models.CharField(max_length=50, unique=True)
@@ -366,15 +353,81 @@ class WaiterTable(models.Model):
     def __str__(self):
         return f"{self.name} ({self.phone})"
 
-    # The current models cover most basic restaurant app needs: users, profiles, menu, cart, orders, delivery, complaints, ratings, wishlist, and offers.
-    # Depending on your requirements, you might consider adding:
-    #
-    # 1. PaymentTable: To store payment transaction details (transaction id, payment method, etc.)
-    # 2. AddressTable: To allow users to save multiple delivery addresses.
-    # 3. NotificationTable: To manage notifications sent to users.
-    # 4. TableBookingTable: If your restaurant supports table reservations.
-    # 5. CouponTable: For promo codes and discounts not tied to specific items.
-    # 6. FeedbackTable: For general feedback not related to orders or complaints.
-    #
-    # Add these only if your business logic requires them.
+class BranchTable(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    place = models.CharField(max_length=100, null=True, blank=True)
+    address = models.CharField(max_length=255)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    floors = models.IntegerField(null=True, blank=True) 
+    managers = models.ManyToManyField(LoginTable, blank=True, related_name='branches_managed')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
+class FloorTable(models.Model):
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='no_of_floors')
+    floor_number = models.IntegerField(null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)  # Optional: e.g., "Ground Floor", "First Floor"
+    description = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('branch', 'floor_number')
+        ordering = ['branch', 'floor_number']
+
+    def __str__(self):
+        return f"{self.branch.name} - Floor {self.floor_number}{f' ({self.name})' if self.name else ''}"
+
+class DiningTable(models.Model):
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='dining_tables')
+    floor = models.IntegerField(null=True, blank=True)
+    table_number = models.CharField(max_length=20)  # e.g. "T1", "A2", etc.
+    seating_capacity = models.IntegerField(null=True, blank=True)
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('branch', 'floor', 'table_number')  # prevent duplicate tables
+
+    def __str__(self):
+        return f"Table {self.table_number} - Floor {self.floor} @ {self.branch.name}"
+
     
+class BillTable(models.Model):
+    # BILL_STATUS_CHOICES = [
+    #     ('PENDING', 'Pending'),
+    #     ('PAID', 'Paid'),
+    #     ('CANCELLED', 'Cancelled'),
+    # ]
+
+    order = models.OneToOneField(OrderTable, on_delete=models.CASCADE, related_name='bill')
+    branch = models.ForeignKey(BranchTable, on_delete=models.SET_NULL, null=True, related_name='bills')
+    table = models.ForeignKey(DiningTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='bills')
+    
+    waiter = models.ForeignKey(LoginTable, on_delete=models.SET_NULL, null=True, related_name='bills_generated')
+
+    bill_number = models.CharField(max_length=50, unique=True)
+    subtotal = models.FloatField(default=0.0)
+    tax = models.FloatField(default=0.0)
+    discount = models.FloatField(default=0.0)
+    total_amount = models.FloatField(default=0.0)
+    status = models.CharField(max_length=20, default='PENDING')
+
+    payment_method = models.CharField(max_length=20, null=True, blank=True)
+    paid_at = models.CharField(max_length=100, null=True, blank=True)
+    total_amount = models.FloatField(default=0.0)
+
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Bill #{self.bill_number} for Order #{self.order.id}"
+
+    # def calculate_total(self):
+    #     self.total_amount = self.subtotal + self.tax - self.discount
+    #     self.save()
