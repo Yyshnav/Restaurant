@@ -3,14 +3,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import LoginTable
+from Accountapp.models import ItemTable, LoginTable, WishlistTable
 from django.conf import settings
+from Restaurant.Userapp.serializer import ProfileTableSerializer
 from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
 from rest_framework.permissions import IsAuthenticated
 import secrets
 from rest_framework.permissions import AllowAny
+from Userapp.serializer import ProfileTableSerializer, WishlistSerializer
 
 
 # Create your views here.
@@ -103,26 +105,25 @@ class ResendOTPView(APIView):
             return Response({'error': 'Failed to send SMS.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'OTP resent successfully.'}, status=status.HTTP_200_OK)
 class AddBasicDetailsView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this view
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user  # The authenticated user from the token
-        name = request.data.get('name')
-        dob = request.data.get('dob')
+        user = request.user
 
-        if not name or not dob:
-            return Response({'error': 'Name and DOB are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Try to get or create the profile for the user
+        profile, created = ProfileTable.objects.get_or_create(user=user)
 
-        try:
-            profile, created = ProfileTable.objects.get_or_create(user=user)
-            profile.name = name
-            profile.dob = dob
-            profile.save()
+        # Include `loginid` in the serializer data as it's a required field
+        data = request.data.copy()
+        data['loginid'] = user.id  # assuming LoginTable is linked to User model via OneToOne
 
-            return Response({'message': 'Basic details added successfully.'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': 'Database error.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+        serializer = ProfileTableSerializer(profile, data=data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Basic details added successfully.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
 # home views.........................................................
 
 class HomeScreenDataView(APIView):
@@ -167,26 +168,53 @@ class FeaturedItemsView(APIView):
         return Response({"featured_items": featured_items}, status=status.HTTP_200_OK)
     
 # wish list views.........................................................
+
+
+
+class AddToWishlistView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        fooditem_id = request.data.get('fooditem_id')
+        if not fooditem_id:
+            return Response({'error': 'fooditem_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            fooditem = ItemTable.objects.get(id=fooditem_id)
+            wishlist_item, created = WishlistTable.objects.get_or_create(
+                userid=request.user, fooditem=fooditem
+            )
+            if not created:
+                return Response({'message': 'Item already in wishlist.'}, status=status.HTTP_200_OK)
+            
+            serializer = WishlistSerializer(wishlist_item)
+            return Response({'message': 'Item added to wishlist.', 'item': serializer.data}, status=status.HTTP_201_CREATED)
+        
+        except ItemTable.DoesNotExist:
+            return Response({'error': 'Food item does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class RemoveFromWishlistView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, fooditem_id):
+        try:
+            wishlist_item = WishlistTable.objects.get(userid=request.user, fooditem_id=fooditem_id)
+            wishlist_item.delete()
+            return Response({'message': 'Item removed from wishlist.'}, status=status.HTTP_200_OK)
+        except WishlistTable.DoesNotExist:
+            return Response({'error': 'Item not found in wishlist.'}, status=status.HTTP_404_NOT_FOUND)
+
+
 class WishlistItemsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        try:
-            wishlist_items = user.wishlistitem_set.all()  # Adjust related name if needed
-            items_data = [
-                {
-                    "id": item.id,
-                    "name": item.name,
-                    "image_url": item.image_url,
-                    "price": item.price,
-                }
-                for item in wishlist_items
-            ]
-            return Response({"wishlist_items": items_data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': 'Failed to fetch wishlist items.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+        wishlist_items = WishlistTable.objects.filter(userid=request.user).select_related('fooditem')
+        serializer = WishlistSerializer(wishlist_items, many=True)
+        return Response({'wishlist_items': serializer.data}, status=status.HTTP_200_OK)
+
+
 
     
 

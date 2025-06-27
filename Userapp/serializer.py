@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-from Accountapp.models import CartTable, ItemTable, ProfileTable, RatingTable
+from Accountapp.models import CartTable, ItemTable, ProfileTable, RatingTable, WishlistTable
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer
 
@@ -73,3 +73,14 @@ class CartTableSerializer(serializers.ModelSerializer):
             'updated_at',
             'total_price',
         ]
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
+    fooditem_image = serializers.CharField(source='fooditem.image_url', read_only=True)
+    fooditem_price = serializers.DecimalField(source='fooditem.price', read_only=True, max_digits=10, decimal_places=2)
+
+    class Meta:
+        model = WishlistTable
+        fields = ['id', 'fooditem', 'fooditem_name', 'fooditem_image', 'fooditem_price', 'added_at']
+        read_only_fields = ['id', 'added_at', 'fooditem_name', 'fooditem_image', 'fooditem_price']
