@@ -92,3 +92,32 @@ class OfferTableSerializer(serializers.ModelSerializer):
             'createdat',
             'updatedat',
         ]
+
+class OrderTableSerializer(serializers.ModelSerializer):
+    userid = serializers.PrimaryKeyRelatedField(queryset=LoginTable.objects.all())
+    deliveryid = serializers.PrimaryKeyRelatedField(
+        queryset=LoginTable.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    class Meta:
+        model = OrderTable
+        fields = [
+            'id',
+            'userid',
+            'totalamount',
+            'orderstatus',
+            'paymentstatus',
+            'deliveryid',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate_deliveryid(self, value):
+        if value:
+            allowed_roles = value.user_roles.values_list('role', flat=True)
+            if 'DELIVERY' not in allowed_roles and 'WAITER' not in allowed_roles:
+                raise serializers.ValidationError("Delivery person must be a Waiter or Delivery Boy.")
+        return value
