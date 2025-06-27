@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-from Accountapp.models import CartTable, ItemTable, ProfileTable, RatingTable, WishlistTable
+from Accountapp.models import CartTable, ItemTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer
 
@@ -74,7 +74,6 @@ class CartTableSerializer(serializers.ModelSerializer):
             'total_price',
         ]
 
-
 class WishlistSerializer(serializers.ModelSerializer):
     fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
     fooditem_image = serializers.CharField(source='fooditem.image_url', read_only=True)
@@ -83,4 +82,30 @@ class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = WishlistTable
         fields = ['id', 'fooditem', 'fooditem_name', 'fooditem_image', 'fooditem_price', 'added_at']
-        read_only_fields = ['id', 'added_at', 'fooditem_name', 'fooditem_image', 'fooditem_price']
+        read_only_fields = ['id', 'added_at', 'fooditem_name', 'fooditem_image', 'fooditem_price']   
+
+   
+class OrderItemTableSerializer(serializers.ModelSerializer):
+    itemname = ItemSerializer(read_only=True)
+    addon = AddonSerializer(read_only=True)
+
+    class Meta:
+        model = OrderItemTable
+        fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
+
+class WishlistSerializer(serializers.ModelSerializer):
+    userid = LoginTableSerializer(read_only=True)
+    fooditem = ItemSerializer(read_only=True)
+
+    class Meta:
+        model = WishlistTable
+        fields = ['id', 'userid', 'fooditem', 'added_at']     
+
+   
+class OrderItemTableSerializer(serializers.ModelSerializer):
+    itemname = ItemSerializer(read_only=True)
+    addon = AddonSerializer(read_only=True)
+
+    class Meta:
+        model = OrderItemTable
+        fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
