@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-from Accountapp.models import CartTable, ItemTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
+from Accountapp.models import AddressTable, CartTable, DeliveryTable, FeedbackTable, ItemTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer
 
@@ -90,3 +90,27 @@ class OrderItemTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItemTable
         fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
+
+class DeliveryTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryTable
+        fields = ['id', 'userid', 'name', 'latitude', 'longitude', 'phone', 'instruction', 'created_at', 'updated_at']
+
+class AddressTableSerializer(serializers.ModelSerializer):
+    userid = LoginTableSerializer(read_only=True)
+
+    class Meta:
+        model = AddressTable
+        fields = '__all__'
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    userid = LoginTableSerializer(read_only=True)
+    class Meta:
+        model = FeedbackTable
+        fields = [
+            'id',
+            'userid',
+            'feedback',
+            'rating',
+            'created_at',
+        ]
