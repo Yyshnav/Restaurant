@@ -60,34 +60,43 @@ class ProfileTable(models.Model):
 class CategoryTable(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
     
 class SubCategoryTable(models.Model):
-    category = models.ForeignKey('CategoryTable', on_delete=models.CASCADE, related_name='subcategories')
+    category = models.ForeignKey(CategoryTable, on_delete=models.CASCADE, related_name='subcategories')
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
 
     def __str__(self):
         return f"{self.category.name} - {self.name}"
+    
+class SubSubCategoryTable(models.Model):
+    subcategory = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='subsubcategories')
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.subcategory.category.name} > {self.subcategory.name} > {self.name}"
+
 
 
 class ItemTable(models.Model):
-    TYPE_CHOICES = [
-        ('VEG', 'Vegetarian'),
-        ('NONVEG', 'Non-Vegetarian'),
-        ('BEVERAGE', 'Beverage'),
-        ('DESSERT', 'Dessert'),
-        ('ADDON', 'Addon'),
-    ]
+    # TYPE_CHOICES = [
+    #     ('VEG', 'Vegetarian'),
+    #     ('NONVEG', 'Non-Vegetarian'),
+    #     ('BEVERAGE', 'Beverage'),
+    #     ('DESSERT', 'Dessert'),
+    #     ('ADDON', 'Addon'),
+    # ]
 
     name = models.CharField(max_length=100)
-    category = models.ForeignKey('CategoryTable', on_delete=models.CASCADE, related_name='items')
-    subcategory = models.ForeignKey('SubCategoryTable', on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    category = models.ForeignKey(CategoryTable, on_delete=models.CASCADE, related_name='items')
+    subcategory = models.ForeignKey(SubCategoryTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
+    subsubcategory = models.ForeignKey(SubSubCategoryTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
+    is_veg = models.BooleanField(default=True) 
     image = models.FileField(upload_to='item_images/', null=True, blank=True)
     description = models.CharField(max_length=200, null=True, blank=True)
     voice_description = models.FileField(upload_to='voice_descriptions/', null=True, blank=True)
@@ -265,8 +274,7 @@ class AddressTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='addresses')
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
-    address_line1 = models.CharField(max_length=255)
-    address_line2 = models.CharField(max_length=255, null=True, blank=True)
+    address = models.CharField(max_length=255, null=True, blank=True)
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=20)
@@ -318,24 +326,48 @@ class VoucherTable(models.Model):
     def __str__(self):
         return self.code
     
-class KitchenSectionTable(models.Model):
+# class KitchenSectionTable(models.Model):
+#     name = models.CharField(max_length=100, unique=True)
+#     description = models.CharField(max_length=255, null=True, blank=True)
+
+#     def __str__(self):
+#         return self.name
+
+# class KitchenTable(models.Model):
+#     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='kitchen_profile')
+#     name = models.CharField(max_length=100)
+#     phone = models.CharField(max_length=15)
+#     image = models.ImageField(upload_to='kitchen_images/', null=True, blank=True)
+#     address = models.CharField(max_length=255, null=True, blank=True)
+#     section = models.ForeignKey(KitchenSectionTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='kitchen_staff')
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"{self.name} ({self.phone}) - {self.section.name if self.section else 'No Section'}"
+
+class BranchTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    description = models.CharField(max_length=255, null=True, blank=True)
+    place = models.CharField(max_length=100, null=True, blank=True)
+    address = models.CharField(max_length=255)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    floors = models.IntegerField(null=True, blank=True) 
+    managers = models.ManyToManyField(LoginTable, blank=True, related_name='branches_managed')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
-class KitchenTable(models.Model):
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='kitchen_profile')
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    image = models.ImageField(upload_to='kitchen_images/', null=True, blank=True)
-    address = models.CharField(max_length=255, null=True, blank=True)
-    section = models.ForeignKey(KitchenSectionTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='kitchen_staff')
-    created_at = models.DateTimeField(auto_now_add=True)
+class PrinterTable(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='printers')
+    subsubcategories = models.ManyToManyField(SubSubCategoryTable, blank=True, related_name='category')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.name} ({self.phone}) - {self.section.name if self.section else 'No Section'}"
+        return self.name
 
 class ManagerTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='manager_profile')
@@ -362,20 +394,7 @@ class WaiterTable(models.Model):
     def __str__(self):
         return f"{self.name} ({self.phone})"
 
-class BranchTable(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    place = models.CharField(max_length=100, null=True, blank=True)
-    address = models.CharField(max_length=255)
-    phone = models.CharField(max_length=15, null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    floors = models.IntegerField(null=True, blank=True) 
-    managers = models.ManyToManyField(LoginTable, blank=True, related_name='branches_managed')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
 
 
 class FloorTable(models.Model):
@@ -432,7 +451,7 @@ class BillTable(models.Model):
 
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
 
     def __str__(self):
         return f"Bill #{self.bill_number} for Order #{self.order.id}"
