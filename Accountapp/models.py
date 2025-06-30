@@ -1,7 +1,10 @@
-from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
+# ------------------------
+# UserRole Model
+# ------------------------
 class UserRole(models.Model):
     ROLE_CHOICES = [
         ('ADMIN', 'Admin'),
@@ -16,8 +19,10 @@ class UserRole(models.Model):
     def __str__(self):
         return self.role
 
+# ------------------------
+# LoginTable Model
+# ------------------------
 class LoginTable(AbstractUser):
-    # Add phone and role info
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -25,13 +30,17 @@ class LoginTable(AbstractUser):
     created_at = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
-        if self.user_type == 'USER':
-            self.username = self.phone  # username is still required, so use phone
-            self.set_unusable_password()  # disable password for phone-login users
+        # Set username to phone if not already set
+        if not self.username and self.phone:
+            self.username = self.phone
+            self.set_unusable_password()  # Disable password for phone-login users
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user_type} - {self.username or self.phone}"
+        # Safely list all assigned roles
+        roles = ', '.join([role.role for role in self.user_roles.all()])
+        return f"{roles} - {self.username or self.phone}"
+
     
 class ProfileTable(models.Model):
     name = models.CharField(max_length=100)
