@@ -75,12 +75,14 @@ class CartTableSerializer(serializers.ModelSerializer):
         ]
 
 class WishlistSerializer(serializers.ModelSerializer):
-    userid = LoginTableSerializer(read_only=True)
-    fooditem = ItemSerializer(read_only=True)
+    fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
+    fooditem_image = serializers.CharField(source='fooditem.image_url', read_only=True)
+    fooditem_price = serializers.DecimalField(source='fooditem.price', read_only=True, max_digits=10, decimal_places=2)
 
     class Meta:
         model = WishlistTable
-        fields = ['id', 'userid', 'fooditem', 'added_at']     
+        fields = ['id', 'fooditem', 'fooditem_name', 'fooditem_image', 'fooditem_price', 'added_at']
+        read_only_fields = ['id', 'added_at', 'fooditem_name', 'fooditem_image', 'fooditem_price']   
 
    
 class OrderItemTableSerializer(serializers.ModelSerializer):
@@ -90,6 +92,37 @@ class OrderItemTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItemTable
         fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
+
+# class WishlistSerializer(serializers.ModelSerializer):
+#     userid = LoginTableSerializer(read_only=True)
+#     fooditem = ItemSerializer(read_only=True)
+
+#     class Meta:
+#         model = WishlistTable
+        # fields = ['id', 'userid', 'fooditem', 'added_at']     
+
+class CartSerializer(serializers.ModelSerializer):
+    fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
+    fooditem_price = serializers.FloatField(source='fooditem.price', read_only=True)
+    addon_name = serializers.CharField(source='addon.name', read_only=True)
+
+    class Meta:
+        model = CartTable
+        fields = [
+            'id', 'fooditem', 'fooditem_name', 'quantity', 'price', 'addon', 'addon_name',
+            'instruction', 'added_at', 'updated_at', 'total_price'
+        ]
+        read_only_fields = ['id', 'added_at', 'updated_at', 'fooditem_name', 'addon_name']
+
+class ProfileNameUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfileTable
+        fields = ['name']
+
+class ProfileLocationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfileTable
+        fields = ['latitude', 'longitude', 'place']
 
 class DeliveryTableSerializer(serializers.ModelSerializer):
     class Meta:
@@ -114,3 +147,6 @@ class FeedbackSerializer(serializers.ModelSerializer):
             'rating',
             'created_at',
         ]
+
+
+   
