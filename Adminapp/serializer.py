@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from Accountapp.models import *
+from Accountapp.serializer import LoginTableSerializer
 
 
 class AddonSerializer(serializers.ModelSerializer):

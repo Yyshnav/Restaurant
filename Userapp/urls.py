@@ -17,6 +17,23 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from Userapp.views import *
+
 urlpatterns = [
+
     path('/', admin.site.urls),
+    #auth
+
+    path('send_otp/',SendOTPView.as_view(), name='send_otp'),
+    path('verify_otp/',VerifyOTPView.as_view(), name='verify-otp'), 
+    path('add_basic_details/',AddBasicDetailsView.as_view(), name='add_basic_details'),
+
+
+    path('wishlist/', WishlistItemsView.as_view(), name='wishlist-items'),
+    path('wishlist/add/', AddToWishlistView.as_view(), name='add-to-wishlist'),
+    path('wishlist/remove/<int:fooditem_id>/', RemoveFromWishlistView.as_view(), name='remove-from-wishlist'),
+    path('cart/add/', AddToCartView.as_view(), name='add-to-cart'),
+    path('cart/remove/<int:cart_item_id>/', RemoveFromCartView.as_view(), name='remove-from-cart'),
+
+
 ]
