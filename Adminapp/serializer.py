@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from Accountapp.models import *
 
+
 class AddonSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddonTable
@@ -17,7 +18,9 @@ class AddonSerializer(serializers.ModelSerializer):
         ]
 
 class ItemSerializer(serializers.ModelSerializer):
-    addons = AddonSerializer(many=True, read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
+    subsubcategory_name = serializers.CharField(source='subsubcategory.name', read_only=True)
 
     class Meta:
         model = ItemTable
@@ -25,8 +28,12 @@ class ItemSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'category',
+            'category_name',
             'subcategory',
-            'type',
+            'subcategory_name',
+            'subsubcategory',
+            'subsubcategory_name',
+            'is_veg',
             'image',
             'description',
             'voice_description',
@@ -36,28 +43,11 @@ class ItemSerializer(serializers.ModelSerializer):
             'updated_at',
             'fast_delivery',
             'newest',
-            'addons',
-        ]
-
-
-class SubCategorySerializer(serializers.ModelSerializer):
-    items = ItemSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = SubCategoryTable
-        fields = [
-            'id',
-            'category',
-            'name',
-            'created_at',
-            'updated_at',
-            'items',
         ]
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    subcategories = SubCategorySerializer(many=True, read_only=True)
-    items = ItemSerializer(many=True, read_only=True)  # Optional: all items under this category
+    items = ItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = CategoryTable
@@ -65,10 +55,26 @@ class CategorySerializer(serializers.ModelSerializer):
             'id',
             'name',
             'created_at',
-            'updated_at',
-            'subcategories',
-            'items',
         ]
+
+class SubCategorySerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=CategoryTable.objects.all(),
+        source='category',
+        write_only=True
+    )
+
+    class Meta:
+        model = SubCategoryTable
+        fields = ['id', 'name', 'category', 'category_id', 'created_at']
+
+class SubSubCategorySerializer(serializers.ModelSerializer):
+    subcategory = SubCategorySerializer(read_only=True)
+
+    class Meta:
+        model = SubSubCategoryTable
+        fields = ['id', 'name', 'subcategory', 'created_at']
 
 # class ItemBriefSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -121,3 +127,66 @@ class OrderTableSerializer(serializers.ModelSerializer):
             if 'DELIVERY' not in allowed_roles and 'WAITER' not in allowed_roles:
                 raise serializers.ValidationError("Delivery person must be a Waiter or Delivery Boy.")
         return value
+    
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CouponTable
+        fields = [
+            'id',
+            'code',
+            'description',
+            'discount_percentage',
+            'max_discount_amount',
+            'min_order_amount',
+            'valid_from',
+            'valid_to',
+            'is_active',
+            'usage_limit',
+            'used_count',
+        ]
+
+class VoucherSerializer(serializers.ModelSerializer):
+    userid = LoginTableSerializer(read_only=True)
+
+    class Meta:
+        model = VoucherTable
+        fields = [
+            'id',
+            'code',
+            'description',
+            'value',
+            'valid_from',
+            'valid_to',
+            'is_active',
+            'userid',
+            'used',
+            'used_at',
+        ]
+
+class BranchTableSerializer(serializers.ModelSerializer):
+    managers = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=LoginTable.objects.all(), required=False
+    )
+
+    class Meta:
+        model = BranchTable
+        fields = [
+            'id',
+            'name',
+            'place',
+            'address',
+            'phone',
+            'latitude',
+            'longitude',
+            'floors',
+            'managers',
+            'created_at',
+            'updated_at',
+        ]
+
+class FloorTableSerializer(serializers.ModelSerializer):
+    branch = BranchTableSerializer()
+
+    class Meta:
+        model = FloorTable
+        fields = ['id', 'branch', 'floor_number', 'name', 'description']
