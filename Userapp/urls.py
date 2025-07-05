@@ -34,6 +34,13 @@ urlpatterns = [
     path('wishlist/remove/<int:fooditem_id>/', RemoveFromWishlistView.as_view(), name='remove-from-wishlist'),
     path('cart/add/', AddToCartView.as_view(), name='add-to-cart'),
     path('cart/remove/<int:cart_item_id>/', RemoveFromCartView.as_view(), name='remove-from-cart'),
-
+    path('carousel/',CarouselAPIView.as_view(), name='carousel'),
+    path('spotlight/',SpotlightApiView.as_view(), name='spotlight'),
+    path('profile/', ProfileApiView.as_view(), name = 'profile'),
+    path('items/', ItemListAPIView.as_view(), name='item-list'),
+    # path('wishlist/', WishlistAPIView.as_view(), name='wishlist'),
+    # path('wishlist/<int:pk>/', WishlistDeleteAPIView.as_view(), name='wishlist-delete'),
+    path('cart/', CartAPIView.as_view(), name='cart'),
+    path('cart/<int:pk>/', CartDeleteAPIView.as_view(), name='cart-detail'),
 
 ]
