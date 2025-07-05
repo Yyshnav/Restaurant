@@ -18,33 +18,83 @@ class AddonSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+class VoiceDescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VoiceDescriptionTable
+        fields = ['id','language', 'audio_file']
+
+class ItemVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemVariantTable
+        fields = ['id', 'variant_name', 'price']
+
+class ItemImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemImageTable
+        fields = ['id', 'image']
+
+
+# class ItemSerializer(serializers.ModelSerializer):
+#     variants = ItemVariantSerializer(many=True, read_only=True)
+#     category_name = serializers.CharField(source='category.name', read_only=True)
+#     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
+#     subsubcategory_name = serializers.CharField(source='subsubcategory.name', read_only=True)
+#     voice_descriptions = VoiceDescriptionSerializer(many=True)
+#     average_rating = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = ItemTable
+#         fields = [
+#             'id',
+#             'name',
+#             'category',
+#             'category_name',
+#             'subcategory',
+#             'subcategory_name',
+#             'subsubcategory',
+#             'subsubcategory_name',
+#             'is_veg',
+#             'image',
+#             'description',
+#             # 'voice_description',
+#             'price',
+#             'variants',
+#             'voice_descriptions',
+#             'created_at',
+#             'updated_at',
+#             'fast_delivery',
+#             'newest',
+#             'average_rating'
+#         ]
+#     def get_average_rating(self, obj):
+#         ratings = obj.ratings.filter(rating_type='DISH').values_list('rating', flat=True)
+#         ratings = [float(r) for r in ratings if r]  # remove null or empty
+#         if ratings:
+#             return round(sum(ratings) / len(ratings), 1)
+#         return None
 class ItemSerializer(serializers.ModelSerializer):
+    variants = ItemVariantSerializer(many=True, read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     subsubcategory_name = serializers.CharField(source='subsubcategory.name', read_only=True)
+    voice_descriptions = VoiceDescriptionSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    images = ItemImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = ItemTable
         fields = [
-            'id',
-            'name',
-            'category',
-            'category_name',
-            'subcategory',
-            'subcategory_name',
-            'subsubcategory',
-            'subsubcategory_name',
-            'is_veg',
-            'image',
-            'description',
-            'voice_description',
-            'price',
-            'quantity',
-            'created_at',
-            'updated_at',
-            'fast_delivery',
-            'newest',
+            'id', 'name', 'category', 'category_name', 'subcategory', 'subcategory_name',
+            'subsubcategory', 'subsubcategory_name', 'is_veg', 'preparation_time',
+            'images', 'description', 'price','preparation_time',
+            'variants', 'voice_descriptions', 'created_at', 'updated_at', 'fast_delivery', 'newest',
+            'average_rating'
         ]
+
+    def get_average_rating(self, obj):
+        ratings = obj.ratings.filter(rating_type='DISH').values_list('rating', flat=True)
+        ratings = [float(r) for r in ratings if r]
+        return round(sum(ratings) / len(ratings), 1) if ratings else None
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -175,11 +225,14 @@ class BranchTableSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'place',
+            'image',
             'address',
             'phone',
+            'branches',
             'latitude',
             'longitude',
             'floors',
+            'fssai_lic_no',
             'managers',
             'created_at',
             'updated_at',
@@ -191,3 +244,13 @@ class FloorTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = FloorTable
         fields = ['id', 'branch', 'floor_number', 'name', 'description']
+
+class CarouselSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CarouselTable
+        fields = '__all__'
+
+class SpotlightSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpotlightTable
+        fields = '__all__'

@@ -25,34 +25,46 @@ class ProfileTableSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
-
 class RatingTableSerializer(serializers.ModelSerializer):
-    # Read-only nested fields
     userid = ProfileTableSerializer(read_only=True)
     itemid = ItemSerializer(read_only=True)
 
-    # Write-only fields for creation/updating
-    userid_id = serializers.PrimaryKeyRelatedField(
-        queryset=LoginTable.objects.all(), write_only=True, source='userid'
-    )
-    itemid_id = serializers.PrimaryKeyRelatedField(
-        queryset=ItemTable.objects.all(), write_only=True, source='itemid', allow_null=True, required=False
-    )
+    userid_id = serializers.PrimaryKeyRelatedField(queryset=LoginTable.objects.all(), write_only=True, source='userid')
+    itemid_id = serializers.PrimaryKeyRelatedField(queryset=ItemTable.objects.all(), write_only=True, source='itemid', allow_null=True, required=False)
 
     class Meta:
         model = RatingTable
         fields = [
-            'id',
-            'userid',       
-            'userid_id',     
-            'itemid',       
-            'itemid_id',     
-            'rating_type',
-            'rating',
-            'comment',
-            'createdat',
-            'updatedat',
+            'id', 'userid', 'userid_id', 'itemid', 'itemid_id', 'rating_type',
+            'rating', 'comment', 'createdat', 'updatedat'
         ]
+# class RatingTableSerializer(serializers.ModelSerializer):
+#     # Read-only nested fields
+#     userid = ProfileTableSerializer(read_only=True)
+#     itemid = ItemSerializer(read_only=True)
+
+#     # Write-only fields for creation/updating
+#     userid_id = serializers.PrimaryKeyRelatedField(
+#         queryset=LoginTable.objects.all(), write_only=True, source='userid'
+#     )
+#     itemid_id = serializers.PrimaryKeyRelatedField(
+#         queryset=ItemTable.objects.all(), write_only=True, source='itemid', allow_null=True, required=False
+#     )
+
+#     class Meta:
+#         model = RatingTable
+#         fields = [
+#             'id',
+#             'userid',       
+#             'userid_id',     
+#             'itemid',       
+#             'itemid_id',     
+#             'rating_type',
+#             'rating',
+#             'comment',
+#             'createdat',
+#             'updatedat',
+#         ]
 
 class CartTableSerializer(serializers.ModelSerializer):
     userid = LoginTableSerializer(read_only=True)
