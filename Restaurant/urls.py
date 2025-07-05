@@ -16,6 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf.urls.static import static
+
+from django.conf import settings
+import os
+
+from Restaurant.settings import BASE_DIR
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,4 +32,8 @@ urlpatterns = [
     path('Kitchenapp/', include('Kitchenapp.urls')),
     path('Userapp/', include('Userapp.urls')),
     path('Deliveryboyapp/', include('Deliveryboyapp.urls')),
-]
+    ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
