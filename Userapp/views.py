@@ -31,10 +31,10 @@ class SendOTPView(APIView):
             user, created = LoginTable.objects.get_or_create(phone=phone)
             user.otp = otp
             user.save()
-            #need o chage later
+            
         except Exception as e:
             return Response({'error': 'Database error.'}, status=status.HTTP_201_CREATED)
-        
+        #need o chage later
         try:
             client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
             message = client.messages.create(
@@ -84,8 +84,6 @@ class VerifyOTPView(APIView):
         except Exception as e:
             return Response({'error': 'Database error.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-    
 class ResendOTPView(APIView):
     def post(self, request):
         phone = request.data.get('phone')
