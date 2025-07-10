@@ -1,13 +1,13 @@
 from multiprocessing.connection import Client
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import CarouselTable, CartTable, ItemTable, LoginTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddressTable, BranchTable, CarouselTable, CartTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
-from Adminapp.serializer import CarouselSerializer, ItemSerializer, SpotlightSerializer
-from Userapp.serializer import ProfileTableSerializer
+from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, ItemSerializer, SpotlightSerializer
+from Userapp.serializer import AddressUpdateSerializer, ProfileTableSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -16,7 +16,8 @@ import requests
 import secrets
 from rest_framework.permissions import AllowAny
 from Userapp.serializer import CartSerializer, ProfileLocationUpdateSerializer, ProfileNameUpdateSerializer, ProfileTableSerializer, WishlistSerializer
-
+from math import radians, cos, sin, asin, sqrt
+from django.db.models import Q
 
 # Create your views here.
 #auth views
@@ -458,8 +459,101 @@ class ItemListAPIView(APIView):
         serializer = ItemSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-class WishlistAPIView(APIView):
+def calculate_distance(lat1, lon1, lat2, lon2):
+
+    R = 6371  # Radius of Earth in KM
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
+    c = 2 * asin(sqrt(a))
+    return R * c
+    
+class BranchItemsAPIView(APIView):
     permission_classes = [AllowAny]
+    def post(self, request):
+        user_lat = request.data.get('latitude')
+        user_lon = request.data.get('longitude')
+        selected_branch_id = request.data.get('branch_id')
+        print(request.data)
+
+        # Get all branches
+        all_branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
+
+        # If branch_id is provided, use that branch
+        if selected_branch_id:
+            try:
+                selected_branch = BranchTable.objects.get(id=selected_branch_id)
+            except BranchTable.DoesNotExist:
+                return Response({'error': 'Branch not found'}, status=404)
+        else:
+            # Calculate nearest branch using user location
+            if not user_lat or not user_lon:
+                return Response({'error': 'Location is required if branch_id not provided'}, status=400)
+
+            user_lat = float(user_lat)
+            user_lon = float(user_lon)
+
+            distances = []
+            for branch in all_branches:
+                dist = calculate_distance(user_lat, user_lon, branch.latitude, branch.longitude)
+                distances.append((dist, branch))
+
+            distances.sort(key=lambda x: x[0])
+            selected_branch = distances[0][1] if distances else None
+
+        if not selected_branch:
+            return Response({'error': 'No branch selected or found'}, status=404)
+
+        # Get items in selected branch
+        items = ItemTable.objects.filter(branches=selected_branch)
+
+        return Response({
+            'selected_branch': BranchTableSerializer(selected_branch).data,
+            'all_branches': BranchTableSerializer(all_branches, many=True).data,
+            'items': ItemSerializer(items, many=True).data
+        })
+  
+# class WishlistAPIView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def get(self, request):
+#         userid = request.query_params.get('userid')
+#         if not userid:
+#             return Response({"error": "User ID is required."}, status=400)
+
+#         wishlist = WishlistTable.objects.filter(userid_id=userid)
+#         serializer = WishlistSerializer(wishlist, many=True)
+#         return Response(serializer.data)
+
+#     def post(self, request):
+#         userid = request.data.get('userid')
+#         fooditem_id = request.data.get('fooditem')
+
+#         if not userid or not fooditem_id:
+#             return Response({"error": "User ID and food item ID are required."}, status=400)
+
+#         # Prevent duplicate wishlist entries
+#         exists = WishlistTable.objects.filter(userid_id=userid, fooditem_id=fooditem_id).exists()
+#         if exists:
+#             return Response({"message": "Item already in wishlist."}, status=200)
+
+#         WishlistTable.objects.create(userid_id=userid, fooditem_id=fooditem_id)
+#         return Response({"message": "Item added to wishlist."}, status=201)
+
+#     def delete(self, request):
+#         wishlist_id = request.data.get('id')
+#         if not wishlist_id:
+#             return Response({"error": "Wishlist ID is required."}, status=400)
+
+#         try:
+#             wishlist = WishlistTable.objects.get(id=wishlist_id)
+#             wishlist.delete()
+#             return Response({"message": "Item removed from wishlist."}, status=200)
+#         except WishlistTable.DoesNotExist:
+#             return Response({"error": "Wishlist item not found."}, status=404)
+    
+class WishlistAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         wishlist = WishlistTable.objects.filter(userid=request.user)
@@ -468,6 +562,7 @@ class WishlistAPIView(APIView):
 
     def post(self, request):
         serializer = WishlistSerializer(data=request.data)
+        print(request.data)
         if serializer.is_valid():
             serializer.save(userid=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -528,3 +623,105 @@ class CartDeleteAPIView(APIView):
             return Response({"message": "Cart item removed."}, status=status.HTTP_204_NO_CONTENT)
         except CartTable.DoesNotExist:
             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class ChangeAddressAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, address_id):
+        user = request.user
+        address = get_object_or_404(AddressTable, id=address_id, userid=user)
+        serializer = AddressUpdateSerializer(address, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Address updated successfully', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TrackDeliveryLocationAPI(APIView):
+    def get(self, request, order_id):
+        try:
+            order = OrderTable.objects.get(id=order_id)
+            delivery = order.deliveryid
+            if delivery:
+                data = {
+                    'name': delivery.name,
+                    'latitude': delivery.latitude,
+                    'longitude': delivery.longitude,
+                    'phone': delivery.phone
+                }
+                return Response(data)
+            else:
+                return Response({'error': 'No delivery person assigned.'}, status=status.HTTP_404_NOT_FOUND)
+        except OrderTable.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+# def calculate_distance(lat1, lon1, lat2, lon2):
+#     # Haversine formula
+#     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+#     dlon = lon2 - lon1
+#     dlat = lat2 - lat1
+#     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+#     c = 2 * asin(sqrt(a))
+#     km = 6371 * c
+#     return km
+
+
+class PersonalizedRecommendationAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        keyword = request.data.get('search_keyword', '').strip()
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+
+        recommendations = ItemTable.objects.all()
+
+        # 1️⃣ FILTER BY NEARBY BRANCH IF LOCATION IS GIVEN
+        if latitude and longitude:
+            latitude = float(latitude)
+            longitude = float(longitude)
+            nearby_branch_ids = []
+
+            branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
+            for branch in branches:
+                dist = calculate_distance(latitude, longitude, branch.latitude, branch.longitude)
+                if dist <= 10:  # You can adjust radius in km
+                    nearby_branch_ids.append(branch.id)
+
+            if nearby_branch_ids:
+                recommendations = recommendations.filter(branches__id__in=nearby_branch_ids)
+
+        # 2️⃣ FILTER BY SEARCH KEYWORD
+        if keyword:
+            recommendations = recommendations.filter(
+                Q(name__icontains=keyword) |
+                Q(description__icontains=keyword)
+            )
+
+        # 3️⃣ FILTER BY USER HISTORY IF USER ID IS PROVIDED
+        if user_id:
+            try:
+                user = LoginTable.objects.get(id=user_id)
+
+                # Wishlist-based
+                wishlist_item_ids = WishlistTable.objects.filter(userid=user).values_list('fooditem_id', flat=True)
+
+                # Order history-based
+                ordered_item_ids = OrderItemTable.objects.filter(order__userid=user).values_list('itemname_id', flat=True)
+
+                # Combine history
+                preferred_ids = set(wishlist_item_ids) | set(ordered_item_ids)
+
+                if preferred_ids:
+                    recommendations = recommendations.filter(
+                        Q(id__in=preferred_ids) |
+                        Q(category__items__id__in=preferred_ids)
+                    ).distinct()
+
+            except LoginTable.DoesNotExist:
+                return Response({'error': 'Invalid user ID'}, status=400)
+
+        recommendations = recommendations.distinct().order_by('-fast_delivery', '-newest')[:20]
+        serialized = ItemSerializer(recommendations, many=True)
+        return Response({'recommendations': serialized.data})

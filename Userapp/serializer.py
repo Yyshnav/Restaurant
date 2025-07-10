@@ -162,3 +162,10 @@ class FeedbackSerializer(serializers.ModelSerializer):
 
 
    
+class AddressUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddressTable
+        fields = [
+            'id', 'name', 'phone', 'address', 'city', 'state', 'postal_code',
+            'country', 'latitude', 'longitude', 'is_default'
+        ]
