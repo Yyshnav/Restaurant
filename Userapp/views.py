@@ -553,7 +553,7 @@ class BranchItemsAPIView(APIView):
 #             return Response({"error": "Wishlist item not found."}, status=404)
     
 class WishlistAPIView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         wishlist = WishlistTable.objects.filter(userid=request.user)
@@ -562,6 +562,7 @@ class WishlistAPIView(APIView):
 
     def post(self, request):
         serializer = WishlistSerializer(data=request.data)
+        print(request.data)
         if serializer.is_valid():
             serializer.save(userid=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
