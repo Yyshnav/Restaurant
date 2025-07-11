@@ -26,7 +26,7 @@ class LoginTable(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    user_roles = models.ManyToManyField(UserRole, related_name='users')
+    user_roles = models.ManyToManyField(UserRole, related_name='users',)
     created_at = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
@@ -82,38 +82,65 @@ class SubSubCategoryTable(models.Model):
         return f"{self.subcategory.category.name} > {self.subcategory.name} > {self.name}"
 
 
-
 class ItemTable(models.Model):
-    # TYPE_CHOICES = [
-    #     ('VEG', 'Vegetarian'),
-    #     ('NONVEG', 'Non-Vegetarian'),
-    #     ('BEVERAGE', 'Beverage'),
-    #     ('DESSERT', 'Dessert'),
-    #     ('ADDON', 'Addon'),
-    # ]
-
     name = models.CharField(max_length=100)
     category = models.ForeignKey(CategoryTable, on_delete=models.CASCADE, related_name='items')
     subcategory = models.ForeignKey(SubCategoryTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
     subsubcategory = models.ForeignKey(SubSubCategoryTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
     is_veg = models.BooleanField(default=True) 
-    image = models.FileField(upload_to='item_images/', null=True, blank=True)
+    # image = models.FileField(upload_to='item_images/', null=True, blank=True)
     description = models.CharField(max_length=200, null=True, blank=True)
-    voice_description = models.FileField(upload_to='voice_descriptions/', null=True, blank=True)
+    # variant = models.ForeignKey(ItemVariantTable, on_delete=models.CASCADE, null=True, blank=True)
+    # voice_description = models.FileField(upload_to='voice_descriptions/', null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
-    quantity = models.IntegerField(default=0)
+    preparation_time = models.FloatField(default=0.0)
+    branches = models.ManyToManyField('BranchTable', related_name='items', blank=True)
+    inventory = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     fast_delivery = models.BooleanField(default=False)
-    newest = models.CharField(max_length=20, null=True, blank=True)
+    newest = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+    
+class ItemImageTable(models.Model):
+    item = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='item_images/', null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.item.name}"
+
+    
+class ItemVariantTable(models.Model):
+    item = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='variants', null=True, blank=True)
+    variant_name = models.CharField(max_length=50)
+    price = models.FloatField()
+
+    def __str__(self):
+        return f"{self.item.name} - {self.variant_name} - ₹{self.price}"    
+
+class VoiceDescriptionTable(models.Model):
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('ml', 'Malayalam'),
+        ('hi', 'Hindi'),
+        ('ar', 'Arabic'),
+        # Add more if needed
+    ]
+    item = models.ForeignKey('ItemTable', on_delete=models.CASCADE, related_name='voice_descriptions')
+    language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES)
+    audio_file = models.FileField(upload_to='voice_descriptions/')
+    
+    def __str__(self):
+        return f"{self.item.name} - {self.get_language_display()}"
 
 
 class AddonTable(models.Model):
     item = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='addons')
     name = models.CharField(max_length=100)
+    quantity = models.IntegerField( default=1, null=True, blank=True)
     description = models.CharField(max_length=200, null=True, blank=True)
     image = models.ImageField(upload_to='addon_images/', null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
@@ -122,12 +149,31 @@ class AddonTable(models.Model):
 
     def __str__(self):
         return f"{self.name} (Addon for {self.item.name})"
+    
+class BranchTable(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    place = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='branch_image/', null=True, blank=True)
+    address = models.CharField(max_length=255)
+    email = models.CharField(max_length=255, null=True, blank=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    floors = models.IntegerField(null=True, blank=True) 
+    fssai_lic_no = models.CharField(max_length=255, null=True, blank=True)
+    manager = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True, limit_choices_to={'user_roles__role': 'MANAGER'})
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
             
 class OfferTable(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
-    startdate = models.CharField(max_length=100, null=True, blank=True)
-    enddate = models.CharField(max_length=100, null=True, blank=True)
+    startdate = models.DateTimeField(null=True, blank=True)
+    enddate = models.DateTimeField(null=True, blank=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
     offer_percentage = models.FloatField(null=True, blank=True)
     itemid = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='offers')
     offerdescription = models.CharField(max_length=100, null=True, blank=True)
@@ -243,9 +289,12 @@ class ComplaintTable(models.Model):
 class DeliveryBoyTable(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
+    email = models.CharField(max_length=100, null=True, blank=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
     address = models.CharField(max_length=255)
     image = models.FileField(upload_to='deliveryboy_images/', null=True, blank=True)
     idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
+    license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
 
     def __str__(self):
@@ -345,20 +394,20 @@ class VoucherTable(models.Model):
 #     def __str__(self):
 #         return f"{self.name} ({self.phone}) - {self.section.name if self.section else 'No Section'}"
 
-class BranchTable(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    place = models.CharField(max_length=100, null=True, blank=True)
-    address = models.CharField(max_length=255)
-    phone = models.CharField(max_length=15, null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    floors = models.IntegerField(null=True, blank=True) 
-    managers = models.ManyToManyField(LoginTable, blank=True, related_name='branches_managed')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+# class BranchTable(models.Model):
+#     name = models.CharField(max_length=100, unique=True)
+#     place = models.CharField(max_length=100, null=True, blank=True)
+#     address = models.CharField(max_length=255)
+#     phone = models.CharField(max_length=15, null=True, blank=True)
+#     latitude = models.FloatField(null=True, blank=True)
+#     longitude = models.FloatField(null=True, blank=True)
+#     floors = models.IntegerField(null=True, blank=True) 
+#     managers = models.ManyToManyField(LoginTable, blank=True, related_name='branches_managed')
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -373,6 +422,7 @@ class ManagerTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='manager_profile')
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
+    email = models.CharField(max_length=15, null=True, blank=True)
     image = models.FileField(upload_to='manager_images/', null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
     idproof = models.FileField(upload_to='manager_idproofs/', null=True, blank=True)
@@ -386,6 +436,7 @@ class WaiterTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='waiter_profile')
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
+    email = models.CharField(max_length=15, null=True, blank=True)
     image = models.FileField(upload_to='waiter_images/', null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
     idproof = models.FileField(upload_to='waiter_idproofs/', null=True, blank=True)
@@ -435,9 +486,7 @@ class BillTable(models.Model):
     order = models.OneToOneField(OrderTable, on_delete=models.CASCADE, related_name='bill')
     branch = models.ForeignKey(BranchTable, on_delete=models.SET_NULL, null=True, related_name='bills')
     table = models.ForeignKey(DiningTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='bills')
-    
     waiter = models.ForeignKey(LoginTable, on_delete=models.SET_NULL, null=True, related_name='bills_generated')
-
     bill_number = models.CharField(max_length=50, unique=True)
     subtotal = models.FloatField(default=0.0)
     tax = models.FloatField(default=0.0)
@@ -448,8 +497,6 @@ class BillTable(models.Model):
     payment_method = models.CharField(max_length=20, null=True, blank=True)
     paid_at = models.CharField(max_length=100, null=True, blank=True)
     total_amount = models.FloatField(default=0.0)
-
-
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -459,3 +506,26 @@ class BillTable(models.Model):
     # def calculate_total(self):
     #     self.total_amount = self.subtotal + self.tax - self.discount
     #     self.save()
+
+class CarouselTable(models.Model):
+    image = models.FileField(upload_to='carousel_images/')
+    category = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
+    offer_percentage = models.FloatField(default=0.0, null=True, blank=True)
+    startdate = models.DateTimeField(null=True, blank=True)
+    enddate = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.category} - {self.branch} ({self.offer_percentage}%)"
+
+class SpotlightTable(models.Model):
+    image = models.FileField(upload_to='spotlight_images/')
+    category = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, null=True, blank=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
+    offer_percentage = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.category} - {self.branch} ({self.offer_percentage}%)"
+    
