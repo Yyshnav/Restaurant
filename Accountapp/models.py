@@ -375,39 +375,6 @@ class VoucherTable(models.Model):
     def __str__(self):
         return self.code
     
-# class KitchenSectionTable(models.Model):
-#     name = models.CharField(max_length=100, unique=True)
-#     description = models.CharField(max_length=255, null=True, blank=True)
-
-#     def __str__(self):
-#         return self.name
-
-# class KitchenTable(models.Model):
-#     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='kitchen_profile')
-#     name = models.CharField(max_length=100)
-#     phone = models.CharField(max_length=15)
-#     image = models.ImageField(upload_to='kitchen_images/', null=True, blank=True)
-#     address = models.CharField(max_length=255, null=True, blank=True)
-#     section = models.ForeignKey(KitchenSectionTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='kitchen_staff')
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-#     def __str__(self):
-#         return f"{self.name} ({self.phone}) - {self.section.name if self.section else 'No Section'}"
-
-# class BranchTable(models.Model):
-#     name = models.CharField(max_length=100, unique=True)
-#     place = models.CharField(max_length=100, null=True, blank=True)
-#     address = models.CharField(max_length=255)
-#     phone = models.CharField(max_length=15, null=True, blank=True)
-#     latitude = models.FloatField(null=True, blank=True)
-#     longitude = models.FloatField(null=True, blank=True)
-#     floors = models.IntegerField(null=True, blank=True) 
-#     managers = models.ManyToManyField(LoginTable, blank=True, related_name='branches_managed')
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return self.name
 
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
