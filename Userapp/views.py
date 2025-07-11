@@ -44,7 +44,7 @@ class SendOTPView(APIView):
                 user.save()
         except Exception as e:
             return Response({'error': 'Database error.'}, status=status.HTTP_201_CREATED)
-        
+        #need o chage later
         try:
             client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
             message = client.messages.create(
