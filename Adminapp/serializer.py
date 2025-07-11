@@ -228,7 +228,7 @@ class BranchTableSerializer(serializers.ModelSerializer):
             'image',
             'address',
             'phone',
-            'branches',
+            # 'branches',
             'latitude',
             'longitude',
             'floors',
