@@ -26,7 +26,7 @@ class LoginTable(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    user_roles = models.ManyToManyField(UserRole, related_name='users')
+    user_roles = models.ManyToManyField(UserRole, related_name='users',)
     created_at = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
@@ -140,7 +140,7 @@ class VoiceDescriptionTable(models.Model):
 class AddonTable(models.Model):
     item = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='addons')
     name = models.CharField(max_length=100)
-    quantity = models.IntegerField(max_length=20, default=1, null=True, blank=True)
+    quantity = models.IntegerField( default=1, null=True, blank=True)
     description = models.CharField(max_length=200, null=True, blank=True)
     image = models.ImageField(upload_to='addon_images/', null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
