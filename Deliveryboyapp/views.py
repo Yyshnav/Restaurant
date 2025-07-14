@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.conf import settings
 from datetime import datetime, timedelta
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # from Accountapp.models import UserRole  # Ensure this model exists and is related properly
 
@@ -31,9 +32,13 @@ class DeliveryBoyLoginAPIView(APIView):
             if user.user_roles.filter(role='DELIVERY').exists():
                 print('55555555555555555555555555555555555555555')
                 if hasattr(user, 'deliveryboy_profile'):  # Assuming profile is set up
-                    token, created = Token.objects.get_or_create(user=user)
-                    print(f"Token created: {created}, Token: {token.key}")
-                    return Response({'token': token.key}, status=status.HTTP_200_OK)
+                    # token, created = Token.objects.get_or_create(user=user)
+                    refresh = RefreshToken.for_user(user)
+                    return Response({
+                        'token': str(refresh.access_token),
+                        'refresh': str(refresh),
+                        # 'token': token.key
+                    }, status=status.HTTP_200_OK) 
                 else:
                     return Response({'error': 'Not a delivery boy'}, status=status.HTTP_403_FORBIDDEN)
             else:
@@ -49,12 +54,12 @@ class LatestPendingOrdersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
+        user = request.userm,
         # Ensure user has DELIVERY role
         if not user.user_roles.filter(role='DELIVERY').exists():
             return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
         # Get latest orders assigned to this delivery boy with status 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=user, orderstatus='PENDING').order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=user, orderstatus='Pending').order_by('-id')
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
