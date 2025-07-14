@@ -2,6 +2,9 @@
 from django.contrib import admin
 from django.urls import path
 from Deliveryboyapp.views import * 
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+) 
 
 urlpatterns = [
     path('delivery_login/',DeliveryBoyLoginAPIView.as_view(), name='delivery_login'),
@@ -19,5 +22,7 @@ urlpatterns = [
     path('verifyOTPAPIView/',VerifyOTPAPIView.as_view(), name='verifyOTPAPIView'),  
     path('resetPasswordAPIView/',ResetPasswordAPIView.as_view(), name='resetPasswordAPIView'),  
     path('logoutAPIView/',LogoutAPIView.as_view(), name='logoutAPIView'),    
+
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 ]
