@@ -26,7 +26,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .fcm_utils import send_fcm_notification
+# from .fcm_utils import send_fcm_notification
 
 class SendTestNotification(APIView):
     def post(self, request):
