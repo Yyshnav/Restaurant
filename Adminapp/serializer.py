@@ -80,7 +80,9 @@ class ItemSerializer(serializers.ModelSerializer):
     voice_descriptions = VoiceDescriptionSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     images = ItemImageSerializer(many=True, read_only=True)
-
+    # images = serializers.FileField(source='subsubcategory.name', read_only=True)
+    is_wishlisted = serializers.SerializerMethodField()
+    # is_wishlist = serializers.CharField()
     class Meta:
         model = ItemTable
         fields = [
@@ -88,13 +90,20 @@ class ItemSerializer(serializers.ModelSerializer):
             'subsubcategory', 'subsubcategory_name', 'is_veg', 'preparation_time',
             'images', 'description', 'price','preparation_time',
             'variants', 'voice_descriptions', 'created_at', 'updated_at', 'fast_delivery', 'newest',
-            'average_rating'
+            'average_rating', 'is_wishlisted'
         ]
 
     def get_average_rating(self, obj):
         ratings = obj.ratings.filter(rating_type='DISH').values_list('rating', flat=True)
         ratings = [float(r) for r in ratings if r]
         return round(sum(ratings) / len(ratings), 1) if ratings else None
+    
+    def get_is_wishlisted(self, obj):
+        request = self.context.get('request', None)
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated:
+            return WishlistTable.objects.filter(userid=user, fooditem=obj).exists()
+        return False
 
 
 class CategorySerializer(serializers.ModelSerializer):
