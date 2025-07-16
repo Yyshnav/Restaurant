@@ -111,6 +111,7 @@ class ProfileTable(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
     dob = models.CharField(max_length=20, null=True, blank=True)
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
@@ -256,7 +257,7 @@ class CartTable(models.Model):
     fooditem = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='cart_entries')
     quantity = models.CharField(max_length=100, null=True, blank=True)
     price = models.FloatField(null=True, blank=True)  # Price at the time item was added
-    addon = models.ForeignKey(ItemTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_addons')
+    addon = models.ForeignKey(AddonTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_addons')
     instruction = models.CharField(max_length=200, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
