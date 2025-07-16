@@ -1,12 +1,13 @@
+import datetime
 from multiprocessing.connection import Client
 from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import AddressTable, BranchTable, CarouselTable, CartTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
-from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, ItemSerializer, SpotlightSerializer
+from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, SpotlightSerializer
 from Userapp.serializer import AddressUpdateSerializer, ProfileTableSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
@@ -136,43 +137,6 @@ class VerifyOTPView(APIView):
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': 'Database error.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-# class ResendOTPView(APIView):
-#     def post(self, request):
-#         phone = request.data.get('phone')
-#         if not phone:
-#             return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             user = LoginTable.objects.get(phone=phone)
-#             otp = random.randint(1000, 9999)
-#             user.otp = otp
-#             user.save()
-#         except LoginTable.DoesNotExist:
-#             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception:
-#             return Response({'error': 'Database error.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-#         try:
-#             url = "https://www.fast2sms.com/dev/bulkV2"
-#             headers = {
-#                 'authorization': settings.FAST2SMS_API_KEY,
-#                 'Content-Type': "application/json"
-#             }
-#             payload = {
-#                 "route": "otp",
-#                 "variables_values": str(otp),
-#                 "numbers": phone.replace('+91', '')  # Fast2SMS usually expects 10-digit number
-#             }
-
-#             response = requests.post(url, json=payload, headers=headers)
-
-#             if response.status_code == 200:
-#                 return Response({'message': 'OTP resent successfully.'}, status=status.HTTP_200_OK)
-#             else:
-#                 return Response({'error': 'Failed to send OTP.', 'details': response.text}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#         except Exception as e:
-#             return Response({'error': 'SMS sending failed.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
@@ -456,7 +420,7 @@ class ItemListAPIView(APIView):
 
     def get(self, request):
         items = ItemTable.objects.all()
-        serializer = ItemSerializer(items, many=True)
+        serializer = ItemSerializer(items, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -510,7 +474,7 @@ class BranchItemsAPIView(APIView):
         return Response({
             'selected_branch': BranchTableSerializer(selected_branch).data,
             'all_branches': BranchTableSerializer(all_branches, many=True).data,
-            'items': ItemSerializer(items, many=True).data
+            'items': ItemSerializer(items, many=True, context={'request': request}).data, 
         })
   
 # class WishlistAPIView(APIView):
@@ -553,7 +517,7 @@ class BranchItemsAPIView(APIView):
 #             return Response({"error": "Wishlist item not found."}, status=404)
     
 class WishlistAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         wishlist = WishlistTable.objects.filter(userid=request.user)
@@ -589,13 +553,27 @@ class CartAPIView(APIView):
 
     def post(self, request):
         serializer = CartSerializer(data=request.data)
+        print(request.data)
         if serializer.is_valid():
-            quantity = int(request.data.get('quantity', 1))
-            price = float(request.data.get('price', 0))
-            total_price = price * quantity
+            fooditem = serializer.validated_data.get('fooditem')
+            quantity = serializer.validated_data.get('quantity', 1)
+            addon = serializer.validated_data.get('addon', None)
+
+            # Calculate price securely from backend
+            # base_price = fooditem.price or 0
+            # addon_price = addon.price if addon and hasattr(addon, 'price') else 0
+
+            # total_price = (base_price + addon_price) * quantity
+            base_price = float(fooditem.price) if fooditem and hasattr(fooditem, 'price') else 0.0
+            addon_price = float(addon.price) if addon and hasattr(addon, 'price') else 0.0
+            quantity = int(quantity)
+            total_price = (base_price + addon_price) * quantity
+
             serializer.save(userid=request.user, total_price=total_price)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
 class CartDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -725,3 +703,91 @@ class PersonalizedRecommendationAPIView(APIView):
         recommendations = recommendations.distinct().order_by('-fast_delivery', '-newest')[:20]
         serialized = ItemSerializer(recommendations, many=True)
         return Response({'recommendations': serialized.data})
+    
+class ProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        print(request.user.id)
+        try:
+            profile = ProfileTable.objects.get(loginid=request.user)
+            serializer = ProfileTableSerializer(profile)
+            
+            return Response(serializer.data)
+        except ProfileTable.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
+
+    # def post(self, request):
+    #     print(request.user.id)
+    #     try:
+    #         ProfileTable.objects.get(loginid=request.user)
+    #         return Response({"error": "Profile already exists."}, status=400)
+    #     except ProfileTable.DoesNotExist:
+    #         data = request.data.copy()
+    #         serializer = ProfileTableSerializer(data=data)
+    #         if serializer.is_valid():
+    #             serializer.save(loginid=request.user)  # Assign current user
+    #             return Response(serializer.data, status=201)
+    #         return Response(serializer.errors, status=400)
+
+
+        
+class UpdateUserProfileByIdAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        try:
+            profile = ProfileTable.objects.get(loginid=request.user)
+            serializer = ProfileTableSerializer(profile, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()  # loginid won't be overwritten
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
+        except ProfileTable.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
+        
+class CouponListAPIView(APIView):
+    def get(self, request):
+        coupons = CouponTable.objects.filter(is_active=True)
+        serializer = CouponSerializer(coupons, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class ApplyCouponAPIView(APIView):
+    def post(self, request):
+        code = request.data.get('code')
+        order_amount = float(request.data.get('order_amount', 0))
+
+        try:
+            coupon = CouponTable.objects.get(code=code, is_active=True)
+
+            # Check valid date range
+            now = datetime.now()
+            valid_from = datetime.strptime(coupon.valid_from, "%Y-%m-%d")
+            valid_to = datetime.strptime(coupon.valid_to, "%Y-%m-%d")
+            if not (valid_from <= now <= valid_to):
+                return Response({'error': 'Coupon not valid at this time.'}, status=400)
+
+            # Check minimum order amount
+            if coupon.min_order_amount and order_amount < coupon.min_order_amount:
+                return Response({'error': f'Minimum order amount is {coupon.min_order_amount}.'}, status=400)
+
+            # Check usage limit
+            if coupon.usage_limit and coupon.used_count:
+                if int(coupon.used_count) >= int(coupon.usage_limit):
+                    return Response({'error': 'Coupon usage limit reached.'}, status=400)
+
+            # Calculate discount
+            discount = (order_amount * coupon.discount_percentage / 100)
+            if coupon.max_discount_amount:
+                discount = min(discount, coupon.max_discount_amount)
+
+            return Response({
+                'message': 'Coupon applied successfully.',
+                'discount': round(discount, 2),
+                'final_amount': round(order_amount - discount, 2),
+                'coupon_id': coupon.id
+            })
+
+        except CouponTable.DoesNotExist:
+            return Response({'error': 'Invalid coupon code.'}, status=404)
+    
