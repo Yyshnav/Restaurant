@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from Accountapp import serializer
 from Accountapp.models import *
+from Userapp.serializer import ProfileTableSerializer,OrderItemTableSerializer,DeliveryTableSerializer,AddressTableSerializer
+from Adminapp.serializer import BranchTableSerializer 
+
 
 class DeliveryBoyTableSerializer(serializers.ModelSerializer):
     userid = serializer.LoginTableSerializer(read_only=True)
@@ -10,10 +13,42 @@ class DeliveryBoyTableSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# class OrderSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = OrderTable
+#         fields = '__all__'
+
 class OrderSerializer(serializers.ModelSerializer):
+    userid = serializers.SerializerMethodField()
+    branch = BranchTableSerializer(read_only=True)
+    address=AddressTableSerializer(read_only=True)
+    # order_items = OrderItemTableSerializer(many=True, read_only=True)
+    delivery_details = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderTable
-        fields = '__all__'
+        fields = '__all__'  # includes branch, userid, order_items, delivery_details
+
+    def get_userid(self, obj):
+        try:
+            profile = obj.userid.profile.first()
+            return ProfileTableSerializer(profile).data if profile else None
+        except:
+            return None
+
+    def get_delivery_details(self, obj):
+        try:
+            delivery = DeliveryTable.objects.filter(order=obj).first()
+            return DeliveryTableSerializer(delivery).data if delivery else None
+        except:
+            return None
+        
+    def get_address(self, obj):
+        try:
+            address = obj.address
+            return AddressTableSerializer(address).data if address else None
+        except:
+            return None
 
 class InputSerializer(serializers.Serializer):
         order_id = serializers.IntegerField()
