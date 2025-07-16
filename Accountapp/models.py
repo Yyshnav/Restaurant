@@ -26,7 +26,7 @@ class LoginTable(AbstractUser):
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    user_roles = models.ManyToManyField(UserRole, related_name='users')
+    user_roles = models.ManyToManyField(UserRole, related_name='users',)
     created_at = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
@@ -40,6 +40,71 @@ class LoginTable(AbstractUser):
         # Safely list all assigned roles
         roles = ', '.join([role.role for role in self.user_roles.all()])
         return f"{roles} - {self.username or self.phone}"
+    
+class BranchTable(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    place = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='branch_image/', null=True, blank=True)
+    address = models.CharField(max_length=255)
+    email = models.CharField(max_length=255, null=True, blank=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    floors = models.IntegerField(null=True, blank=True) 
+    fssai_lic_no = models.CharField(max_length=255, null=True, blank=True)
+    manager = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True, limit_choices_to={'user_roles__role': 'MANAGER'})
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    
+class OrderTable(models.Model):
+    ORDER_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),
+        ('PREPARING', 'Preparing'),
+        ('OUT_FOR_DELIVERY', 'Out for Delivery'),
+        ('DELIVERED', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('FAILED', 'Failed'),
+        ('REFUNDED', 'Refunded'),
+    ]
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
+    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='orders')
+    totalamount = models.FloatField(null=True, blank=True)
+    orderstatus = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='PENDING')
+    paymentstatus = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+    deliveryid = models.ForeignKey(LoginTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='deliveries')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Order #{self.id} by {self.userid} - {self.orderstatus}"
+    
+    
+class AddressTable(models.Model):
+    orderid = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    address = models.CharField(max_length=455, null=True, blank=True)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    country = models.CharField(max_length=100, default='India')
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.address}, {self.city}"
+    
 
     
 class ProfileTable(models.Model):
@@ -48,9 +113,10 @@ class ProfileTable(models.Model):
     image = models.FileField(upload_to='profile_images/', null=True, blank=True)
     email = models.EmailField(max_length=255, null=True, blank=True)
     dob = models.CharField(max_length=20, null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    place = models.CharField(max_length=255, null=True, blank=True)
+    # latitude = models.FloatField(null=True, blank=True)
+    # longitude = models.FloatField(null=True, blank=True)
+    # place = models.CharField(max_length=255, null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliverie', null=True, blank=True)
     loginid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='profile')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -141,7 +207,7 @@ class VoiceDescriptionTable(models.Model):
 class AddonTable(models.Model):
     item = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='addons')
     name = models.CharField(max_length=100)
-    quantity = models.IntegerField(max_length=20, default=1, null=True, blank=True)
+    quantity = models.IntegerField( default=1, null=True, blank=True)
     description = models.CharField(max_length=200, null=True, blank=True)
     image = models.ImageField(upload_to='addon_images/', null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
@@ -151,23 +217,7 @@ class AddonTable(models.Model):
     def __str__(self):
         return f"{self.name} (Addon for {self.item.name})"
     
-class BranchTable(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    place = models.CharField(max_length=100, null=True, blank=True)
-    image = models.ImageField(upload_to='branch_image/', null=True, blank=True)
-    address = models.CharField(max_length=255)
-    email = models.CharField(max_length=255, null=True, blank=True)
-    phone = models.CharField(max_length=15, null=True, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    floors = models.IntegerField(null=True, blank=True) 
-    fssai_lic_no = models.CharField(max_length=255, null=True, blank=True)
-    manager = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True, limit_choices_to={'user_roles__role': 'MANAGER'})
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
 
             
 class OfferTable(models.Model):
@@ -224,35 +274,9 @@ class WishlistTable(models.Model):
     def __str__(self):
         return f"{self.userid} - {self.fooditem}"
     
-class OrderTable(models.Model):
-    ORDER_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('CONFIRMED', 'Confirmed'),
-        ('PREPARING', 'Preparing'),
-        ('OUT_FOR_DELIVERY', 'Out for Delivery'),
-        ('DELIVERED', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-    ]
-    PAYMENT_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('PAID', 'Paid'),
-        ('FAILED', 'Failed'),
-        ('REFUNDED', 'Refunded'),
-    ]
 
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='orders')
-    totalamount = models.FloatField(null=True, blank=True)
-    orderstatus = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='PENDING')
-    paymentstatus = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
-    deliveryid = models.ForeignKey(LoginTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='deliveries')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Order #{self.id} by {self.userid} - {self.orderstatus}"
-    
 class OrderItemTable(models.Model):
-    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='order_items')
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='order_item',null=True, blank=True)
     itemname = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='order_items')
     quantity = models.CharField(max_length=100, blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -262,13 +286,17 @@ class OrderItemTable(models.Model):
     def __str__(self):
         return f"{self.order} - {self.itemname} x {self.quantity}"
     
+
+    
 class DeliveryTable(models.Model):
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='order_items',null=True, blank=True)
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveries_info')
-    name = models.CharField(max_length=100)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=400)
+    address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliveries', null=True, blank=True)
+    # latitude = models.FloatField(null=True, blank=True)
+    # longitude = models.FloatField(null=True, blank=True)
     phone = models.CharField(max_length=15)
-    instruction = models.CharField(max_length=200, null=True, blank=True)  # Can store text or a reference to a voice file
+    instruction = models.CharField(max_length=450, null=True, blank=True)  # Can store text or a reference to a voice file
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -288,7 +316,7 @@ class ComplaintTable(models.Model):
         return f"Complaint by {self.userid} (Delivery: {self.deliveryid})"
     
 class DeliveryBoyTable(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=400)
     phone = models.CharField(max_length=15)
     email = models.CharField(max_length=100, null=True, blank=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
@@ -320,22 +348,7 @@ class PaymentTable(models.Model):
     def __str__(self):
         return f"Payment {self.transaction_id} for Order #{self.order.id}"
 
-class AddressTable(models.Model):
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='addresses')
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    address = models.CharField(max_length=255, null=True, blank=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    postal_code = models.CharField(max_length=20)
-    country = models.CharField(max_length=100, default='India')
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.name} - {self.address_line1}, {self.city}"
 
 
 class CouponTable(models.Model):
