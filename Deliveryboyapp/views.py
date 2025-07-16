@@ -5,6 +5,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
 
@@ -18,6 +19,68 @@ from datetime import datetime, timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # from Accountapp.models import UserRole  # Ensure this model exists and is related properly
+
+# notification
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .fcm_utils import send_fcm_notification
+
+class SendTestNotification(APIView):
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        title = request.data.get('title', 'Test Notification')
+        body = request.data.get('body', 'This is a test message')
+
+        if not fcm_token:
+            return Response({"error": "FCM token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = send_fcm_notification(fcm_token, title, body)
+        return Response(result, status=result['status_code'])
+
+
+# import json
+# import requests
+# from google.oauth2 import service_account
+# from google.auth.transport.requests import Request
+
+# # Path to your Firebase service account JSON key
+
+
+# def get_access_token():
+#     credentials = service_account.Credentials.from_service_account_file(
+#         SERVICE_ACCOUNT_FILE,
+#         scopes=["https://www.googleapis.com/auth/firebase.messaging"]
+#     )
+#     credentials.refresh(Request())
+#     return credentials.token
+
+# def send_fcm_notification(token, title, body):
+#     access_token = get_access_token()
+
+#     headers = {
+#         "Authorization": f"Bearer {access_token}",
+#         "Content-Type": "application/json; UTF-8",
+#     }
+
+#     message = {
+#         "message": {
+#             "token": token,
+#             "notification": {
+#                 "title": title,
+#                 "body": body
+#             }
+#         }
+#     }
+
+    
+#     url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+
+#     response = requests.post(url, headers=headers, data=json.dumps(message))
+#     return response.json()
+
 
 class DeliveryBoyLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -50,23 +113,27 @@ class DeliveryBoyLoginAPIView(APIView):
 # Assuming you have an Order model with a foreign key to the delivery boy user
 
 class LatestPendingOrdersAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    
+
     def get(self, request):
-        user = request.userm,
+        user = request.user
         # Ensure user has DELIVERY role
+        
         if not user.user_roles.filter(role='DELIVERY').exists():
             return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
         # Get latest orders assigned to this delivery boy with status 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=user, orderstatus='Pending').order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=user, orderstatus='PENDING').order_by('-id')
         serializer = OrderSerializer(orders, many=True)
+        print("Orders:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 
 class AssignedOrdersAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -80,7 +147,7 @@ class AssignedOrdersAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class UpdateOrderStatusAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     
@@ -104,7 +171,7 @@ class UpdateOrderStatusAPIView(APIView):
     
 
 class OrderDetailAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, order_id):
@@ -122,7 +189,7 @@ class OrderDetailAPIView(APIView):
     #profile section..........
 
 class DeliveryBoyProfileAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
      # Adjust fields as per your model
@@ -173,7 +240,7 @@ class ChangePasswordAPIView(APIView):
     
    
 class PostComplaintAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -195,7 +262,7 @@ class PostComplaintAPIView(APIView):
 
 
 class OrderHistoryAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -212,7 +279,7 @@ class OrderHistoryAPIView(APIView):
     
 
 class FeedbackAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -303,15 +370,16 @@ class ResetPasswordAPIView(APIView):
     
 
 
-class LogoutAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+# class LogoutAPIView(APIView):
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        try:
-            request.user.auth_token.delete()
-        except Exception:
-            return Response({'error': 'Logout failed'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success': 'Logged out successfully'}, status=status.HTTP_200_OK)
+#     def post(self, request):
+#         try:
+#             # request.user.auth_token.delete()
+
+#         except Exception:
+#             return Response({'error': 'Logout failed'}, status=status.HTTP_400_BAD_REQUEST)
+#         return Response({'success': 'Logged out successfully'}, status=status.HTTP_200_OK)
 
 
