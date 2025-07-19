@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 
 from Accountapp.models import AddressTable, CartTable, DeliveryTable, FeedbackTable, ItemTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
 from Accountapp.serializer import LoginTableSerializer
-from Adminapp.serializer import AddonSerializer, ItemSerializer
+from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSerializer
 
 LoginTable = get_user_model()
 
@@ -17,9 +17,8 @@ class ProfileTableSerializer(serializers.ModelSerializer):
             'name',
             'phone',
             'image',
+            'address',
             'dob',
-            'latitude',
-            'longitude',
             'place',
             'loginid',
             'created_at',
@@ -103,7 +102,8 @@ class OrderItemTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItemTable
-        fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
+        # fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
+        fields = '__all__'
 
 # class WishlistSerializer(serializers.ModelSerializer):
 #     userid = LoginTableSerializer(read_only=True)
@@ -136,17 +136,21 @@ class ProfileLocationUpdateSerializer(serializers.ModelSerializer):
         model = ProfileTable
         fields = ['latitude', 'longitude', 'place']
 
-class DeliveryTableSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DeliveryTable
-        fields = ['id', 'userid', 'name', 'latitude', 'longitude', 'phone', 'instruction', 'created_at', 'updated_at']
-
 class AddressTableSerializer(serializers.ModelSerializer):
     userid = LoginTableSerializer(read_only=True)
 
     class Meta:
         model = AddressTable
         fields = '__all__'
+
+class DeliveryTableSerializer(serializers.ModelSerializer):
+    order = OrderTableSerializer(read_only=True) 
+    address= AddressTableSerializer(read_only=True)
+    class Meta:
+        model = DeliveryTable
+        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
+
+
 
 class FeedbackSerializer(serializers.ModelSerializer):
     userid = LoginTableSerializer(read_only=True)
