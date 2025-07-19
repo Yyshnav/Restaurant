@@ -8,11 +8,12 @@ from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSeria
 LoginTable = get_user_model()
 
 class ProfileTableSerializer(serializers.ModelSerializer):
-    loginid = serializers.PrimaryKeyRelatedField(queryset=LoginTable.objects.all())
+    loginid = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = ProfileTable
         fields = [
+
             'id',
             'name',
             'phone',
@@ -23,7 +24,9 @@ class ProfileTableSerializer(serializers.ModelSerializer):
             'loginid',
             'created_at',
             'updated_at'
+
         ]
+
 class RatingTableSerializer(serializers.ModelSerializer):
     userid = ProfileTableSerializer(read_only=True)
     itemid = ItemSerializer(read_only=True)
@@ -85,15 +88,32 @@ class CartTableSerializer(serializers.ModelSerializer):
             'total_price',
         ]
 
+# class WishlistSerializer(serializers.ModelSerializer):
+#     # fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
+#     # fooditem_image = serializers.CharField(source='fooditem.image_url', read_only=True)
+#     # fooditem_price = serializers.DecimalField(source='fooditem.price', read_only=True, max_digits=10, decimal_places=2)
+#     fooditem_details = ItemSerializer(many= True, read_only=True)
+#     fooditem_id = serializers.PrimaryKeyRelatedField(
+#         queryset=ItemTable.objects.all(), source='fooditem', write_only=True)
+
+#     class Meta:
+#         model = WishlistTable
+#         fields = ['id', 'fooditem', 'fooditem_details', 'fooditem_id', 'added_at']
+#         read_only_fields = ['id', 'added_at']
+        # fields = ['id', 'fooditem', 'fooditem_name', 'fooditem_image', 'fooditem_price', 'added_at']
+        # read_only_fields = ['id', 'added_at', 'fooditem_name', 'fooditem_image', 'fooditem_price']   
+
 class WishlistSerializer(serializers.ModelSerializer):
-    fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
-    fooditem_image = serializers.CharField(source='fooditem.image_url', read_only=True)
-    fooditem_price = serializers.DecimalField(source='fooditem.price', read_only=True, max_digits=10, decimal_places=2)
+    fooditem_details = ItemSerializer(source='fooditem', read_only=True)  # ✅ Correct source
+
+    fooditem_id = serializers.PrimaryKeyRelatedField(
+        queryset=ItemTable.objects.all(), source='fooditem', write_only=True
+    )
 
     class Meta:
         model = WishlistTable
-        fields = ['id', 'fooditem', 'fooditem_name', 'fooditem_image', 'fooditem_price', 'added_at']
-        read_only_fields = ['id', 'added_at', 'fooditem_name', 'fooditem_image', 'fooditem_price']   
+        fields = ['id', 'fooditem_id', 'fooditem_details', 'added_at']
+        read_only_fields = ['id', 'added_at', 'fooditem_details']
 
    
 class OrderItemTableSerializer(serializers.ModelSerializer):
@@ -121,7 +141,7 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartTable
         fields = [
-            'id', 'fooditem', 'fooditem_name', 'quantity', 'price', 'addon', 'addon_name',
+            'id', 'fooditem', 'fooditem_name', 'quantity', 'price', 'addon', 'addon_name','fooditem_price',
             'instruction', 'added_at', 'updated_at', 'total_price'
         ]
         read_only_fields = ['id', 'added_at', 'updated_at', 'fooditem_name', 'addon_name']
