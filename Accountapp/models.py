@@ -23,6 +23,7 @@ class UserRole(models.Model):
 # LoginTable Model
 # ------------------------
 class LoginTable(AbstractUser):
+    notificationToken = models.CharField(max_length=455, null=True, blank=True)
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -58,6 +59,22 @@ class BranchTable(models.Model):
 
     def __str__(self):
         return self.name
+    
+class AddressTable(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    address = models.CharField(max_length=455, null=True, blank=True)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    country = models.CharField(max_length=100, default='India')
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.address}, {self.city}"
 
     
 class OrderTable(models.Model):
@@ -75,8 +92,9 @@ class OrderTable(models.Model):
         ('FAILED', 'Failed'),
         ('REFUNDED', 'Refunded'),
     ]
+    address= models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='order_address', null=True, blank=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='orders')
+    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='order_user')
     totalamount = models.FloatField(null=True, blank=True)
     orderstatus = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='PENDING')
     paymentstatus = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
@@ -88,22 +106,7 @@ class OrderTable(models.Model):
         return f"Order #{self.id} by {self.userid} - {self.orderstatus}"
     
     
-class AddressTable(models.Model):
-    orderid = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    address = models.CharField(max_length=455, null=True, blank=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    postal_code = models.CharField(max_length=20)
-    country = models.CharField(max_length=100, default='India')
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.name} - {self.address}, {self.city}"
     
 
     
@@ -161,7 +164,7 @@ class ItemTable(models.Model):
     # voice_description = models.FileField(upload_to='voice_descriptions/', null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
     preparation_time = models.FloatField(default=0.0)
-    branches = models.ManyToManyField('BranchTable', related_name='items', blank=True)
+    branches = models.ManyToManyField('BranchTable', related_name='item_branch', blank=True)
     inventory = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -277,8 +280,8 @@ class WishlistTable(models.Model):
 
 class OrderItemTable(models.Model):
     order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='order_item',null=True, blank=True)
-    itemname = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='order_items')
-    quantity = models.CharField(max_length=100, blank=True, null=True)
+    itemname = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='itemname')
+    quantity = models.CharField(max_length=100, blank=True, null=True, default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     instruction = models.TextField(null=True, blank=True)
     addon = models.ForeignKey(ItemTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='addon_order_items')
@@ -509,4 +512,23 @@ class SpotlightTable(models.Model):
 
     def __str__(self):
         return f"{self.category} - {self.branch} ({self.offer_percentage}%)"
+    
+
+
+class ChatMessageTable(models.Model):
+    SENDER_TYPE_CHOICES = (
+        ('USER', 'User'),
+        ('DELIVERYBOY', 'Delivery Boy'),
+    )
+
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='chats')
+    user = models.ForeignKey(ProfileTable, on_delete=models.CASCADE)
+    delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE)
+    
+    sender_type = models.CharField(max_length=20, choices=SENDER_TYPE_CHOICES)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['timestamp']
     
