@@ -119,7 +119,7 @@ class ProfileTable(models.Model):
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
     # place = models.CharField(max_length=255, null=True, blank=True)
-    address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliverie', null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, related_name='deliverie', null=True, blank=True)
     loginid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='profile')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
