@@ -36,7 +36,10 @@ from .fcm_utils import send_fcm_notification
 # class SendTestNotification(APIView):
 #     permission_classes = [AllowAny]
 
+#     permission_classes = [AllowAny]
+
 #     def post(self, request):
+#         fcm_token = request.data.get('fcm_token',)
 #         fcm_token = request.data.get('fcm_token',)
 #         title = request.data.get('title', 'Test Notification')
 #         body = request.data.get('body', 'This is a test message')
