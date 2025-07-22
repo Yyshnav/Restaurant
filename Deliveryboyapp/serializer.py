@@ -13,16 +13,16 @@ class DeliveryBoyTableSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# class OrderSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = OrderTable
-#         fields = '__all__'
+class OrderTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderTable
+        fields = '__all__'
 
 class OrderSerializer(serializers.ModelSerializer):
     userid = serializers.SerializerMethodField()
     branch = BranchTableSerializer(read_only=True)
     address=AddressTableSerializer(read_only=True)
-    # order_items = OrderItemTableSerializer(many=True, read_only=True)
+    order_item = OrderItemTableSerializer(read_only=True, many=True)
     delivery_details = serializers.SerializerMethodField()
 
     class Meta:
@@ -38,10 +38,14 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_delivery_details(self, obj):
         try:
+            print("Getting delivery for order:", obj.id)
             delivery = DeliveryTable.objects.filter(order=obj).first()
+            print("Found delivery:", delivery)
             return DeliveryTableSerializer(delivery).data if delivery else None
-        except:
+        except Exception as e:
+            print("Error getting delivery:", e)
             return None
+
         
     def get_address(self, obj):
         try:
