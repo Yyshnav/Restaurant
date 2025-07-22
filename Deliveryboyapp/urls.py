@@ -21,7 +21,7 @@ urlpatterns = [
     path('forgotPasswordAPIView/',ForgotPasswordAPIView.as_view(), name='forgotPasswordAPIView'),  
     path('verifyOTPAPIView/',VerifyOTPAPIView.as_view(), name='verifyOTPAPIView'),  
     path('resetPasswordAPIView/',ResetPasswordAPIView.as_view(), name='resetPasswordAPIView'),  
-    path('notifi/',SendTestNotification.as_view(), name='notifi'),    
+    # path('notifi/',SendTestNotification.as_view(), name='notifi'),    
 
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 

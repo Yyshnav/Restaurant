@@ -1,8 +1,10 @@
-
-
 from django.urls import path
 
 from Userapp.views import *
+
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+)
 
 urlpatterns = [
 
@@ -34,5 +36,6 @@ urlpatterns = [
     path('profile/update/', UpdateUserProfileByIdAPIView.as_view(), name='update-user-profile'),
     path('coupon/', CouponListAPIView.as_view(), name='coupon-list'),
     path('applycoupon/', ApplyCouponAPIView.as_view(), name='apply-coupon'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
 ]

@@ -28,17 +28,17 @@ from rest_framework import status
 
 # from .fcm_utils import send_fcm_notification
 
-class SendTestNotification(APIView):
-    def post(self, request):
-        fcm_token = request.data.get('fcm_token')
-        title = request.data.get('title', 'Test Notification')
-        body = request.data.get('body', 'This is a test message')
+# class SendTestNotification(APIView):
+#     def post(self, request):
+#         fcm_token = request.data.get('fcm_token')
+#         title = request.data.get('title', 'Test Notification')
+#         body = request.data.get('body', 'This is a test message')
 
-        if not fcm_token:
-            return Response({"error": "FCM token is required"}, status=status.HTTP_400_BAD_REQUEST)
+#         if not fcm_token:
+#             return Response({"error": "FCM token is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        result = send_fcm_notification(fcm_token, title, body)
-        return Response(result, status=result['status_code'])
+#         result = send_fcm_notification(fcm_token, title, body)
+#         return Response(result, status=result['status_code'])
 
 
 # import json
