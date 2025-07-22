@@ -29,14 +29,17 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 
-from Restaurant.Accountapp.serializer import ChatMessageSerializer
+from Accountapp.serializer import ChatMessageSerializer
 from .fcm_utils import send_fcm_notification
 
 
 # class SendTestNotification(APIView):
 #     permission_classes = [AllowAny]
 
+#     permission_classes = [AllowAny]
+
 #     def post(self, request):
+#         fcm_token = request.data.get('fcm_token',)
 #         fcm_token = request.data.get('fcm_token',)
 #         title = request.data.get('title', 'Test Notification')
 #         body = request.data.get('body', 'This is a test message')
@@ -47,7 +50,7 @@ from .fcm_utils import send_fcm_notification
 #         result = send_fcm_notification(fcm_token, title, body)
 #         return Response(result, status=result['status_code'])
 def send_notification_view(request):
-    users = LoginTable.objects.filter(notificationToken__isnull=False).exclude(notificationToken='')
+    users = LoginTable.objects.filter(notification_token__isnull=False).exclude(notification_token='')
 
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
@@ -56,7 +59,7 @@ def send_notification_view(request):
 
         try:
             user = LoginTable.objects.get(id=user_id)
-            fcm_token = user.notificationToken
+            fcm_token = user.notification_token
 
             if not fcm_token:
                 return HttpResponse("Selected user has no FCM token.")

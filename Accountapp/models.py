@@ -23,7 +23,7 @@ class UserRole(models.Model):
 # LoginTable Model
 # ------------------------
 class LoginTable(AbstractUser):
-    notificationToken = models.CharField(max_length=455, null=True, blank=True)
+    notification_token = models.CharField(max_length=455, null=True, blank=True)
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -34,7 +34,7 @@ class LoginTable(AbstractUser):
         # Set username to phone if not already set
         if not self.username and self.phone:
             self.username = self.phone
-            self.set_unusable_password()  # Disable password for phone-login users
+            self.set_unusable_password()
         super().save(*args, **kwargs)
 
     def __str__(self):
