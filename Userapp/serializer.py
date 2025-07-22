@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from Accountapp.models import AddressTable, CartTable, DeliveryTable, FeedbackTable, ItemTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSerializer
+from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSerializer
 
 LoginTable = get_user_model()
 
@@ -115,6 +116,8 @@ class OrderItemTableSerializer(serializers.ModelSerializer):
         model = OrderItemTable
         # fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
         fields = '__all__'
+        # fields = ['id', 'order', 'itemname', 'quantity', 'price', 'instruction', 'addon']
+        fields = '__all__'
 
 # class WishlistSerializer(serializers.ModelSerializer):
 #     userid = LoginTableSerializer(read_only=True)
@@ -153,6 +156,15 @@ class AddressTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressTable
         fields = '__all__'
+
+class DeliveryTableSerializer(serializers.ModelSerializer):
+    order = OrderTableSerializer(read_only=True) 
+    address= AddressTableSerializer(read_only=True)
+    class Meta:
+        model = DeliveryTable
+        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
+
+
 
 class DeliveryTableSerializer(serializers.ModelSerializer):
     order = OrderTableSerializer(read_only=True) 
