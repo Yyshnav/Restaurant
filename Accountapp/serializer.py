@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from Accountapp.models import UserRole
+from Accountapp.models import ChatMessageTable, UserRole
 
 LoginTable = get_user_model()
 
@@ -70,5 +70,10 @@ class PhoneOTPLoginSerializer(serializers.Serializer):
             'access': str(refresh.access_token),
             'user': LoginTableSerializer(user).data
         }
+    
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessageTable
+        fields = '__all__'
 
     

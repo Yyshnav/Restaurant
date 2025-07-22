@@ -25,12 +25,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import render
+from django.http import HttpResponse
 
-# from .fcm_utils import send_fcm_notification
+
+from Restaurant.Accountapp.serializer import ChatMessageSerializer
+from .fcm_utils import send_fcm_notification
+
 
 # class SendTestNotification(APIView):
+#     permission_classes = [AllowAny]
+
 #     def post(self, request):
-#         fcm_token = request.data.get('fcm_token')
+#         fcm_token = request.data.get('fcm_token',)
 #         title = request.data.get('title', 'Test Notification')
 #         body = request.data.get('body', 'This is a test message')
 
@@ -39,8 +46,28 @@ from rest_framework import status
 
 #         result = send_fcm_notification(fcm_token, title, body)
 #         return Response(result, status=result['status_code'])
+def send_notification_view(request):
+    users = LoginTable.objects.filter(notificationToken__isnull=False).exclude(notificationToken='')
 
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        title = request.POST.get('title', 'Hello')
+        body = request.POST.get('body', 'This is a test')
 
+        try:
+            user = LoginTable.objects.get(id=user_id)
+            fcm_token = user.notificationToken
+
+            if not fcm_token:
+                return HttpResponse("Selected user has no FCM token.")
+
+            result = send_fcm_notification(fcm_token, title, body)
+            return HttpResponse(f"Notification sent. Response: {result}")
+
+        except LoginTable.DoesNotExist:
+            return HttpResponse("Invalid user selected.")
+
+    return render(request, 'send_notification.html', {'users': users})
 # import json
 # import requests
 # from google.oauth2 import service_account
@@ -381,5 +408,53 @@ class ResetPasswordAPIView(APIView):
 #         except Exception:
 #             return Response({'error': 'Logout failed'}, status=status.HTTP_400_BAD_REQUEST)
 #         return Response({'success': 'Logged out successfully'}, status=status.HTTP_200_OK)
+
+
+class ChatMessageAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_id):
+        try:
+            chats = ChatMessageTable.objects.filter(order_id=order_id)
+            serializer = ChatMessageSerializer(chats, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, order_id):
+        try:
+            order = OrderTable.objects.get(id=order_id)
+
+            sender_type = request.data.get('sender_type')  # "USER" or "DELIVERYBOY"
+            message = request.data.get('message')
+
+            if not message or not sender_type:
+                return Response({'error': 'sender_type and message required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if sender_type == 'USER':
+                user = request.user
+                delivery_boy = order.delivery_boy
+            elif sender_type == 'DELIVERYBOY':
+                delivery_boy = request.user.deliveryboy  # assuming OneToOne relationship
+                user = order.user
+            else:
+                return Response({'error': 'Invalid sender_type'}, status=status.HTTP_400_BAD_REQUEST)
+
+            chat = ChatMessageTable.objects.create(
+                order=order,
+                user=user,
+                delivery_boy=delivery_boy,
+                sender_type=sender_type,
+                message=message
+            )
+
+            serializer = ChatMessageSerializer(chat)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        except OrderTable.DoesNotExist:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
