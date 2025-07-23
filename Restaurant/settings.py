@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'Userapp',
     'Deliveryboyapp',
     'Accountapp',
+    'channels', 
 ]
 
 MIDDLEWARE = [
@@ -65,6 +66,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'Restaurant.wsgi.application'
+ASGI_APPLICATION = "Restaurant.asgi.application"
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'CONFIG': {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
 
 # Database
 # DATABASES = {
@@ -101,7 +113,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',

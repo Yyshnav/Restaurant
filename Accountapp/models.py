@@ -114,6 +114,7 @@ class ProfileTable(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
     dob = models.CharField(max_length=20, null=True, blank=True)
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
@@ -259,7 +260,7 @@ class CartTable(models.Model):
     fooditem = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='cart_entries')
     quantity = models.CharField(max_length=100, null=True, blank=True)
     price = models.FloatField(null=True, blank=True)  # Price at the time item was added
-    addon = models.ForeignKey(ItemTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_addons')
+    addon = models.ForeignKey(AddonTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_addons')
     instruction = models.CharField(max_length=200, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -460,16 +461,21 @@ class DiningTable(models.Model):
 
     
 class BillTable(models.Model):
-    # BILL_STATUS_CHOICES = [
-    #     ('PENDING', 'Pending'),
-    #     ('PAID', 'Paid'),
-    #     ('CANCELLED', 'Cancelled'),
-    # ]
+    PAYMENT_METHOD_CHOICES = [
+        ('COD', 'Cash on Delivery'),
+        ('ONLINE', 'Online Payment'),
+    ]
 
-    order = models.OneToOneField(OrderTable, on_delete=models.CASCADE, related_name='bill')
-    branch = models.ForeignKey(BranchTable, on_delete=models.SET_NULL, null=True, related_name='bills')
-    table = models.ForeignKey(DiningTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='bills')
-    waiter = models.ForeignKey(LoginTable, on_delete=models.SET_NULL, null=True, related_name='bills_generated')
+    PAYMENT_CHANNEL_CHOICES = [
+        ('BY_HAND', 'By Hand'),
+        ('ONLINE', 'Online'),
+    ]
+
+    order = models.OneToOneField('OrderTable', on_delete=models.CASCADE, related_name='bill')
+    branch = models.ForeignKey('BranchTable', on_delete=models.SET_NULL, null=True, related_name='bills')
+    table = models.ForeignKey('DiningTable', on_delete=models.SET_NULL, null=True, blank=True, related_name='bills')
+    waiter = models.ForeignKey('LoginTable', on_delete=models.SET_NULL, null=True, related_name='bills_generated')
+    
     bill_number = models.CharField(max_length=50, unique=True)
     subtotal = models.FloatField(default=0.0)
     tax = models.FloatField(default=0.0)
@@ -477,9 +483,19 @@ class BillTable(models.Model):
     total_amount = models.FloatField(default=0.0)
     status = models.CharField(max_length=20, default='PENDING')
 
-    payment_method = models.CharField(max_length=20, null=True, blank=True)
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        null=True,
+        blank=True
+    )
+    payment_channel = models.CharField(
+        max_length=20,
+        choices=PAYMENT_CHANNEL_CHOICES,
+        null=True,
+        blank=True
+    )
     paid_at = models.CharField(max_length=100, null=True, blank=True)
-    total_amount = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -514,20 +530,22 @@ class SpotlightTable(models.Model):
     
 
 
-class ChatMessageTable(models.Model):
-    SENDER_TYPE_CHOICES = (
-        ('USER', 'User'),
-        ('DELIVERYBOY', 'Delivery Boy'),
-    )
-
-    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='chats')
-    user = models.ForeignKey(ProfileTable, on_delete=models.CASCADE)
+class ChatMessage(models.Model):
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(ProfileTable, on_delete=models.CASCADE, null=True, blank=True)
     delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE)
+    sender_type = models.CharField(max_length=20, choices=[('USER', 'User'), ('DELIVERYBOY', 'DeliveryBoy')])
     
-    sender_type = models.CharField(max_length=20, choices=SENDER_TYPE_CHOICES)
-    message = models.TextField()
+    message_type = models.CharField(
+        max_length=10,
+        choices=[('TEXT', 'Text'), ('IMAGE', 'Image'), ('AUDIO', 'Audio')],
+        default='TEXT'
+    )
+    text = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='chat/images/', blank=True, null=True)
+    audio = models.FileField(upload_to='chat/audio/', blank=True, null=True)
+
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['timestamp']
-    
+    def __str__(self):
+        return f'{self.sender_type} -> {self.message_type}'

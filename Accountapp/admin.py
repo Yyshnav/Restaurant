@@ -29,4 +29,5 @@ class LoginTableAdmin(UserAdmin):
     get_roles.short_description = 'Roles'
 
 admin.site.register(LoginTable, LoginTableAdmin)
+
 # admin.site.register(UserRole)
