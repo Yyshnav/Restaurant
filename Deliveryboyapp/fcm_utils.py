@@ -4,7 +4,7 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
 # Replace with your actual service account path
-SERVICE_ACCOUNT_FILE = 'ichat-1b6d6-firebase-adminsdk-pndsj-d04ef131bb.json'
+SERVICE_ACCOUNT_FILE = 'dinetime-62391-firebase-adminsdk-fbsvc-c71a48d528.json'
 
 def get_access_token():
     credentials = service_account.Credentials.from_service_account_file(
@@ -32,7 +32,7 @@ def send_fcm_notification(token, title, body):
         }
     }
 
-    project_id = "ichat-1b6d6"  # Check this in Firebase > Project settings
+    project_id = "dinetime-62391"  # Check this in Firebase > Project settings
     url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
 
     response = requests.post(url, headers=headers, data=json.dumps(message))

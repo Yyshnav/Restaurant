@@ -793,3 +793,18 @@ class ApplyCouponAPIView(APIView):
         except CouponTable.DoesNotExist:
             return Response({'error': 'Invalid coupon code.'}, status=404)
     
+class UpdateFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('fcm_token')
+        if not token:
+            return Response({'error': 'FCM token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = request.user
+            user.notification_token = token
+            user.save()
+            return Response({'message': 'FCM token updated successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
