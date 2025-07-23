@@ -747,12 +747,14 @@ class UpdateUserProfileByIdAPIView(APIView):
             return Response({"error": "Profile not found"}, status=404)
         
 class CouponListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         coupons = CouponTable.objects.filter(is_active=True)
         serializer = CouponSerializer(coupons, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class ApplyCouponAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         code = request.data.get('code')
         order_amount = float(request.data.get('order_amount', 0))

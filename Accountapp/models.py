@@ -23,7 +23,7 @@ class UserRole(models.Model):
 # LoginTable Model
 # ------------------------
 class LoginTable(AbstractUser):
-    notificationToken = models.CharField(max_length=455, null=True, blank=True)
+    notification_token = models.CharField(max_length=455, null=True, blank=True)
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -34,7 +34,7 @@ class LoginTable(AbstractUser):
         # Set username to phone if not already set
         if not self.username and self.phone:
             self.username = self.phone
-            self.set_unusable_password()  # Disable password for phone-login users
+            self.set_unusable_password()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -119,7 +119,7 @@ class ProfileTable(models.Model):
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
     # place = models.CharField(max_length=255, null=True, blank=True)
-    address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliverie', null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, related_name='deliverie', null=True, blank=True)
     loginid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='profile')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
