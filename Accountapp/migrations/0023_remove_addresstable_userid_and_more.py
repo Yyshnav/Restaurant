@@ -7,34 +7,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Accountapp', '0022_merge_20250716_1310'),
+        ('Accountapp', '0021_profiletable_email'),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='addresstable',
-            name='userid',
-        ),
-        migrations.RemoveField(
-            model_name='deliverytable',
-            name='latitude',
-        ),
-        migrations.RemoveField(
-            model_name='deliverytable',
-            name='longitude',
-        ),
-        migrations.RemoveField(
-            model_name='profiletable',
-            name='latitude',
-        ),
-        migrations.RemoveField(
-            model_name='profiletable',
-            name='longitude',
-        ),
-        migrations.RemoveField(
-            model_name='profiletable',
-            name='place',
-        ),
         migrations.AddField(
             model_name='addresstable',
             name='orderid',

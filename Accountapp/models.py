@@ -528,7 +528,7 @@ class ChatMessageTable(models.Model):
     sender_type = models.CharField(max_length=20, choices=SENDER_TYPE_CHOICES)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-
+ 
     class Meta:
         ordering = ['timestamp']
     
