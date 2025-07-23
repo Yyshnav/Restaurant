@@ -14,9 +14,16 @@ class ProfileTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfileTable
         fields = [
-            'id', 'name', 'phone', 'image', 'email', 'dob',
+            'id',
+            'name',
+            'phone',
+            'image',
+            'address',
+            'dob',
+            'place',
             'loginid',
-            'created_at', 'updated_at'
+            'created_at',
+            'updated_at'
         ]
 
 class RatingTableSerializer(serializers.ModelSerializer):
