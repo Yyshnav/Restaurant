@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html class="loading" lang="en" data-textdirection="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+  <title>Register Branch - Chameleon Admin</title>
+
+  <!-- Favicon and Fonts -->
+  <link rel="apple-touch-icon" href="../../theme-assets/images/ico/apple-icon-120.png">
+  <link rel="shortcut icon" type="image/x-icon" href="../../theme-assets/images/ico/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700|Comfortaa:300,400,700" rel="stylesheet">
+  <link href="https://maxcdn.icons8.com/fonts/line-awesome/1.1/css/line-awesome.min.css" rel="stylesheet">
+
+  <!-- Vendor CSS -->
+  <link rel="stylesheet" href="../../theme-assets/css/vendors.css">
+  <link rel="stylesheet" href="../../theme-assets/css/app-lite.css">
+  <link rel="stylesheet" href="../../theme-assets/css/core/menu/menu-types/vertical-menu.css">
+  <link rel="stylesheet" href="../../theme-assets/css/core/colors/palette-gradient.css">
+</head>
+
+<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
+
+  <!-- Side Navigation -->
+  <div class="main-menu menu-fixed menu-light menu-accordion    menu-shadow " data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
+      <div class="navbar-header">
+        <ul class="nav navbar-nav flex-row">       
+          <li class="nav-item mr-auto"><a class="navbar-brand" href="index.html"><img class="brand-logo" alt="Chameleon admin logo" src="../../theme-assets/images/logo/logo.png"/>
+              <h3 class="brand-text">Admin</h3></a></li>
+          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
+        </ul>
+      </div>
+      <div class="main-menu-content">
+        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
+          <li class="nav-item"><a href="index.html"><i class="ft-home"></i><span class="menu-title" data-i18n="">Dashboard</span></a>
+          </li>
+          
+          <li class=" nav-item "><a href="viewStaff.html"><i class="ft-users"></i><span class="menu-title" data-i18n="">staff</span></a>
+          </li>
+          <li class="nav-item"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title" data-i18n="">Dishes</span></a>
+          </li>
+          <li class=" nav-item"><a href="category.html"><i class="ft-tag"></i><span class="menu-title" data-i18n="">Ctegory</span></a>
+          </li>
+           <li class="active"><a href="ViewBranch.html"><i class="ft-map-pin"></i><span class="menu-title" data-i18n="">Branches</span></a>
+          </li>
+          <li class=" nav-item"><a href="branch-report.html"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Reports</span></a>
+          </li>
+         
+          <li class="nav-item"><a href="offer.html"><i class="ft-award"></i><span class="menu-title"> Offers</span></a></li>
+            <li class="nav-item"><a href="carousel.html"><i class="ft-image"></i><span class="menu-title"> Carousel</span></a></li>
+        </ul>
+      </div><a class="btn btn-danger btn-block btn-glow btn-upgrade-pro mx-1" href="https://themeselection.com/products/chameleon-admin-modern-bootstrap-webapp-dashboard-html-template-ui-kit/" target="_blank">LogOut</a>
+      <div class="navigation-background"></div>
+    </div>
+
+  <!-- Top Navbar -->
+  <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
+    <div class="navbar-wrapper">
+      <div class="navbar-container content">
+        <div class="collapse navbar-collapse show" id="navbar-mobile">
+          <ul class="nav navbar-nav mr-auto">
+            <li class="nav-item d-block d-md-none"><a class="nav-link menu-toggle"><i class="ft-menu"></i></a></li>
+            <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a></li>
+          </ul>
+          <ul class="nav navbar-nav float-right">
+            <li class="dropdown dropdown-user nav-item">
+              <a class="dropdown-toggle nav-link dropdown-user-link" data-toggle="dropdown">
+                <span class="avatar avatar-online">
+                  <!-- <img src="../../theme-assets/images/portrait/small/avatar-s-19.png" alt="avatar"><i></i> -->
+                </span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="#"><i class="ft-user"></i> Profile</a>
+                <a class="dropdown-item" href="#"><i class="ft-power"></i> Logout</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="app-content content">
+   
+      
+      <div class="content-body">
+        <section class="registration-form py-3">
+          <div class="container">
+            <div class="row justify-content-center">
+              <div class="col-12 col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                  <div class="card-header text-center">
+                    <h4 class="card-title">Branch Details</h4>
+                  </div>
+                  <div class="card-body">
+                    <form action="#" method="POST">
+                      <div class="form-group">
+                        <label for="branch_name">Branch Name</label>
+                        <input type="text" id="branch_name" name="branch_name" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="latitude">Latitude</label>
+                        <input type="text" id="latitude" name="latitude" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="longitude">Longitude</label>
+                        <input type="text" id="longitude" name="longitude" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" class="form-control" rows="2" required></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="floor">floor</label>
+                        <input type="text" id="floor" name="floor" class="form-control" required>
+                      </div>
+                      <!-- <div class="form-group">
+                        <label for="zipcode">Zip Code</label>
+                        <input type="text" id="zipcode" name="zipcode" class="form-control" required>
+                      </div> -->
+                      <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="text" id="phone" name="phone" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control">
+                      </div>
+                     
+                      <button type="submit" class="btn btn-success btn-block mt-2">Register Branch</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../theme-assets/vendors/js/vendors.min.js"></script>
+  <script src="../../theme-assets/js/core/app-menu-lite.js"></script>
+  <script src="../../theme-assets/js/core/app-lite.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+    });
+  </script>
+</body>
+</html>

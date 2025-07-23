@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="loading" lang="en" data-textdirection="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+  <title>Branch Report - Chameleon Admin</title>
+
+  <!-- Favicon and Fonts -->
+  <link rel="apple-touch-icon" href="../../theme-assets/images/ico/apple-icon-120.png">
+  <link rel="shortcut icon" type="image/x-icon" href="../../theme-assets/images/ico/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700|Comfortaa:300,400,700" rel="stylesheet">
+
+  <!-- Vendor CSS -->
+  <link rel="stylesheet" href="../../theme-assets/css/vendors.css">
+  <link rel="stylesheet" href="../../theme-assets/css/app-lite.css">
+  <link rel="stylesheet" href="../../theme-assets/css/core/menu/menu-types/vertical-menu.css">
+  <link rel="stylesheet" href="../../theme-assets/css/core/colors/palette-gradient.css">
+</head>
+
+<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
+
+  <!-- Sidebar -->
+  <div class="main-menu menu-fixed menu-light menu-accordion    menu-shadow " data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
+      <div class="navbar-header">
+        <ul class="nav navbar-nav flex-row">       
+          <li class="nav-item mr-auto"><a class="navbar-brand" href="index.html"><img class="brand-logo" alt="Chameleon admin logo" src="../../theme-assets/images/logo/logo.png"/>
+              <h3 class="brand-text">Admin</h3></a></li>
+          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
+        </ul>
+      </div>
+      <div class="main-menu-content">
+        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
+          <li class="nav-item"><a href="index.html"><i class="ft-home"></i><span class="menu-title" data-i18n="">Dashboard</span></a>
+          </li>
+          
+          <li class=" nav-item "><a href="viewStaff.html"><i class="ft-users"></i><span class="menu-title" data-i18n="">staff</span></a>
+          </li>
+          <li class="active"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title" data-i18n="">Dishes</span></a>
+          </li>
+          <li class=" nav-item"><a href="category.html"><i class="ft-tag"></i><span class="menu-title" data-i18n="">Ctegory</span></a>
+          </li>
+           <li class=" nav-item"><a href="ViewBranch.html"><i class="ft-map-pin"></i><span class="menu-title" data-i18n="">Branches</span></a>
+          </li>
+          <li class=" nav-item"><a href="branch-report.html"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Reports</span></a>
+          </li>
+         
+          <li class="nav-item"><a href="offer.html"><i class="ft-award"></i><span class="menu-title"> Offers</span></a></li>
+            <li class="nav-item"><a href="carousel.html"><i class="ft-image"></i><span class="menu-title"> Carousel</span></a></li>
+        </ul>
+      </div><a class="btn btn-danger btn-block btn-glow btn-upgrade-pro mx-1" href="https://themeselection.com/products/chameleon-admin-modern-bootstrap-webapp-dashboard-html-template-ui-kit/" target="_blank">LogOut</a>
+      <div class="navigation-background"></div>
+    </div>
+
+  <!-- Top Navbar -->
+  <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
+    <div class="navbar-wrapper">
+      <div class="navbar-container content">
+        <div class="collapse navbar-collapse show" id="navbar-mobile">
+          <ul class="nav navbar-nav mr-auto">
+            <li class="nav-item d-block d-md-none"><a class="nav-link menu-toggle"><i class="ft-menu"></i></a></li>
+            <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a></li>
+          </ul>
+          <ul class="nav navbar-nav float-right">
+            <li class="dropdown dropdown-user nav-item">
+              <a class="dropdown-toggle nav-link dropdown-user-link" data-toggle="dropdown">
+                <span class="avatar avatar-online">
+                  <!-- <img src="../../theme-assets/images/portrait/small/avatar-s-19.png" alt="avatar"><i></i> -->
+                </span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="#"><i class="ft-user"></i> Profile</a>
+                <a class="dropdown-item" href="#"><i class="ft-power"></i> Logout</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="d-flex justify-content-between align-items-center p-2 text-dark">
+        <h2 class="mb-0">Branch Report</h2>
+      </div>
+      <div class="content-body">
+
+        <!-- Filter Section -->
+        <section class="branch-filter py-2">
+          <div class="container">
+            <div class="row align-items-end">
+              <div class="col-md-4">
+                <label for="filterDate">Filter by Date</label>
+                <input type="date" id="filterDate" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label for="filterMonth">Filter by Month</label>
+                <input type="month" id="filterMonth" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <button id="resetFilters" class="btn btn-secondary mt-2">Reset Filters</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Report Table -->
+        <section class="branch-report py-3">
+          <div class="container">
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped">
+                <thead class="bg-primary text-white">
+                  <tr>
+                    <th>#</th>
+                    <th>Branch Name</th>
+                    <th>Total Sales</th>
+                    <th>Customers</th>
+                    <th>Employees</th>
+                    <th>Last Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Main Branch</td>
+                    <td>$12,000</td>
+                    <td>150</td>
+                    <td>12</td>
+                    <td>2025-06-29</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>North Branch</td>
+                    <td>$8,500</td>
+                    <td>120</td>
+                    <td>10</td>
+                    <td>2025-06-28</td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>South Branch</td>
+                    <td>$10,000</td>
+                    <td>135</td>
+                    <td>11</td>
+                    <td>2025-05-28</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chart Section -->
+        <section class="chart-report py-3">
+          <div class="container">
+            <h4 class="text-center">Sales Comparison</h4>
+            <canvas id="salesChart" height="100"></canvas>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../theme-assets/vendors/js/vendors.min.js"></script>
+  <script src="../../theme-assets/js/core/app-menu-lite.js"></script>
+  <script src="../../theme-assets/js/core/app-lite.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+
+      // Filter Logic
+      const allRows = Array.from(document.querySelectorAll("tbody tr"));
+      const filterDate = document.getElementById("filterDate");
+      const filterMonth = document.getElementById("filterMonth");
+      const resetFilters = document.getElementById("resetFilters");
+
+      function applyFilters() {
+        const selectedDate = filterDate.value;
+        const selectedMonth = filterMonth.value;
+
+        allRows.forEach(row => {
+          const dateText = row.cells[5].textContent.trim();
+          let show = true;
+
+          if (selectedDate) {
+            show = dateText === selectedDate;
+          }
+
+          if (selectedMonth) {
+            const rowMonth = dateText.slice(0, 7); // 'YYYY-MM'
+            show = show && rowMonth === selectedMonth;
+          }
+
+          row.style.display = show ? "" : "none";
+        });
+      }
+
+      filterDate.addEventListener("change", applyFilters);
+      filterMonth.addEventListener("change", applyFilters);
+      resetFilters.addEventListener("click", () => {
+        filterDate.value = "";
+        filterMonth.value = "";
+        allRows.forEach(row => row.style.display = "");
+      });
+
+      // Chart
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Main Branch', 'North Branch', 'South Branch'],
+          datasets: [{
+            label: 'Total Sales ($)',
+            data: [12000, 8500, 10000],
+            backgroundColor: ['#7367F0', '#28C76F', '#EA5455']
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

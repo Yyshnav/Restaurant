@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="loading" lang="en" data-textdirection="ltr">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Dish - Chameleon Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700|Comfortaa:300,400,700" rel="stylesheet">
+  <link rel="stylesheet" href="../../theme-assets/css/vendors.css">
+  <link rel="stylesheet" href="../../theme-assets/css/app-lite.css">
+  <link rel="stylesheet" href="../../theme-assets/css/core/menu/menu-types/vertical-menu.css">
+  <link rel="stylesheet" href="../../theme-assets/css/core/colors/palette-gradient.css">
+  <style>
+    .form-section { margin-bottom: 20px; }
+    .printer-field, .variant-field { display: flex; gap: 10px; margin-bottom: 10px; }
+    .printer-field input, .variant-field input { flex: 1; }
+  </style>
+</head>
+
+<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar">
+  <!-- Navbar + Sidebar omitted for brevity (same as in your original code) -->
+ <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
+      <div class="navbar-wrapper">
+        <div class="navbar-container content">
+          <div class="collapse navbar-collapse show" id="navbar-mobile">
+            <ul class="nav navbar-nav mr-auto float-left">
+              <li class="nav-item d-md-none"><a class="nav-link nav-menu-main menu-toggle" href="#"><i class="ft-menu"></i></a></li>
+              <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a></li>
+            </ul>
+            <ul class="nav navbar-nav float-right">
+              <li class="dropdown dropdown-user nav-item">
+                <a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown">
+                  <!-- <span class="avatar avatar-online"><img src="../../theme-assets/images/portrait/small/avatar-s-19.png" alt="avatar"><i></i></span> -->
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                  <a class="dropdown-item" href="#"><i class="ft-user"></i> Edit Profile</a>
+                  <a class="dropdown-item" href="#"><i class="ft-power"></i> Logout</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="main-menu menu-fixed menu-light menu-accordion    menu-shadow " data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
+      <div class="navbar-header">
+        <ul class="nav navbar-nav flex-row">       
+          <li class="nav-item mr-auto"><a class="navbar-brand" href="index.html"><img class="brand-logo" alt="Chameleon admin logo" src="../../theme-assets/images/logo/logo.png"/>
+              <h3 class="brand-text">Admin</h3></a></li>
+          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
+        </ul>
+      </div>
+      <div class="main-menu-content">
+        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
+          <li class="nav-item"><a href="index.html"><i class="ft-home"></i><span class="menu-title" data-i18n="">Dashboard</span></a>
+          </li>
+          
+          <li class=" nav-item "><a href="viewStaff.html"><i class="ft-users"></i><span class="menu-title" data-i18n="">staff</span></a>
+          </li>
+          <li class="active"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title" data-i18n="">Dishes</span></a>
+          </li>
+          <li class=" nav-item"><a href="category.html"><i class="ft-tag"></i><span class="menu-title" data-i18n="">Ctegory</span></a>
+          </li>
+           <li class=" nav-item"><a href="ViewBranch.html"><i class="ft-map-pin"></i><span class="menu-title" data-i18n="">Branches</span></a>
+          </li>
+          <li class=" nav-item"><a href="branch-report.html"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Reports</span></a>
+          </li>
+         
+          <li class="nav-item"><a href="offer.html"><i class="ft-award"></i><span class="menu-title"> Offers</span></a></li>
+            <li class="nav-item"><a href="carousel.html"><i class="ft-image"></i><span class="menu-title"> Carousel</span></a></li>
+        </ul>
+      </div><a class="btn btn-danger btn-block btn-glow btn-upgrade-pro mx-1" href="https://themeselection.com/products/chameleon-admin-modern-bootstrap-webapp-dashboard-html-template-ui-kit/" target="_blank">LogOut</a>
+      <div class="navigation-background"></div>
+    </div>
+
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-header row">
+        <div class="content-header-left col-md-6 col-12">
+          <h3 class="content-header-title text-dark">Edit Dish</h3>
+        </div>
+      </div>
+      <div class="content-body">
+        <section>
+          <div class="card">
+            <div class="card-body">
+              <form action="update-dish.php?id=<?= $dish['id'] ?>" method="POST" enctype="multipart/form-data">
+                <div class="form-section">
+                  <label>Dish Name</label>
+                  <input type="text" name="dishName" class="form-control" value="<?= $dish['name'] ?>" required>
+                </div>
+
+                <div class="form-section">
+                  <label>Main Category</label>
+                  <select name="mainCategory" class="form-control" required>
+                    <option value="">Select</option>
+                    <?php foreach (['Food', 'Beverages', 'Desserts'] as $cat): ?>
+                      <option value="<?= $cat ?>" <?= $dish['mainCategory'] == $cat ? 'selected' : '' ?>><?= $cat ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Sub Category</label>
+                  <select name="subCategory" class="form-control" required>
+                    <option value="">Select</option>
+                    <?php foreach (['Indian', 'Chinese', 'Continental'] as $sub): ?>
+                      <option value="<?= $sub ?>" <?= $dish['subCategory'] == $sub ? 'selected' : '' ?>><?= $sub ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Sub-Sub Category</label>
+                  <select name="subSubCategory" class="form-control" required>
+                    <option value="">Select</option>
+                    <?php foreach (['North Indian', 'South Indian', 'Sichuan'] as $ssub): ?>
+                      <option value="<?= $ssub ?>" <?= $dish['subSubCategory'] == $ssub ? 'selected' : '' ?>><?= $ssub ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Veg / Non-Veg</label>
+                  <select name="type" class="form-control" required>
+                    <option value="veg" <?= $dish['type'] == 'veg' ? 'selected' : '' ?>>Vegetarian</option>
+                    <option value="non-veg" <?= $dish['type'] == 'non-veg' ? 'selected' : '' ?>>Non-Vegetarian</option>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Description</label>
+                  <textarea name="description" class="form-control" required><?= $dish['description'] ?></textarea>
+                </div>
+
+                <div class="form-section">
+                  <label>Current Image:</label><br>
+                  <img src="<?= $dish['image_url'] ?>" width="120"><br>
+                  <input type="file" name="dishImage" class="form-control" accept="image/*">
+                </div>
+
+                <div class="form-section">
+                  <label>Current Voice Note:</label><br>
+                  <?php if (!empty($dish['voice_note_url'])): ?>
+                    <audio controls src="<?= $dish['voice_note_url'] ?>"></audio><br>
+                  <?php endif; ?>
+                  <input type="file" name="voiceNote" class="form-control" accept="audio/*">
+                </div>
+
+                <div class="form-section">
+                  <label>Variants</label>
+                  <div id="variantContainer">
+                    <?php foreach ($dish['variants'] as $i => $variant): ?>
+                      <div class="variant-field">
+                        <input type="text" name="variants[<?= $i ?>][name]" value="<?= $variant['name'] ?>" required>
+                        <input type="number" name="variants[<?= $i ?>][price]" value="<?= $variant['price'] ?>" step="0.01" required>
+                        <button type="button" onclick="removeVariant(this)" class="btn btn-danger btn-sm">X</button>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                  <button type="button" onclick="addVariant()" class="btn btn-primary btn-sm mt-1">+ Add Variant</button>
+                </div>
+
+                <div class="form-section">
+                  <label>Cost</label>
+                  <input type="number" name="cost" class="form-control" step="0.01" value="<?= $dish['cost'] ?>" required>
+                </div>
+
+                <div class="form-section">
+                  <label>Inventory Quantity</label>
+                  <input type="number" name="inventory" class="form-control" value="<?= $dish['inventory'] ?>" required>
+                </div>
+
+                <div class="form-section">
+                  <label><strong>Branches</strong></label>
+                  <?php $selectedBranches = $dish['branches']; ?>
+                  <?php foreach (['branch1', 'branch2', 'branch3'] as $branch): ?>
+                    <div class="form-check">
+                      <input type="checkbox" name="branches[]" value="<?= $branch ?>" id="<?= $branch ?>" <?= in_array($branch, $selectedBranches) ? 'checked' : '' ?>>
+                      <label for="<?= $branch ?>"><?= ucfirst($branch) ?></label>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+
+                <div class="form-section">
+                  <label>Calories (kcal)</label>
+                  <input type="number" name="calories" class="form-control" value="<?= $dish['calories'] ?>" step="1" min="0" required>
+                </div>
+
+                <button type="submit" class="btn btn-success">Update Dish</button>
+                <a href="dishes.html" class="btn btn-secondary">Cancel</a>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../theme-assets/js/vendors.min.js"></script>
+  <script src="../../theme-assets/js/app-menu-lite.js"></script>
+  <script src="../../theme-assets/js/app-lite.js"></script>
+  <script>
+    let variantIndex = <?= count($dish['variants']) ?>;
+
+    function addVariant() {
+      const container = document.getElementById('variantContainer');
+      const div = document.createElement('div');
+      div.className = 'variant-field';
+      div.innerHTML = `
+        <input type="text" name="variants[${variantIndex}][name]" placeholder="Variant (e.g., Full)" required>
+        <input type="number" name="variants[${variantIndex}][price]" placeholder="Price" step="0.01" required>
+        <button type="button" onclick="removeVariant(this)" class="btn btn-danger btn-sm">X</button>`;
+      container.appendChild(div);
+      variantIndex++;
+    }
+
+    function removeVariant(btn) {
+      btn.parentElement.remove();
+    }
+  </script>
+</body>
+</html>
