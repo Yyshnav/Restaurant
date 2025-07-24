@@ -1,69 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Add Carousel Offer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700|Comfortaa:300,400,700" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="../../theme-assets/css/vendors.css" />
-  <link rel="stylesheet" href="../../theme-assets/css/app-lite.css" />
-  <link rel="stylesheet" href="../../theme-assets/css/core/menu/menu-types/vertical-menu.css" />
-  <link rel="stylesheet" href="../../theme-assets/css/core/colors/palette-gradient.css" />
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
   <style>
     .form-group label { font-weight: 600; }
     .form-control { border-radius: 0.4rem; }
   </style>
-</head>
 
-<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 
-<!-- Navbar -->
-<nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
-  <div class="navbar-wrapper">
-    <div class="navbar-container content">
-      <div class="collapse navbar-collapse show" id="navbar-mobile">
-        <ul class="nav navbar-nav mr-auto">
-          <li class="nav-item d-block d-md-none"><a class="nav-link menu-toggle"><i class="ft-menu"></i></a></li>
-          <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a></li>
-          <!-- <li class="nav-item"><span class="navbar-text">Add Carousel Offer</span></li> -->
-        </ul>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- Sidebar -->
-<div class="main-menu menu-fixed menu-light menu-accordion    menu-shadow " data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
-      <div class="navbar-header">
-        <ul class="nav navbar-nav flex-row">       
-          <li class="nav-item mr-auto"><a class="navbar-brand" href="index.html"><img class="brand-logo" alt="Chameleon admin logo" src="../../theme-assets/images/logo/logo.png"/>
-              <h3 class="brand-text">Admin</h3></a></li>
-          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
-        </ul>
-      </div>
-      <div class="main-menu-content">
-        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
-          <li class="nav-item"><a href="index.html"><i class="ft-home"></i><span class="menu-title" data-i18n="">Dashboard</span></a>
-          </li>
-          
-          <li class=" nav-item "><a href="viewStaff.html"><i class="ft-users"></i><span class="menu-title" data-i18n="">staff</span></a>
-          </li>
-          <li class="nav-item"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title" data-i18n="">Dishes</span></a>
-          </li>
-          <li class=" nav-item"><a href="category.html"><i class="ft-tag"></i><span class="menu-title" data-i18n="">Ctegory</span></a>
-          </li>
-           <li class=" nav-item"><a href="ViewBranch.html"><i class="ft-map-pin"></i><span class="menu-title" data-i18n="">Branches</span></a>
-          </li>
-          <li class=" nav-item"><a href="branch-report.html"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Reports</span></a>
-          </li>
-         
-          <li class="nav-item"><a href="offer.html"><i class="ft-award"></i><span class="menu-title"> Offers</span></a></li>
-            <li class="active"><a href="carousel.html"><i class="ft-image"></i><span class="menu-title"> Carousel</span></a></li>
-        </ul>
-      </div><a class="btn btn-danger btn-block btn-glow btn-upgrade-pro mx-1" href="https://themeselection.com/products/chameleon-admin-modern-bootstrap-webapp-dashboard-html-template-ui-kit/" target="_blank">LogOut</a>
-      <div class="navigation-background"></div>
-    </div>
 <!-- Content -->
 <div class="app-content content">
   <div class="content-wrapper">
@@ -122,8 +68,4 @@
   </div>
 </div>
 
-<script src="../../theme-assets/vendors/js/vendors.min.js"></script>
-<script src="../../theme-assets/js/core/app-menu-lite.js"></script>
-<script src="../../theme-assets/js/core/app-lite.js"></script>
-</body>
-</html>
+{% endblock %}

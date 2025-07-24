@@ -1,0 +1,119 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
+    <!-- Main Content -->
+    <div class="app-content content">
+      <div class="content-wrapper">
+        <div class="content-header row">
+          <div class="content-header-left col-md-6 col-12 mb-2">
+            <h3 class="content-header-title text-dark">Dishes Menu</h3>
+          </div>
+ <div class="content-header-right col-md-6 col-12">
+  <div class="row justify-content-end align-items-center">
+    <div class="col-md-6 mb-1 mb-md-0">
+      <input type="text" id="dishSearch" class="form-control" placeholder="Search dishes..." autocomplete="off">
+      <div id="searchResults" class="bg-white border position-absolute w-100" style="z-index: 1000; max-height: 300px; overflow-y: auto; display: none;"></div>
+    </div>
+    <div class="col-md-auto">
+      <a href="/add-dish" class="btn btn-primary">
+        <i class="ft-plus"></i> Add Dish
+      </a>
+    </div>
+  </div>
+</div>
+
+
+        </div>
+        <div class="content-body">
+          <section id="dishes-list">
+            <div class="row match-height">
+              
+              <!-- Dish 1 -->
+              <div class="col-lg-4 col-md-6 mb-3">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Margherita Pizza</h4>
+                    <h6 class="card-subtitle text-muted">Classic Italian</h6>
+                  </div>
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFWzu7BJbzghpygtEl1tGLyKh8wJ0GWVIpaw&s" alt="Pizza" height="300">
+                  <div class="card-body">
+                    <p class="card-text">Tomato, mozzarella, fresh basil, and olive oil.</p>
+                  
+                  </div>
+                  <div class="card-footer text-muted">$9.99<div><button type="button" class="btn btn-secondary btn-min-width mr-1 mb-1">Edit</button> <button type="button" class="btn btn-danger btn-min-width mr-1 mb-1">Delete</button></div></div>
+                </div>
+              </div>
+
+              <!-- Dish 2 -->
+              <div class="col-lg-4 col-md-6 mb-3">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Chicken Biryani</h4>
+                    <h6 class="card-subtitle text-muted">Spicy Delight</h6>
+                  </div>
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlvK0XRAUy0BezZoMO5b5tZ_bzz2BDPu38MA&s" alt="Biryani" height="300">
+                  <div class="card-body">
+                    <p class="card-text">Aromatic rice with chicken and Indian spices.</p>
+                  
+                  </div>
+                  <div class="card-footer text-muted">$11.50
+                      <div><a href="dish_edit.html"><button type="button" class="btn btn-secondary btn-min-width mr-1 mb-1">Edit</button></a> <button type="button" class="btn btn-danger btn-min-width mr-1 mb-1">Delete</button></div>
+                  </div>
+                
+                </div>
+              </div>
+
+              <!-- Dish 3 -->
+              <div class="col-lg-4 col-md-6 mb-3">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Veggie Burger</h4>
+                    <h6 class="card-subtitle text-muted">Healthy & Tasty</h6>
+                  </div>
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlvK0XRAUy0BezZoMO5b5tZ_bzz2BDPu38MA&s" alt="Veggie Burger" height="300">
+                  <div class="card-body">
+                    <p class="card-text">Grilled veggie patty with fresh salad and sauces.</p>
+                  
+                  </div>
+                  <div class="card-footer text-muted">$8.00</div>
+                </div>
+              </div>
+
+              <!-- Add more dish cards as needed -->
+
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+ 
+  <script>
+document.getElementById('dishSearch').addEventListener('input', function () {
+  const query = this.value.trim().toLowerCase();
+  const dishes = document.querySelectorAll('#dishes-list .card');
+
+  dishes.forEach(card => {
+    const title = card.querySelector('.card-title').textContent.toLowerCase();
+    const subtitle = card.querySelector('.card-subtitle')?.textContent.toLowerCase() || '';
+    const description = card.querySelector('.card-text')?.textContent.toLowerCase() || '';
+
+    if (title.includes(query) || subtitle.includes(query) || description.includes(query)) {
+      card.parentElement.style.display = 'block'; // .col-lg-4
+    } else {
+      card.parentElement.style.display = 'none';
+    }
+  });
+});
+ document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+    });
+</script>
+
+
+{% endblock %}

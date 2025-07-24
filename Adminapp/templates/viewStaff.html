@@ -1,25 +1,8 @@
-<!DOCTYPE html>
-<html class="loading" lang="en" data-textdirection="ltr">
-  <head>
-    <meta charset="UTF-8">
-    <title>View Staffs - Admin Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="description" content="Chameleon Admin Dashboard">
-    <meta name="keywords" content="admin, dashboard, webapp">
-    <meta name="author" content="ThemeSelect">
+{% extends 'sidebar.html' %}
+{% load static %}
 
-    <!-- Fonts & Icons -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700|Comfortaa:300,400,700">
-    <link rel="stylesheet" href="https://maxcdn.icons8.com/fonts/line-awesome/1.1/css/line-awesome.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-    <!-- Vendor & Theme CSS -->
-    <link rel="stylesheet" href="../../theme-assets/css/vendors.css">
-    <link rel="stylesheet" href="../../theme-assets/vendors/css/charts/chartist.css">
-    <link rel="stylesheet" href="../../theme-assets/css/app-lite.css">
-    <link rel="stylesheet" href="../../theme-assets/css/core/menu/menu-types/vertical-menu.css">
-    <link rel="stylesheet" href="../../theme-assets/css/core/colors/palette-gradient.css">
+{% block body %}
 
     <!-- Custom Switch Style -->
     <style>
@@ -61,69 +44,7 @@
         transform: translateX(20px);
       }
     </style>
-  </head>
-
-  <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
-
-    <!-- Header -->
-    <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
-      <div class="navbar-wrapper">
-        <div class="navbar-container content">
-          <div class="collapse navbar-collapse show" id="navbar-mobile">
-            <ul class="nav navbar-nav mr-auto float-left">
-              <li class="nav-item d-block d-md-none"><a class="nav-link menu-toggle" href="#"><i class="ft-menu"></i></a></li>
-              <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand" href="#"><i class="ficon ft-maximize"></i></a></li>
-              <li class="nav-item">
-                <input id="searchInput" type="text" class="form-control mt-2" placeholder="Search staff..." onkeyup="filterTable()">
-              </li>
-            </ul>
-            <ul class="nav navbar-nav float-right">
-              <li class="dropdown dropdown-user nav-item">
-                <a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown">
-                  <!-- <span class="avatar avatar-online"><img src="../../theme-assets/images/portrait/small/avatar-s-19.png" alt="avatar"><i></i></span> -->
-                </a>
-                <div class="dropdown-menu dropdown-menu-right">
-                  <a class="dropdown-item" href="#"><i class="ft-user"></i> Profile</a>
-                  <a class="dropdown-item" href="#"><i class="ft-power"></i> Logout</a>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Sidebar -->
-    <div class="main-menu menu-fixed menu-light menu-accordion    menu-shadow " data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
-      <div class="navbar-header">
-        <ul class="nav navbar-nav flex-row">       
-          <li class="nav-item mr-auto"><a class="navbar-brand" href="index.html"><img class="brand-logo" alt="Chameleon admin logo" src="../../theme-assets/images/logo/logo.png"/>
-              <h3 class="brand-text">Admin</h3></a></li>
-          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
-        </ul>
-      </div>
-      <div class="main-menu-content">
-        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
-          <li class="nav-item"><a href="index.html"><i class="ft-home"></i><span class="menu-title" data-i18n="">Dashboard</span></a>
-          </li>
-          
-          <li class=" active"><a href="viewStaff.html"><i class="ft-users"></i><span class="menu-title" data-i18n="">staff</span></a>
-          </li>
-          <li class=" nav-item"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title" data-i18n="">Dishes</span></a>
-          </li>
-          <li class=" nav-item"><a href="category.html"><i class="ft-tag"></i><span class="menu-title" data-i18n="">Ctegory</span></a>
-          </li>
-           <li class=" nav-item"><a href="ViewBranch.html"><i class="ft-map-pin"></i><span class="menu-title" data-i18n="">Branches</span></a>
-          </li>
-          <li class=" nav-item"><a href="branch-report.html"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Reports</span></a>
-          </li>
-         
-          <li class="nav-item"><a href="offer.html"><i class="ft-award"></i><span class="menu-title"> Offers</span></a></li>
-            <li class="nav-item"><a href="carousel.html"><i class="ft-image"></i><span class="menu-title"> Carousel</span></a></li>
-        </ul>
-      </div><a class="btn btn-danger btn-block btn-glow btn-upgrade-pro mx-1" href="https://themeselection.com/products/chameleon-admin-modern-bootstrap-webapp-dashboard-html-template-ui-kit/" target="_blank">LogOut</a>
-      <div class="navigation-background"></div>
-    </div>
+  
 
 
     <!-- Main Content -->
@@ -138,7 +59,7 @@
                   <!-- Header Row -->
                   <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-2">
                     <h4 class="card-title mb-2 mb-md-0">View Staffs</h4>
-                    <a href="register.html">
+                    <a href="/registerstaff">
                     <button class="btn btn-success btn-sm"><i class="fas fa-user-plus"></i></button></a>
                   </div>
 
@@ -202,11 +123,7 @@
       </div>
     </div>
 
-    <!-- Vendor JS -->
-    <script src="../../theme-assets/vendors/js/vendors.min.js"></script>
-    <script src="../../theme-assets/vendors/js/charts/chartist.min.js"></script>
-    <script src="../../theme-assets/js/core/app-menu-lite.js"></script>
-    <script src="../../theme-assets/js/core/app-lite.js"></script>
+
 
     <!-- Custom JS -->
     <script>
@@ -238,5 +155,4 @@
     </script>
   
 
-  </body>
-</html>
+  {% endblock %}
