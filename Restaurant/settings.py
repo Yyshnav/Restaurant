@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'Deliveryboyapp',
     'Accountapp',
     'channels', 
+    
 ]
 
 MIDDLEWARE = [
@@ -67,12 +68,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Restaurant.wsgi.application'
 ASGI_APPLICATION = "Restaurant.asgi.application"
+CELERY_BROKER_URL = 'redis://172.27.212.99:6379/0'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # 'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         'CONFIG': {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [("172.27.212.99", 6379)],
         },
     },
 }
