@@ -26,7 +26,7 @@ from Restaurant.settings import BASE_DIR
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('Accountapp/', include('Accountapp.urls')),
-    path('Adminapp/', include('Adminapp.urls')),
+    path('', include('Adminapp.urls')),
     path('Managerapp/', include('Managerapp.urls')),
     path('Waiterapp/', include('Waiterapp.urls')),
     path('Kitchenapp/', include('Kitchenapp.urls')),

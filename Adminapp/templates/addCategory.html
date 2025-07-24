@@ -1,0 +1,66 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+  <style>
+    .form-section { margin-bottom: 20px; }
+  </style>
+
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-header row">
+        <div class="content-header-left col-md-6 col-12">
+          <h3 class="content-header-title text-dark">Add Category Levels</h3>
+        </div>
+      </div>
+      <div class="content-body">
+        <section>
+          <div class="card">
+            <div class="card-body">
+              <form action="submit-category.php" method="POST" enctype="multipart/form-data">
+
+                <!-- MAIN CATEGORY -->
+                <div class="form-section">
+                  <h4>Main Category</h4>
+                  <label>Category Name</label>
+                  <input type="text" name="mainCategoryName" class="form-control" placeholder="e.g. Food" required>
+
+                  <label class="mt-1">Category Image</label>
+                  <input type="file" name="mainCategoryImage" class="form-control" accept="image/*" required>
+                </div>
+
+                <!-- SUB CATEGORY -->
+                <div class="form-section">
+                  <h4>Sub Category</h4>
+                  <label>Sub Category Name</label>
+                  <input type="text" name="subCategoryName" class="form-control" placeholder="e.g. Indian" required>
+
+                  <label class="mt-1">Sub Category Image</label>
+                  <input type="file" name="subCategoryImage" class="form-control" accept="image/*" required>
+                </div>
+
+                <!-- SUB-SUB CATEGORY -->
+                <div class="form-section">
+                  <h4>Sub-Sub Category</h4>
+                  <label>Sub-Sub Category Name</label>
+                  <input type="text" name="subSubCategoryName" class="form-control" placeholder="e.g. South Indian" required>
+
+                  <label class="mt-1">Sub-Sub Category Image</label>
+                  <input type="file" name="subSubCategoryImage" class="form-control" accept="image/*" required>
+                </div>
+
+                <button type="submit" class="btn btn-success">Add Categories</button>
+
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+
+  {% endblock %}

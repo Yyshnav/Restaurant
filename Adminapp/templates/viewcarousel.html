@@ -1,0 +1,99 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+  
+  <style>
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .switch input { display: none; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #28a745;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+  </style>
+
+
+<!-- Content -->
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-body">
+      <div class="container-fluid">
+        <div class="card p-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Carousel Offers</h4>
+            <a href="/add-carousel" class="btn btn-primary btn-sm"><i class="ft-upload"></i> Add Carousel</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead class="thead-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Image</th>
+                  <th>Category</th>
+                  <th>Branch</th>
+                  <th>Offer %</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td><img src="uploads/sample.jpg" width="80" alt="Carousel" /></td>
+                  <td>Pizza</td>
+                  <td>Branch 1</td>
+                  <td>20%</td>
+                  <td>2025-07-01</td>
+                  <td>2025-07-10</td>
+                  <td>
+                    <label class="switch">
+                      <input type="checkbox" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                  </td>
+                </tr>
+                <!-- Repeat rows dynamically if needed -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

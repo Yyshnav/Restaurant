@@ -148,6 +148,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Fast2SMS Key
 FAST2SMS_API_KEY = 'Q7C0LbOImoVgaJGy6dvfXl4zK3AZ28xD1puwMntNkWeEsjSrT984Ikom6vMReYLK12d7qTsQSV5DJOuU'
