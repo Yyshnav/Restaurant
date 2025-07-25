@@ -1,0 +1,147 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
+  <style>
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #28c76f;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    table td, table th {
+      vertical-align: middle !important;
+    }
+
+    /* Make table scrollable on mobile */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    table.table {
+      min-width: 900px;
+    }
+
+    table.table td,
+    table.table th {
+      white-space: nowrap;
+      padding: 0.75rem;
+      font-size: 14px;
+    }
+  </style>
+
+
+<!-- Content -->
+<div class="app-content content">
+  <div class="content-wrapper ">
+    <!-- <div class="content-body"> -->
+      <!-- <div class="container-fluid"> -->
+        <div class="card pt-3 p-1">
+            <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+    <h4 class="mb-0">All Offers</h4>
+    <a href="/add-offer" class="btn btn-primary btn-sm">
+      <i class="fa fa-plus mr-1"></i> Add Offer
+    </a>
+  </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead class="thead-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Offer Title</th>
+                  <th>Discount</th>
+                  <th>Date Range</th>
+                  <th>Branches</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Pizza</td>
+                  <td>Weekend Bonanza</td>
+                  <td>20%</td>
+                  <td>2025-07-01 to 2025-07-10</td>
+                  <td>Branch 1, Branch 2</td>
+                  <td>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleStatus(this)">
+                      <span class="slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  function toggleStatus(checkbox) {
+    const isActive = checkbox.checked;
+    alert('Offer ' + (isActive ? 'enabled' : 'disabled'));
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelector('.close-navbar').addEventListener('click', function () {
+      document.querySelector('.main-menu').classList.remove('menu-expanded');
+      document.querySelector('.main-menu').classList.add('menu-collapsed');
+    });
+  });
+</script>
+
+{% endblock %}

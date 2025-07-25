@@ -1,0 +1,71 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
+  <style>
+    .form-group label { font-weight: 600; }
+    .form-control { border-radius: 0.4rem; }
+  </style>
+
+
+<!-- Content -->
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-body">
+      <div class="container-fluid">
+        <div class="card p-3">
+          <h4 class="mb-3">Add Carousel Offer</h4>
+          <form>
+            <div class="form-group">
+              <label for="carouselImage">Carousel Image</label>
+              <input type="file" class="form-control" id="carouselImage" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="category">Category</label>
+              <select class="form-control" id="category">
+                <option>Pizza</option>
+                <option>Burger</option>
+                <option>Drinks</option>
+              </select>
+            </div>
+         <div class="form-group">
+  <label>Select Branches</label><br>
+  <!-- <div>
+    <input type="checkbox" id="branch_all"> <label for="branch_all">All Branches</label>
+  </div> -->
+  <div>
+    <input type="checkbox" class="branch-option" id="branch1" value="branch1"> <label for="branch1">Branch 1</label>
+  </div>
+  <div>
+    <input type="checkbox" class="branch-option" id="branch2" value="branch2"> <label for="branch2">Branch 2</label>
+  </div>
+  <div>
+    <input type="checkbox" class="branch-option" id="branch3" value="branch3"> <label for="branch3">Branch 3</label>
+  </div>
+  <div>
+    <input type="checkbox" class="branch-option" id="branch4" value="branch4"> <label for="branch4">Branch 4</label>
+  </div>
+</div>
+            <div class="form-group">
+              <label for="offerPercentage">Offer Percentage</label>
+              <input type="number" class="form-control" id="offerPercentage" placeholder="e.g., 20">
+            </div>
+            <div class="form-group">
+              <label for="startDate">Start Date</label>
+              <input type="date" class="form-control" id="startDate">
+            </div>
+            <div class="form-group">
+              <label for="endDate">End Date</label>
+              <input type="date" class="form-control" id="endDate">
+            </div>
+            <button type="submit" class="btn btn-success">Add Carousel Offer</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
+  <!-- Main Content -->
+  <div class="app-content content">
+   
+      
+      <div class="content-body">
+        <section class="registration-form py-3">
+          <div class="container">
+            <div class="row justify-content-center">
+              <div class="col-12 col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                  <div class="card-header text-center">
+                    <h4 class="card-title">Branch Details</h4>
+                  </div>
+                  <div class="card-body">
+                    <form action="#" method="POST">
+                      <div class="form-group">
+                        <label for="branch_name">Branch Name</label>
+                        <input type="text" id="branch_name" name="branch_name" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="latitude">Latitude</label>
+                        <input type="text" id="latitude" name="latitude" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="longitude">Longitude</label>
+                        <input type="text" id="longitude" name="longitude" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" class="form-control" rows="2" required></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="floor">floor</label>
+                        <input type="text" id="floor" name="floor" class="form-control" required>
+                      </div>
+                      <!-- <div class="form-group">
+                        <label for="zipcode">Zip Code</label>
+                        <input type="text" id="zipcode" name="zipcode" class="form-control" required>
+                      </div> -->
+                      <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="text" id="phone" name="phone" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control">
+                      </div>
+                     
+                      <button type="submit" class="btn btn-success btn-block mt-2">Register Branch</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+    });
+  </script>
+
+{% endblock %}

@@ -26,3 +26,31 @@
   </form>
 </body>
 </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Send FCM Notification</title>
+</head>
+<body>
+  <h2>Send Push Notification</h2>
+  <form method="post">
+    {% csrf_token %}
+
+    <label>Select User:</label><br>
+    <select name="user_id" required>
+      <option value="">-- Select a user --</option>
+      {% for user in users %}
+        <option value="{{ user.id }}">{{ user }}</option>
+      {% endfor %}
+    </select><br><br>
+
+    <label>Title:</label><br>
+    <input type="text" name="title" value="Hello"><br><br>
+
+    <label>Body:</label><br>
+    <input type="text" name="body" value="This is a test"><br><br>
+
+    <button type="submit">Send Notification</button>
+  </form>
+</body>
+</html>

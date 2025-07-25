@@ -1,0 +1,155 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+  <style>
+    .form-section { margin-bottom: 20px; }
+    .printer-field, .variant-field { display: flex; gap: 10px; margin-bottom: 10px; }
+    .printer-field input, .variant-field input { flex: 1; }
+  </style>
+
+
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-header row">
+        <div class="content-header-left col-md-6 col-12">
+          <h3 class="content-header-title text-dark">Add New Dish</h3>
+        </div>
+      </div>
+      <div class="content-body">
+        <section>
+          <div class="card">
+            <div class="card-body">
+              <form action="submit-dish.php" method="POST" enctype="multipart/form-data">
+                <div class="form-section">
+                  <label>Dish Name</label>
+                  <input type="text" name="dishName" class="form-control" required>
+                </div>
+
+                <div class="form-section">
+                  <label>Main Category</label>
+                  <select name="mainCategory" class="form-control" required>
+                    <option value="">Select</option>
+                    <option>Food</option><option>Beverages</option><option>Desserts</option>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Sub Category</label>
+                  <select name="subCategory" class="form-control" required>
+                    <option value="">Select</option>
+                    <option>Indian</option><option>Chinese</option><option>Continental</option>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Sub-Sub Category</label>
+                  <select name="subSubCategory" class="form-control" required>
+                    <option value="">Select</option>
+                    <option>North Indian</option><option>South Indian</option><option>Sichuan</option>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Veg / Non-Veg</label>
+                  <select name="type" class="form-control" required>
+                    <option value="veg">Vegetarian</option>
+                    <option value="non-veg">Non-Vegetarian</option>
+                  </select>
+                </div>
+
+                <div class="form-section">
+                  <label>Description</label>
+                  <textarea name="description" class="form-control" required></textarea>
+                </div>
+
+                <div class="form-section">
+                  <label>Dish Image</label>
+                  <input type="file" name="dishImage" class="form-control" accept="image/*" required>
+                </div>
+
+                <div class="form-section">
+                  <label>Voice Note</label>
+                  <input type="file" name="voiceNote" class="form-control" accept="audio/*">
+                </div>
+
+                <div class="form-section">
+                  <label>Variants</label>
+                  <div id="variantContainer">
+                    <div class="variant-field">
+                      <input type="text" name="variants[0][name]" placeholder="Variant (e.g., Half)" required>
+                      <input type="number" name="variants[0][price]" placeholder="Price" step="0.01" required>
+                      <button type="button" onclick="removeVariant(this)" class="btn btn-danger btn-sm">X</button>
+                    </div>
+                  </div>
+                  <button type="button" onclick="addVariant()" class="btn btn-primary btn-sm mt-1">+ Add Variant</button>
+                </div>
+
+                <div class="form-section">
+                  <label>Cost</label>
+                  <input type="number" name="cost" class="form-control" step="0.01" required>
+                </div>
+
+                <div class="form-section">
+                  <label>Inventory Quantity</label>
+                  <input type="number" name="inventory" class="form-control" required>
+                </div>
+
+                <!-- Updated Branch Selection (Multiple) -->
+                <div class="form-section">
+                  <label><strong>Branches</strong></label>
+                  <div>
+                    <div class="form-check">
+                      <input type="checkbox" name="branches[]" value="branch1" id="branch1">
+                      <label for="branch1">Branch1</label>
+                    </div>
+                    <div class="form-check">
+                      <input type="checkbox" name="branches[]" value="branch2" id="branch2">
+                      <label for="branch2">Branch1</label>
+                    </div>
+                    <div class="form-check">
+                      <input type="checkbox" name="branches[]" value="branch3" id="branch3">
+                      <label for="branch3">Branch1</label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- New Field for Calories -->
+                <div class="form-section">
+                  <label>Calories (kcal)</label>
+                  <input type="number" name="calories" class="form-control" step="1" min="0" required>
+                </div>
+
+                <button type="submit" class="btn btn-success">Submit Dish</button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  
+  <script>
+    let variantIndex = 1;
+
+    function addVariant() {
+      const container = document.getElementById('variantContainer');
+      const div = document.createElement('div');
+      div.className = 'variant-field';
+      div.innerHTML = `<input type="text" name="variants[${variantIndex}][name]" placeholder="Variant (e.g., Full)" required>
+        <input type="number" name="variants[${variantIndex}][price]" placeholder="Price" step="0.01" required>
+        <button type="button" onclick="removeVariant(this)" class="btn btn-danger btn-sm">X</button>`;
+      container.appendChild(div);
+      variantIndex++;
+    }
+
+    function removeVariant(btn) {
+      btn.parentElement.remove();
+    }
+  </script>
+
+{% endblock %}
