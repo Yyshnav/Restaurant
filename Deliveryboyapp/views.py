@@ -460,4 +460,15 @@ class ResetPasswordAPIView(APIView):
 #         except Exception as e:
 #             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class ChatHistoryAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, order_id):
+        print('order_id:', order_id)
+        try:
+            chats = ChatMessage.objects.filter(order=order_id).order_by('timestamp')
+            serializer = ChatMessageSerializer(chats, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

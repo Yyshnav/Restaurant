@@ -227,7 +227,6 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('address', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='deliverie', to='Accountapp.addresstable')),
-                ('address', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='deliverie', to='Accountapp.addresstable')),
             ],
         ),
         migrations.CreateModel(
@@ -329,7 +328,6 @@ class Migration(migrations.Migration):
                 ('email', models.EmailField(blank=True, max_length=254, verbose_name='email address')),
                 ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('notification_token', models.CharField(blank=True, max_length=455, null=True)),
                 ('notification_token', models.CharField(blank=True, max_length=455, null=True)),
                 ('phone', models.CharField(blank=True, max_length=15, null=True, unique=True)),
                 ('otp', models.CharField(blank=True, max_length=6, null=True)),
