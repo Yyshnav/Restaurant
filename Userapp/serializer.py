@@ -20,7 +20,7 @@ class ProfileTableSerializer(serializers.ModelSerializer):
             'image',
             'address',
             'dob',
-            'place',
+            # 'place',
             'loginid',
             'created_at',
             'updated_at'
