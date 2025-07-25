@@ -1,0 +1,154 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+   <style>
+    .chat-box {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      padding: 1rem;
+      border-radius: 0.25rem;
+    }
+    .chat-message {
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+    .chat-message.customer {
+      background-color: #f1f1f1;
+      text-align: left;
+    }
+    .chat-message.admin {
+      background-color: #007bff;
+      color: white;
+      text-align: right;
+      margin-left: auto;
+    }
+    .complaint-item {
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.complaint-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(17, 16, 16, 0.788);
+}
+.border-left-danger {
+  border-left: 4px solid #dc3545;
+}
+.border-left-warning {
+  border-left: 4px solid #ffc107;
+}
+
+  </style>
+
+
+  <!-- Content -->
+  <div class="app-content content">
+    <div class="content-wrapper card">
+      <div class="content-header row">
+        <div class="content-header-left col-md-6 col-12 mb-2">
+          <h3 class="content-header-title text-dark">Customer Complaints</h3>
+        </div>
+      </div>
+      <div class="content-body">
+       <div class="row" id="complaintList">
+  <div class="col-md-6 mb-3">
+    <div class=" complaint-item shadow-sm border-left-danger cursor-pointer" data-toggle="modal" data-target="#chatModal"
+         data-customer="John Doe" data-message="Food was cold on delivery.">
+      <div class="card-body">
+        <h5 class="card-title mb-1"><i class="la la-user text-primary mr-1"></i> John Doe</h5>
+        <p class="card-text text-muted mb-0"><i class="la la-comment-dots mr-1 text-secondary"></i> Food was cold on delivery.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-3">
+    <div class=" complaint-item shadow-sm border-left-warning cursor-pointer" data-toggle="modal" data-target="#chatModal"
+         data-customer="Jane Smith" data-message="Late delivery by 30 minutes.">
+      <div class="card-body">
+        <h5 class="card-title mb-1"><i class="la la-user text-primary mr-1"></i> Jane Smith</h5>
+        <p class="card-text text-muted mb-0"><i class="la la-clock mr-1 text-secondary"></i> Late delivery by 30 minutes.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+<!-- Chat Modal -->
+<div class="modal fade" id="chatModal" tabindex="-1" role="dialog" aria-labelledby="chatModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-secondary text-white">
+        <h5 class="modal-title text-white" id="chatModalLabel">Chat</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="chat-box" id="chatBox">
+          <div class="text-muted text-center">Loading chat...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <form id="chatForm" class="form-inline w-100">
+          <input type="text" class="form-control mr-2 flex-grow-1" id="replyInput" placeholder="Type your reply..." required>
+          <button type="submit" class="btn btn-primary mr-2"><i class="la la-paper-plane"></i> Send</button>
+          <button type="button" class="btn btn-danger" id="clearChat"><i class="la la-trash"></i> Clear</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+  <!-- JS -->
+
+  <script>
+    $('.close-navbar').on('click', function () {
+      $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+    });
+
+    $('.menu-toggle').on('click', function () {
+      $('.main-menu').toggleClass('menu-collapsed menu-expanded');
+    });
+
+  let currentCustomer = '';
+
+  // Open modal and load chat
+  $('#chatModal').on('show.bs.modal', function (event) {
+    const button = $(event.relatedTarget);
+    const customer = button.data('customer');
+    const message = button.data('message');
+    currentCustomer = customer;
+
+    $('#chatModalLabel').text(`Chat with ${customer}`);
+    $('#chatBox').html(`
+      <div class="chat-message customer p-2 mb-2 rounded"><strong>${customer}:</strong> ${message}</div>
+    `);
+  });
+
+  // Send reply
+  $('#chatForm').on('submit', function (e) {
+    e.preventDefault();
+    const reply = $('#replyInput').val();
+    if (reply.trim()) {
+      $('#chatBox').append(`
+        <div class="chat-message admin p-2 mb-2 rounded"><strong>You:</strong> ${reply}</div>
+      `);
+      $('#replyInput').val('').focus();
+      $('#chatBox').scrollTop($('#chatBox')[0].scrollHeight);
+    }
+  });
+
+  // Clear chat
+  $('#clearChat').on('click', function () {
+    $('#chatBox').html('<div class="text-muted text-center">Chat cleared.</div>');
+    $('#replyInput').val('');
+  });
+
+  </script>
+
+
+{% endblock %}

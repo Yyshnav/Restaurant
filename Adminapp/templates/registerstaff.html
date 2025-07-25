@@ -1,0 +1,163 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-header row">
+        <div class="content-header-left col-md-12 ">
+          <h3 class="content-header-title text-center text-dark"> Registration</h3>
+        </div>
+      </div>
+      <div class="content-body">
+        <section class="registration-form py-3">
+          <div class="container">
+            <div class="row justify-content-center">
+              <div class="col-12 col-md-8 col-lg-6">
+                <div class="card shadow-sm">
+                  <div class="card-header text-center">
+                    <h4 class="card-title">Register a New User</h4>
+                  </div>
+                  <div class="card-body">
+                    <form action="#" method="POST">
+                      <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="text" id="phone" name="phone" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="branch">Branch</label>
+                        <input type="text" id="branch" name="branch" class="form-control" required>
+                      </div>
+                      <!-- <div class="form-group">
+                        <label for="national_id">Nationality ID Number</label>
+                        <input type="text" id="national_id" name="national_id" class="form-control" required>
+                      </div> -->
+                      <div class="form-group">
+  <label for="employee_id">Id proof</label>
+  <input type="file" id="employee_id" name="employee_id" class="form-control" accept="image/*" required>
+</div>
+
+                      <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="role">Select Role(s)</label>
+                        <select name="role[]" id="role" class="form-control" multiple required>
+                         
+                          <option value="manager">Manager</option>
+                          <option value="waiter">Waiter</option>
+                         
+                          <option value="deliveryboy">DeliveryBoy</option>
+                        </select>
+                      </div>
+<div class="form-group">
+  <label for="employee_image">Upload Image</label>
+  <input type="file" id="employee_image" name="employee_image" class="form-control" accept="image/*" required>
+</div>
+
+<!-- Qualification field (hidden by default) -->
+<div id="manager-qualification" style="display: none;">
+  <div class="form-group">
+    <label for="qualification">Qualification</label>
+    <input type="text" id="qualification" name="qualification" class="form-control">
+  </div>
+</div>
+
+                      <!-- Conditional Fields -->
+                      <div id="deliveryboy-fields" style="display: none;">
+                        <div class="form-group">
+                          <label for="license_number">License Number</label>
+                          <input type="text" id="license_number" name="license_number" class="form-control">
+                        </div>
+                        <div class="form-group">
+                          <label for="vehicle_number">Vehicle Number</label>
+                          <input type="text" id="vehicle_number" name="vehicle_number" class="form-control">
+                        </div>
+                      </div>
+
+                      <button type="submit" class="btn btn-primary btn-block mt-2">Register</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+
+
+  <!-- <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+
+      $('#role').select2({
+        placeholder: "Select role(s)",
+        width: '100%'
+      });
+
+      $('#role').on('change', function () {
+        const selectedRoles = $(this).val();
+        if (selectedRoles && selectedRoles.includes('deliveryboy')) {
+          $('#deliveryboy-fields').slideDown();
+          $('#license_number, #vehicle_number').attr('required', true);
+        } else {
+          $('#deliveryboy-fields').slideUp();
+          $('#license_number, #vehicle_number').removeAttr('required');
+        }
+      });
+    });
+  </script> -->
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    $('.close-navbar').on('click', function () {
+      $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+    });
+
+    $('#role').select2({
+      placeholder: "Select role(s)",
+      width: '100%'
+    });
+
+    $('#role').on('change', function () {
+      const selectedRoles = $(this).val();
+
+      // Show DeliveryBoy fields if selected
+      if (selectedRoles.includes('deliveryboy')) {
+        $('#deliveryboy-fields').slideDown();
+        $('#license_number, #vehicle_number').attr('required', true);
+      } else {
+        $('#deliveryboy-fields').slideUp();
+        $('#license_number, #vehicle_number').removeAttr('required');
+      }
+
+      // Show Manager Qualification field if selected
+      if (selectedRoles.includes('manager')) {
+        $('#manager-qualification').slideDown();
+        $('#qualification').attr('required', true);
+      } else {
+        $('#manager-qualification').slideUp();
+        $('#qualification').removeAttr('required');
+      }
+    });
+  });
+</script>
+
+{% endblock %}

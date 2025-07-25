@@ -1,0 +1,158 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+
+{% block body %}
+
+    <!-- Custom Switch Style -->
+    <style>
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0;
+        right: 0; bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #28c76f;
+      }
+      input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+    </style>
+  
+
+
+    <!-- Main Content -->
+    <div class="app-content content">
+      <div class="content-wrapper">
+        <div class="content-body">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-12">
+                <div class="card p-2">
+
+                  <!-- Header Row -->
+                  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-2">
+                    <h4 class="card-title mb-2 mb-md-0">View Staffs</h4>
+                    <a href="/registerstaff">
+                    <button class="btn btn-success btn-sm"><i class="fas fa-user-plus"></i></button></a>
+                  </div>
+
+                  <!-- Responsive Table -->
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="staffTable">
+                      <thead class="thead-dark">
+                        <tr>
+                          <th>#</th>
+                          <th>Name</th>
+                          <th>Role</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>1</td>
+                          <td>Jane Doe</td>
+                          <td>HR Manager</td>
+                          <td>jane@example.com</td>
+                          <td>
+                            <label class="switch">
+                              <input type="checkbox" checked onchange="toggleStatus(this)">
+                              <span class="slider"></span>
+                            </label>
+                            <span class="status-label">Active</span>
+                          </td>
+                          <td>
+                            <button class="btn btn-sm btn-primary" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>2</td>
+                          <td>John Smith</td>
+                          <td>Accountant</td>
+                          <td>john@example.com</td>
+                          <td>
+                            <label class="switch">
+                              <input type="checkbox" onchange="toggleStatus(this)">
+                              <span class="slider"></span>
+                            </label>
+                            <span class="status-label">Inactive</span>
+                          </td>
+                          <td>
+                            <button class="btn btn-sm btn-primary" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div> <!-- /table-responsive -->
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Custom JS -->
+    <script>
+      function filterTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const rows = document.querySelectorAll("#staffTable tbody tr");
+        rows.forEach(row => {
+          const cells = row.getElementsByTagName("td");
+          let match = false;
+          for (let i = 0; i < cells.length - 2; i++) {
+            if (cells[i].innerText.toLowerCase().includes(input)) {
+              match = true;
+              break;
+            }
+          }
+          row.style.display = match ? "" : "none";
+        });
+      }
+
+      function toggleStatus(checkbox) {
+        const label = checkbox.closest('td').querySelector('.status-label');
+        label.textContent = checkbox.checked ? 'Active' : 'Inactive';
+      }
+       document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+    });
+    </script>
+  
+
+  {% endblock %}

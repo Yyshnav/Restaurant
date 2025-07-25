@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'Deliveryboyapp',
     'Accountapp',
     'channels', 
+    
 ]
 
 MIDDLEWARE = [
@@ -67,12 +68,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Restaurant.wsgi.application'
 ASGI_APPLICATION = "Restaurant.asgi.application"
+CELERY_BROKER_URL = 'redis://172.27.212.99:6379/0'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # 'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         'CONFIG': {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [("172.27.212.99", 6379)],
         },
     },
 }
@@ -148,6 +151,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Fast2SMS Key
 FAST2SMS_API_KEY = 'Q7C0LbOImoVgaJGy6dvfXl4zK3AZ28xD1puwMntNkWeEsjSrT984Ikom6vMReYLK12d7qTsQSV5DJOuU'

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html class="loading" lang="en" data-textdirection="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
+  <title>Branch Dashboard - Chameleon Admin</title>
+
+  <!-- Favicon and Fonts -->
+  <link rel="apple-touch-icon" href="../../theme-assets/images/ico/apple-icon-120.png" />
+  <link rel="shortcut icon" type="image/x-icon" href="../../theme-assets/images/ico/favicon.ico" />
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,600,700|Comfortaa:300,400,700" rel="stylesheet" />
+  <link href="https://maxcdn.icons8.com/fonts/line-awesome/1.1/css/line-awesome.min.css" rel="stylesheet" />
+
+  <!-- Vendor CSS -->
+  <link rel="stylesheet" href="../../theme-assets/css/vendors.css" />
+  <link rel="stylesheet" href="../../theme-assets/css/app-lite.css" />
+  <link rel="stylesheet" href="../../theme-assets/css/core/menu/menu-types/vertical-menu.css" />
+  <link rel="stylesheet" href="../../theme-assets/css/core/colors/palette-gradient.css" />
+</head>
+
+<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar"
+      data-open="click" data-menu="vertical-menu"
+      data-color="bg-gradient-x-purple-blue" data-col="2-columns">
+
+  <!-- Sidebar -->
+  <div class="main-menu menu-fixed menu-light menu-accordion    menu-shadow " data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
+      <div class="navbar-header">
+        <ul class="nav navbar-nav flex-row">       
+          <li class="nav-item mr-auto"><a class="navbar-brand" href="index.html"><img class="brand-logo" alt="Chameleon admin logo" src="../../theme-assets/images/logo/logo.png"/>
+              <h3 class="brand-text">Admin</h3></a></li>
+          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
+        </ul>
+      </div>
+      <div class="main-menu-content">
+        <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
+          <li class="nav-item"><a href="index.html"><i class="ft-home"></i><span class="menu-title" data-i18n="">Dashboard</span></a>
+          </li>
+          
+          <li class=" nav-item "><a href="viewStaff.html"><i class="ft-users"></i><span class="menu-title" data-i18n="">staff</span></a>
+          </li>
+          <li class="nav-item"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title" data-i18n="">Dishes</span></a>
+          </li>
+          <li class=" nav-item"><a href="category.html"><i class="ft-tag"></i><span class="menu-title" data-i18n="">Ctegory</span></a>
+          </li>
+           <li class="active"><a href="ViewBranch.html"><i class="ft-map-pin"></i><span class="menu-title" data-i18n="">Branches</span></a>
+          </li>
+          <li class=" nav-item"><a href="branch-report.html"><i class="ft-layers"></i><span class="menu-title" data-i18n="">Reports</span></a>
+          </li>
+         
+          <li class="nav-item"><a href="offer.html"><i class="ft-award"></i><span class="menu-title"> Offers</span></a></li>
+            <li class="nav-item"><a href="carousel.html"><i class="ft-image"></i><span class="menu-title"> Carousel</span></a></li>
+        </ul>
+      </div><a class="btn btn-danger btn-block btn-glow btn-upgrade-pro mx-1" href="https://themeselection.com/products/chameleon-admin-modern-bootstrap-webapp-dashboard-html-template-ui-kit/" target="_blank">LogOut</a>
+      <div class="navigation-background"></div>
+    </div>
+
+  <!-- Top Navbar -->
+  <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
+    <div class="navbar-wrapper">
+      <div class="navbar-container content">
+        <div class="collapse navbar-collapse show" id="navbar-mobile">
+          <ul class="nav navbar-nav mr-auto">
+            <li class="nav-item d-block d-md-none">
+              <a class="nav-link menu-toggle"><i class="ft-menu"></i></a>
+            </li>
+            <li class="nav-item d-none d-md-block">
+              <a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav float-right">
+            <li class="dropdown dropdown-user nav-item">
+              <a class="dropdown-toggle nav-link dropdown-user-link" data-toggle="dropdown">
+                <span class="avatar avatar-online">
+                  <!-- <img src="../../theme-assets/images/portrait/small/avatar-s-19.png" alt="avatar" /> -->
+                </span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="#"><i class="ft-user"></i> Profile</a>
+                <a class="dropdown-item" href="#"><i class="ft-power"></i> Logout</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-header row"></div>
+      <div class="content-body">
+        <section class="branch-dashboard">
+          <div class="container-fluid">
+
+            <!-- Tab Nav -->
+            <ul class="nav nav-tabs mb-2" id="branchTab" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" id="overview-tab" data-toggle="tab" href="#overview" role="tab">Overview</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="dishes-tab" data-toggle="tab" href="#dishes" role="tab">Dishes</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="customers-tab" data-toggle="tab" href="#customers" role="tab">Customers</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="employees-tab" data-toggle="tab" href="#employees" role="tab">Employees</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="orders-tab" data-toggle="tab" href="#orders" role="tab">Bills</a>
+              </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="branchTabContent">
+              <!-- Overview -->
+              <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Branch Overview</h4>
+                    <p><strong>Name:</strong> Main Branch</p>
+                    <p><strong>Address:</strong> 123 Street Name, City</p>
+                    <p><strong>Phone:</strong> 123-456-7890</p>
+                    <p><strong>Email:</strong> branch@example.com</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dishes -->
+              <div class="tab-pane fade" id="dishes" role="tabpanel">
+                <div class="card">
+                  <div class="card-header"><h4 class="card-title">Popular Dishes</h4></div>
+                  <div class="card-body row">
+                    <div class="col-md-4 mb-2">
+                      <div class="card">
+                        <img class="card-img-top" src="images/dish1.jpg" alt="Dish 1">
+                        <div class="card-body">
+                          <h5 class="card-title">Grilled Chicken</h5>
+                          <p>Juicy grilled chicken with herbs.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                      <div class="card">
+                        <img class="card-img-top" src="images/dish2.jpg" alt="Dish 2">
+                        <div class="card-body">
+                          <h5 class="card-title">Veggie Pasta</h5>
+                          <p>Fresh pasta with seasonal vegetables.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                      <div class="card">
+                        <img class="card-img-top" src="images/dish3.jpg" alt="Dish 3">
+                        <div class="card-body">
+                          <h5 class="card-title">Cheesecake</h5>
+                          <p>Classic creamy New York cheesecake.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Customers -->
+              <div class="tab-pane fade" id="customers" role="tabpanel">
+                <div class="card">
+                  <div class="card-header"><h4 class="card-title">Customers</h4></div>
+                  <div class="card-body table-responsive">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>1</td><td>Jane Doe</td><td>jane@example.com</td><td>123-456-7890</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Employees -->
+              <div class="tab-pane fade" id="employees" role="tabpanel">
+                <div class="card">
+                  <div class="card-header"><h4 class="card-title">Employees</h4></div>
+                  <div class="card-body table-responsive">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr><th>#</th><th>Name</th><th>Role</th><th>Email</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>1</td><td>John Smith</td><td>Manager</td><td>john@branch.com</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Orders -->
+              <div class="tab-pane fade" id="orders" role="tabpanel">
+                <div class="card">
+                  <div class="card-header"><h4 class="card-title">Bills</h4></div>
+                  <div class="card-body table-responsive">
+                    <table class="table table-striped">
+                      <thead>
+                        <tr><th>#</th><th>Order ID</th><th>Date</th><th>Status</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>1</td><td>#ORD123</td><td>2025-06-30</td><td>Completed</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div> <!-- /.tab-content -->
+
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../theme-assets/vendors/js/vendors.min.js"></script>
+  <script src="../../theme-assets/js/core/app-menu-lite.js"></script>
+  <script src="../../theme-assets/js/core/app-lite.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      $('.close-navbar').on('click', function () {
+        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
+      });
+    });
+  </script>
+</body>
+</html>
