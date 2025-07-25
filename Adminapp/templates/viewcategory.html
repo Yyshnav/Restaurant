@@ -1,179 +1,125 @@
 {% extends 'sidebar.html' %}
 {% load static %}
 
-
 {% block body %}
-  <style>
-    .preview-img {
-      border-radius: 4px;
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-    }
-    .accordion-button {
-  width: 90%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+<style>
+  .preview-img {
+    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+  }
+  .accordion-button {
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
 
-  </style>
-
-
-  <!-- Main Content -->
-  <div class="app-content content ">
-    <div class="content-wrapper ">
-      <div class="content-header row ">
-        <div class="content-header-left col-md-6 col-12">
-          <h3 class="content-header-title text-dark">Category Manager</h3>
-        </div>
-      </div>
-      <div class="content-body ">
-        <div class="container mt-2 ">
-          <button class="btn btn-primary mb-4" onclick="openModal('', '')">+ Add Main Category</button>
-          <div class="accordion w" id="categoryAccordion"></div>
-        </div>
+<!-- Main Content -->
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-header row">
+      <div class="content-header-left col-md-6 col-12">
+        <h3 class="content-header-title text-dark">Category Manager</h3>
       </div>
     </div>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <form id="categoryForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="categoryModalLabel">Add Category</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal">   <span aria-hidden="true">&times;</span></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="cid">
-          <input type="hidden" id="parentCid">
-          <div class="mb-3">
-            <label for="cname" class="form-label">Category Name</label>
-            <input type="text" class="form-control" id="cname" required>
-          </div>
-          <div class="mb-3">
-            <label for="cimg" class="form-label">Category Image</label>
-            <input type="file" class="form-control" id="cimg" accept="image/*">
-            <img id="previewImg" class="preview-img mt-2" src="" />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Save Category</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    let categories = [];
-
-    function openModal(parentId = '', parentName = '', edit = false, cat = {}) {
-      document.getElementById('cid').value = edit ? cat.id : '';
-      document.getElementById('parentCid').value = parentId;
-      document.getElementById('cname').value = edit ? cat.name : '';
-      document.getElementById('previewImg').src = edit && cat.img ? cat.img : '';
-      document.getElementById('cimg').value = '';
-      document.getElementById('categoryModalLabel').textContent = edit
-        ? `Edit "${cat.name}"`
-        : parentId ? `Add Subcategory to "${parentName}"` : 'Add Main Category';
-
-      new bootstrap.Modal(document.getElementById('categoryModal')).show();
-    }
-
-    document.getElementById('cimg').addEventListener('change', function (e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          document.getElementById('previewImg').src = evt.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    document.getElementById('categoryForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const id = document.getElementById('cid').value || Date.now().toString();
-      const parentId = document.getElementById('parentCid').value;
-      const name = document.getElementById('cname').value;
-      const imgSrc = document.getElementById('previewImg').src || '';
-
-      const existingIndex = categories.findIndex(c => c.id === id);
-
-      if (existingIndex !== -1) {
-        categories[existingIndex].name = name;
-        categories[existingIndex].img = imgSrc;
-      } else {
-        categories.push({ id, name, img: imgSrc, parent: parentId || null });
-      }
-
-      bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
-      renderCategories();
-    });
-
-    function renderCategories() {
-      const container = document.getElementById('categoryAccordion');
-      container.innerHTML = '';
-
-      function createItems(parentId, parentAccordionId) {
-        return categories
-          .filter(c => c.parent === parentId)
-          .map(c => {
-            const collapseId = `collapse-${c.id}`;
-            const headingId = `heading-${c.id}`;
-            const childHtml = createItems(c.id, `accordion-${c.id}`).join('');
-            return `
-           <div class="accordion-item">
-  <h2 class="accordion-header" id="${headingId}">
-    <button class="accordion-button collapsed p-3 py-2" type="button"
-      data-bs-toggle="collapse" data-bs-target="#${collapseId}"
-      aria-expanded="false" aria-controls="${collapseId}">
-      
-      <div class="d-flex w-100 align-items-center justify-content-between">
-        <div class="d-flex align-items-center">
-          <img src="${c.img}" class="me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
-          <strong>${c.name}</strong>
-        </div>
-      </div>
-      
-    </button>
-  </h2>
-
-  <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#${parentAccordionId}">
-    <div class="accordion-body">
-      ${childHtml.length > 0
-        ? `<div class="accordion" id="accordion-${c.id}">${childHtml}</div>`
-        : '<small class="text-muted">No subcategories</small>'}
-
-      <div class="mt-2 d-flex gap-1">
-        <button class="btn btn-sm btn-success" onclick='openModal("${c.id}", "${c.name}")'>+ Sub</button>
-        <button class="btn btn-sm btn-warning" onclick='openModal("${c.parent}", "", true, ${JSON.stringify(c)})'>Edit</button>
-        <button class="btn btn-sm btn-danger" onclick='deleteCategory("${c.id}")'>Delete</button>
+    <div class="content-body">
+      <div class="container mt-2">
+        <button class="btn btn-primary mb-4" onclick="openModal('', '')">+ Add Main Category</button>
+        <div class="accordion" id="categoryAccordion"></div>
       </div>
     </div>
   </div>
 </div>
-`;
-          });
-      }
 
-      const html = createItems(null, 'categoryAccordion');
-      container.innerHTML = html.join('');
-    }
+<!-- Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="categoryForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="categoryModalLabel">Add Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cid">
+        <input type="hidden" id="parentCid">
+        <div class="mb-3">
+          <label for="cname" class="form-label">Category Name</label>
+          <input type="text" class="form-control" id="cname" required>
+        </div>
+        <div class="mb-3">
+          <label for="cimg" class="form-label">Category Image</label>
+          <input type="file" class="form-control" id="cimg" accept="image/*">
+          <img id="previewImg" class="preview-img mt-2" src="" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Save Category</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-    function deleteCategory(id) {
-      if (confirm('Are you sure you want to delete this category and all its subcategories?')) {
-        function removeRecursive(catId) {
-          categories.filter(c => c.parent === catId).forEach(child => removeRecursive(child.id));
-          categories = categories.filter(c => c.id !== catId);
-        }
-        removeRecursive(id);
-        renderCategories();
-      }
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Preview image when selected
+  document.getElementById('cimg').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        document.getElementById('previewImg').src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
     }
-  </script>
+  });
+
+  // Open modal and reset fields
+  function openModal(id = '', parentId = '') {
+    document.getElementById('cid').value = id;
+    document.getElementById('parentCid').value = parentId;
+    document.getElementById('cname').value = '';
+    document.getElementById('cimg').value = '';
+    document.getElementById('previewImg').src = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
+    modal.show();
+  }
+
+  // Handle form submission via AJAX
+  document.getElementById('categoryForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById('cname').value;
+    const parentId = document.getElementById('parentCid').value;
+    const imgTag = document.getElementById('previewImg');
+    const imgSrc = imgTag.src;
+
+    fetch("{% url 'view_categories' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({
+        name: name,
+        img: imgSrc.startsWith('data:image') ? imgSrc : '',
+        parent: parentId || null
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Optional: refresh category display here
+        alert('Category saved!');
+      }
+      bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
+    });
+  });
+</script>
 
 {% endblock %}
