@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
-from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, SpotlightSerializer
+from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
 from Userapp.serializer import AddressUpdateSerializer, ProfileTableSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
@@ -633,16 +633,6 @@ class TrackDeliveryLocationAPI(APIView):
         except OrderTable.DoesNotExist:
             return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
         
-# def calculate_distance(lat1, lon1, lat2, lon2):
-#     # Haversine formula
-#     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-#     dlon = lon2 - lon1
-#     dlat = lat2 - lat1
-#     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-#     c = 2 * asin(sqrt(a))
-#     km = 6371 * c
-#     return km
-
 
 class PersonalizedRecommendationAPIView(APIView):
     permission_classes = [AllowAny]
@@ -808,3 +798,57 @@ class UpdateFCMTokenView(APIView):
             return Response({'message': 'FCM token updated successfully.'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class PlaceOrderAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        try:
+            # Step 1: Get or validate user
+            user = LoginTable.objects.get(id=data['userid'])
+
+            # Step 2: Optional delivery person
+            delivery = None
+            if data.get('deliveryid'):
+                delivery = LoginTable.objects.get(id=data['deliveryid'])
+
+            # Step 3: Create the order
+            order = OrderTable.objects.create(
+                userid=user,
+                deliveryid=delivery,
+                totalamount=data.get('totalamount', 0),
+                orderstatus=data.get('orderstatus', 'PENDING'),
+                paymentstatus=data.get('paymentstatus', 'UNPAID'),
+                created_at=datetime.timezone.now(),
+                updated_at=datetime.timezone.now(),
+            )
+
+            # Step 4: Create order items
+            items_data = data.get('items', [])
+            for item_data in items_data:
+                item = ItemTable.objects.get(id=item_data['itemname'])
+
+                variant = None
+                if item_data.get('variant'):
+                    variant = ItemVariantSerializer.objects.get(id=item_data['variant'])
+
+                addon = None
+                if item_data.get('addon'):
+                    addon = AddonTable.objects.get(id=item_data['addon'])
+
+                OrderItemTable.objects.create(
+                    orderid=order,
+                    itemname=item,
+                    variant=variant,
+                    addon=addon,
+                    quantity=item_data.get('quantity', 1),
+                    price=item_data.get('price', 0)
+                )
+
+            # Step 5: Return serialized order
+            serializer = OrderTableSerializer(order)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
