@@ -247,7 +247,7 @@ class DeliveryBoyProfileAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class ChangePasswordAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     
@@ -348,6 +348,7 @@ class ForgotPasswordAPIView(APIView):
         except DeliveryBoyTable.DoesNotExist:
             return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
         otp = get_random_string(length=4, allowed_chars='0123456789')
+        print(f"Generated OTP for {email}: {otp}")
         OTP_STORE[email] = {'otp': otp, 'expires': datetime.now() + timedelta(minutes=10)}
         send_mail(
             'Your OTP for Password Reset',
