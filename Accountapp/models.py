@@ -535,7 +535,7 @@ class SpotlightTable(models.Model):
 class ChatMessage(models.Model):
     order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(ProfileTable, on_delete=models.CASCADE, null=True, blank=True)
-    delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE)
+    delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE, null=True, blank=True)
     sender_type = models.CharField(max_length=20, choices=[('USER', 'User'), ('DELIVERYBOY', 'DeliveryBoy')])
     
     message_type = models.CharField(
