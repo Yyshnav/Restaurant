@@ -136,7 +136,8 @@ class CategoryTable(models.Model):
     
 class SubCategoryTable(models.Model):
     category = models.ForeignKey(CategoryTable, on_delete=models.CASCADE, related_name='subcategories')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='subcategory_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -145,7 +146,8 @@ class SubCategoryTable(models.Model):
     
 class SubSubCategoryTable(models.Model):
     subcategory = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='subsubcategories')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='subsubcategory_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

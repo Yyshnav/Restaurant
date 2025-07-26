@@ -9,6 +9,7 @@
     height: 40px;
     object-fit: cover;
   }
+
   .accordion-button {
     width: 90%;
     display: flex;
@@ -16,8 +17,8 @@
     align-items: center;
   }
 </style>
+<meta name="csrf-token" content="{{ csrf_token }}">
 
-<!-- Main Content -->
 <div class="app-content content">
   <div class="content-wrapper">
     <div class="content-header row">
@@ -45,6 +46,7 @@
       <div class="modal-body">
         <input type="hidden" id="cid">
         <input type="hidden" id="parentCid">
+        <input type="hidden" id="ctype">
         <div class="mb-3">
           <label for="cname" class="form-label">Category Name</label>
           <input type="text" class="form-control" id="cname" required>
@@ -62,11 +64,28 @@
   </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-  // Preview image when selected
+  let categories = {{ categories_json|safe }};
+  let categoryModalInstance;
+
+  function openModal(parentId = '', parentName = '', edit = false, cat = {}) {
+    const modalEl = document.getElementById('categoryModal');
+
+    document.getElementById('cid').value = edit ? cat.id : '';
+    document.getElementById('ctype').value = edit ? cat.type : (parentId ? (cat.type === 'sub' ? 'subsub' : 'sub') : 'main');
+    document.getElementById('parentCid').value = parentId;
+    document.getElementById('cname').value = edit ? cat.name : '';
+    document.getElementById('previewImg').src = edit && cat.img ? cat.img : '';
+    document.getElementById('cimg').value = '';
+    document.getElementById('categoryModalLabel').textContent = edit
+      ? `Edit "${cat.name}"`
+      : parentId ? `Add Subcategory to "${parentName}"` : 'Add Main Category';
+
+    categoryModalInstance = new bootstrap.Modal(modalEl);
+    categoryModalInstance.show();
+  }
+
   document.getElementById('cimg').addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (file) {
@@ -78,48 +97,124 @@
     }
   });
 
-  // Open modal and reset fields
-  function openModal(id = '', parentId = '') {
-    document.getElementById('cid').value = id;
-    document.getElementById('parentCid').value = parentId;
-    document.getElementById('cname').value = '';
-    document.getElementById('cimg').value = '';
-    document.getElementById('previewImg').src = '';
-    
-    const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
-    modal.show();
-  }
-
-  // Handle form submission via AJAX
   document.getElementById('categoryForm').addEventListener('submit', function (e) {
     e.preventDefault();
 
-    const name = document.getElementById('cname').value;
+    const id = document.getElementById('cid').value;
     const parentId = document.getElementById('parentCid').value;
-    const imgTag = document.getElementById('previewImg');
-    const imgSrc = imgTag.src;
+    const name = document.getElementById('cname').value;
+    const type = document.getElementById('ctype').value;
+    const file = document.getElementById('cimg').files[0];
 
-    fetch("{% url 'view_categories' %}", {
+    const formData = new FormData();
+    formData.append('id', id);
+    formData.append('name', name);
+    formData.append('parent', parentId);
+    formData.append('type', type);
+    if (file) formData.append('img', file);
+
+    fetch('', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'X-CSRFToken': '{{ csrf_token }}'
       },
-      body: JSON.stringify({
-        name: name,
-        img: imgSrc.startsWith('data:image') ? imgSrc : '',
-        parent: parentId || null
-      })
+      body: formData
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'success') {
-        // Optional: refresh category display here
-        alert('Category saved!');
-      }
-      bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
-    });
+      .then(response => response.json())
+      .then(res => {
+        if (res.status === 'success') {
+          categoryModalInstance.hide();
+          document.getElementById('categoryForm').reset();
+          document.getElementById('previewImg').src = '';
+          location.reload();
+          fetchCategories();
+        } else {
+          alert('Error saving category.');
+        }
+      });
   });
-</script>
 
+  function fetchCategories() {
+    fetch("{% url 'view_categories' %}")
+      .then(response => response.json())
+      .then(data => {
+        categories = data.categories;
+        renderCategories();
+      });
+  }
+
+function getCategoryType(cat) {
+  if (!cat.parent) return 'main';
+  const parentObj = categories.find(c => c.id === cat.parent);
+  return parentObj && parentObj.parent ? 'subsub' : 'sub';
+}
+
+function renderCategories() {
+  const container = document.getElementById('categoryAccordion');
+  container.innerHTML = '';
+
+  function createItems(parentId, parentAccordionId) {
+    return categories
+      .filter(c => c.parent === parentId)
+      .map(c => {
+        const collapseId = `collapse-${c.type}-${c.id}`;
+        const headingId = `heading-${c.type}-${c.id}`;
+        const childHtml = createItems(c.id, `accordion-${c.type}-${c.id}`).join('');
+        return `
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="${headingId}">
+              <button class="accordion-button collapsed px-3 py-2" type="button"
+                data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+                aria-expanded="false" aria-controls="${collapseId}">
+                <div class="d-flex w-100 align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <img src="${c.img}" class="me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
+                    <strong>${c.name}</strong>
+                  </div>
+                </div>
+              </button>
+            </h2>
+            <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#${parentAccordionId}">
+              <div class="accordion-body">
+                ${childHtml.length > 0
+                  ? `<div class="accordion" id="accordion-${c.type}-${c.id}">${childHtml}</div>`
+                  : '<small class="text-muted">No subcategories</small>'}
+
+                <div class="mt-2 d-flex gap-1">
+                  <button class="btn btn-sm btn-success" onclick='openModal("${c.id}", "${c.name}")'>+ Sub</button>
+                  <button class="btn btn-sm btn-warning" onclick='openModal("${c.parent}", "", true, ${JSON.stringify(c)})'>Edit</button>
+                  <button class="btn btn-sm btn-danger" onclick='deleteCategory("${c.id}", "${c.type || getCategoryType(c)}")'>Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+  }
+
+  const html = createItems(null, 'categoryAccordion');
+  container.innerHTML = html.join('');
+}
+
+function deleteCategory(id, type) {
+  const numericId = id.replace(/[^\d]/g, '');
+  fetch(`/delete-category/${type}/${numericId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}'
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      location.reload();
+      // fetchCategories();
+    } else {
+      alert('Failed to delete');
+    }
+  });
+}
+
+renderCategories();
+</script>
 {% endblock %}

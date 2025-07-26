@@ -3,6 +3,8 @@
 from django.urls import path
 
 from Adminapp.views import *
+from . import views
+
 
 urlpatterns = [
     path('', LoginView.as_view(), name='login'),
@@ -25,4 +27,9 @@ urlpatterns = [
     path('view-offer', ViewOfferView.as_view(), name='view-offer'),
     path('view-staff', ViewStaffView.as_view(), name='view-staff'),
     path('logout', LogoutView.as_view(), name='logout'),
+    path('add-category/', views.add_category_ajax, name='add_category_ajax'),
+    path('add-subcategory/', views.add_subcategory_ajax, name='add_subcategory_ajax'),
+    path('add-subsubcategory/', views.add_subsubcategory_ajax, name='add_subsubcategory_ajax'),
+    path('delete-category/<str:type>/<str:pk>/', delete_category, name='delete_category'),
+
 ]

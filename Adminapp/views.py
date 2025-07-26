@@ -203,68 +203,147 @@ from django.utils.decorators import method_decorator
 import base64
 from django.core.files.base import ContentFile
 import uuid
+import json
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CategoryManagerView(View):
     def get(self, request):
-        categories = []
+        data = []
+
         for cat in CategoryTable.objects.all():
-            categories.append({
+            data.append({
                 "id": f"cat-{cat.id}",
                 "name": cat.name,
                 "img": cat.image.url if cat.image else "",
                 "parent": None
             })
             for sub in cat.subcategories.all():
-                categories.append({
+                data.append({
                     "id": f"sub-{sub.id}",
                     "name": sub.name,
-                    "img": "",  # No image in SubCategory model
+                    "img": sub.image.url if sub.image else "",
                     "parent": f"cat-{cat.id}"
                 })
                 for subsub in sub.subsubcategories.all():
-                    categories.append({
+                    data.append({
                         "id": f"subsub-{subsub.id}",
                         "name": subsub.name,
-                        "img": "",  # No image in SubSubCategory model
+                        "img": subsub.image.url if subsub.image else "",
                         "parent": f"sub-{sub.id}"
                     })
 
-        return render(request, 'viewcategory.html', {'categories_json': categories})
+        # If it's an AJAX request, return JSON
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({"categories": data})
+
+        # Else return full HTML
+        return render(request, "viewcategory.html", {
+            "categories_json": json.dumps(data)
+        })
+
 
     def post(self, request):
-        import json
-        data = json.loads(request.body)
-
-        name = data.get("name")
-        image_data = data.get("img")
-        parent_id = data.get("parent")
-
-        saved_image = None
-        if image_data and image_data.startswith("data:image"):
-            format, imgstr = image_data.split(';base64,') 
-            ext = format.split('/')[-1]  
-            file_name = f"{uuid.uuid4()}.{ext}"
-            saved_image = ContentFile(base64.b64decode(imgstr), name=file_name)
+        name = request.POST.get("name")
+        parent_id = request.POST.get("parent")
+        image_file = request.FILES.get("img")
 
         if not parent_id:
+            # Main Category
             cat = CategoryTable.objects.create(name=name)
-            if saved_image:
-                cat.image = saved_image
+            if image_file:
+                cat.image = image_file
                 cat.save()
             return JsonResponse({"status": "success", "id": f"cat-{cat.id}"})
 
         elif parent_id.startswith("cat-"):
+            # Sub Category
             cat_id = parent_id.replace("cat-", "")
             sub = SubCategoryTable.objects.create(name=name, category_id=cat_id)
+            if image_file:
+                sub.image = image_file
+                sub.save()
             return JsonResponse({"status": "success", "id": f"sub-{sub.id}"})
 
         elif parent_id.startswith("sub-"):
+            # Sub Sub Category
             sub_id = parent_id.replace("sub-", "")
             subsub = SubSubCategoryTable.objects.create(name=name, subcategory_id=sub_id)
+            if image_file:
+                subsub.image = image_file
+                subsub.save()
             return JsonResponse({"status": "success", "id": f"subsub-{subsub.id}"})
 
-        return JsonResponse({"status": "error"})
+        return JsonResponse({"status": "error", "message": "Invalid parent ID"})
+
+# views.py
+from django.shortcuts import render
+from django.http import JsonResponse
+from Accountapp.models import CategoryTable, SubCategoryTable, SubSubCategoryTable
+from django.views.decorators.csrf import csrf_exempt
+
+def category_page(request):
+    categories = CategoryTable.objects.all().prefetch_related('subcategories__subsubcategories')
+    return render(request, 'category_page.html', {
+        'categories': categories
+    })
+
+@csrf_exempt
+def add_category_ajax(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        image = request.FILES.get('image')
+        cat = CategoryTable.objects.create(name=name, image=image)
+        return JsonResponse({'status': 'success', 'id': cat.id})
+    return JsonResponse({'status': 'error'}, status=400)
+
+@csrf_exempt
+def add_subcategory_ajax(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        cat_id = request.POST.get('category_id')
+        image = request.FILES.get('image')
+        sub = SubCategoryTable.objects.create(name=name, image=image, category_id=cat_id)
+        return JsonResponse({'status': 'success', 'id': sub.id})
+    return JsonResponse({'status': 'error'}, status=400)
+
+@csrf_exempt
+def add_subsubcategory_ajax(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        subcat_id = request.POST.get('subcategory_id')
+        image = request.FILES.get('image')
+        subsub = SubSubCategoryTable.objects.create(name=name, image=image, subcategory_id=subcat_id)
+        return JsonResponse({'status': 'success', 'id': subsub.id})
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+from django.http import JsonResponse, HttpResponseBadRequest
+
+def delete_category(request, type, pk):
+    if request.method == 'POST':
+        try:
+            pk = int(pk)
+        except ValueError:
+            return HttpResponseBadRequest('Invalid ID')
+
+        model = {
+            'main': CategoryTable,
+            'sub': SubCategoryTable,
+            'subsub': SubSubCategoryTable,
+        }.get(type)
+
+        if model:
+            try:
+                model.objects.get(id=pk).delete()
+                return JsonResponse({'status': 'success'})
+            except model.DoesNotExist:
+                return JsonResponse({'status': 'not_found'}, status=404)
+
+    return JsonResponse({'status': 'failed'}, status=400)
+
+
 
     
 class ViewComplaintView(View):
