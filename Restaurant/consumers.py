@@ -53,17 +53,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
         # Save message to DB
-        await self.save_message(self.order_id, self.user, sender_type, text,file_url,message_type)
+        if text!=None or file_url!=None:
+            print(f"Received message: {text}, file_url: {file_url}..Sender type: {sender_type}...Message type: {message_type}....................................")
+            print(text!=None or file_url!=None)
+            await self.save_message(self.order_id, self.user, sender_type, text,file_url,message_type)
 
-    async def chat_message(self, event):
+    # async def chat_message(self, event):
        
-        await self.send(text_data=json.dumps(event))
+    #     await self.send(text_data=json.dumps(event))
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps({
+            'message_type': event['message_type'],
+            'sender_type': event['sender_type'],
+            'text': event['text'],
+            'file_url': event['file_url'],
+            # 'user': event['user'],
+        }))
+
 
 
     @database_sync_to_async
     def save_message(self, order_id, user, sender_type, text,file_url,message_type):
         from Accountapp.models import ChatMessage, OrderTable, DeliveryBoyTable, ProfileTable
-
+        
         order = OrderTable.objects.get(id=order_id)
         chat_data = {}
         if sender_type == 'DELIVERYBOY':
@@ -73,7 +85,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'delivery_boy': delivery,
                 'user': None,
                 'sender_type': sender_type,
-                'text': text
+                'text': text,
+                'message_type': message_type
             }
            
             
@@ -84,7 +97,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'delivery_boy': None,
                 'user': profile,
                 'sender_type': sender_type,
-                'text': text
+                'text': text,
+                'message_type': message_type
             }
 
         # Handle file saving
