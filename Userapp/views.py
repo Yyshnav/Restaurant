@@ -635,10 +635,10 @@ class TrackDeliveryLocationAPI(APIView):
         
 
 class PersonalizedRecommendationAPIView(APIView):
-    permission_classes = [AllowAny]
+    # authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user_id = request.data.get('user_id')
         keyword = request.data.get('search_keyword', '').strip()
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
@@ -647,18 +647,21 @@ class PersonalizedRecommendationAPIView(APIView):
 
         # 1️⃣ FILTER BY NEARBY BRANCH IF LOCATION IS GIVEN
         if latitude and longitude:
-            latitude = float(latitude)
-            longitude = float(longitude)
-            nearby_branch_ids = []
+            try:
+                latitude = float(latitude)
+                longitude = float(longitude)
+                nearby_branch_ids = []
 
-            branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
-            for branch in branches:
-                dist = calculate_distance(latitude, longitude, branch.latitude, branch.longitude)
-                if dist <= 10:  # You can adjust radius in km
-                    nearby_branch_ids.append(branch.id)
+                branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
+                for branch in branches:
+                    dist = calculate_distance(latitude, longitude, branch.latitude, branch.longitude)
+                    if dist <= 10:  # radius in km
+                        nearby_branch_ids.append(branch.id)
 
-            if nearby_branch_ids:
-                recommendations = recommendations.filter(branches__id__in=nearby_branch_ids)
+                if nearby_branch_ids:
+                    recommendations = recommendations.filter(branches__id__in=nearby_branch_ids)
+            except ValueError:
+                pass  # ignore invalid lat/lon
 
         # 2️⃣ FILTER BY SEARCH KEYWORD
         if keyword:
@@ -667,28 +670,28 @@ class PersonalizedRecommendationAPIView(APIView):
                 Q(description__icontains=keyword)
             )
 
-        # 3️⃣ FILTER BY USER HISTORY IF USER ID IS PROVIDED
-        if user_id:
-            try:
-                user = LoginTable.objects.get(id=user_id)
+        # 3️⃣ FILTER BY USER HISTORY BASED ON TOKEN
+        user = request.user
+        try:
+            login_user = LoginTable.objects.get(id=user.id)
 
-                # Wishlist-based
-                wishlist_item_ids = WishlistTable.objects.filter(userid=user).values_list('fooditem_id', flat=True)
+            # Wishlist-based
+            wishlist_item_ids = WishlistTable.objects.filter(userid=login_user).values_list('fooditem_id', flat=True)
 
-                # Order history-based
-                ordered_item_ids = OrderItemTable.objects.filter(order__userid=user).values_list('itemname_id', flat=True)
+            # Order history-based
+            ordered_item_ids = OrderItemTable.objects.filter(order__userid=login_user).values_list('itemname_id', flat=True)
 
-                # Combine history
-                preferred_ids = set(wishlist_item_ids) | set(ordered_item_ids)
+            # Combine history
+            preferred_ids = set(wishlist_item_ids) | set(ordered_item_ids)
 
-                if preferred_ids:
-                    recommendations = recommendations.filter(
-                        Q(id__in=preferred_ids) |
-                        Q(category__items__id__in=preferred_ids)
-                    ).distinct()
+            if preferred_ids:
+                recommendations = recommendations.filter(
+                    Q(id__in=preferred_ids) |
+                    Q(category__items__id__in=preferred_ids)
+                ).distinct()
 
-            except LoginTable.DoesNotExist:
-                return Response({'error': 'Invalid user ID'}, status=400)
+        except LoginTable.DoesNotExist:
+            return Response({'error': 'User profile not found'}, status=404)
 
         recommendations = recommendations.distinct().order_by('-fast_delivery', '-newest')[:20]
         serialized = ItemSerializer(recommendations, many=True)
