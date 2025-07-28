@@ -29,7 +29,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 
-from Accountapp.serializer import ChatMessageSerializer
+# from Accountapp.serializer import ChatMessageSerializer
 from .fcm_utils import send_fcm_notification
 
 

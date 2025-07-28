@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
-from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, SpotlightSerializer
+from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
 from Userapp.serializer import AddressUpdateSerializer, ProfileTableSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
@@ -633,22 +633,12 @@ class TrackDeliveryLocationAPI(APIView):
         except OrderTable.DoesNotExist:
             return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
         
-# def calculate_distance(lat1, lon1, lat2, lon2):
-#     # Haversine formula
-#     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-#     dlon = lon2 - lon1
-#     dlat = lat2 - lat1
-#     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-#     c = 2 * asin(sqrt(a))
-#     km = 6371 * c
-#     return km
-
 
 class PersonalizedRecommendationAPIView(APIView):
-    permission_classes = [AllowAny]
+    # authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user_id = request.data.get('user_id')
         keyword = request.data.get('search_keyword', '').strip()
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
@@ -657,18 +647,21 @@ class PersonalizedRecommendationAPIView(APIView):
 
         # 1️⃣ FILTER BY NEARBY BRANCH IF LOCATION IS GIVEN
         if latitude and longitude:
-            latitude = float(latitude)
-            longitude = float(longitude)
-            nearby_branch_ids = []
+            try:
+                latitude = float(latitude)
+                longitude = float(longitude)
+                nearby_branch_ids = []
 
-            branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
-            for branch in branches:
-                dist = calculate_distance(latitude, longitude, branch.latitude, branch.longitude)
-                if dist <= 10:  # You can adjust radius in km
-                    nearby_branch_ids.append(branch.id)
+                branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
+                for branch in branches:
+                    dist = calculate_distance(latitude, longitude, branch.latitude, branch.longitude)
+                    if dist <= 10:  # radius in km
+                        nearby_branch_ids.append(branch.id)
 
-            if nearby_branch_ids:
-                recommendations = recommendations.filter(branches__id__in=nearby_branch_ids)
+                if nearby_branch_ids:
+                    recommendations = recommendations.filter(branches__id__in=nearby_branch_ids)
+            except ValueError:
+                pass  # ignore invalid lat/lon
 
         # 2️⃣ FILTER BY SEARCH KEYWORD
         if keyword:
@@ -677,28 +670,28 @@ class PersonalizedRecommendationAPIView(APIView):
                 Q(description__icontains=keyword)
             )
 
-        # 3️⃣ FILTER BY USER HISTORY IF USER ID IS PROVIDED
-        if user_id:
-            try:
-                user = LoginTable.objects.get(id=user_id)
+        # 3️⃣ FILTER BY USER HISTORY BASED ON TOKEN
+        user = request.user
+        try:
+            login_user = LoginTable.objects.get(id=user.id)
 
-                # Wishlist-based
-                wishlist_item_ids = WishlistTable.objects.filter(userid=user).values_list('fooditem_id', flat=True)
+            # Wishlist-based
+            wishlist_item_ids = WishlistTable.objects.filter(userid=login_user).values_list('fooditem_id', flat=True)
 
-                # Order history-based
-                ordered_item_ids = OrderItemTable.objects.filter(order__userid=user).values_list('itemname_id', flat=True)
+            # Order history-based
+            ordered_item_ids = OrderItemTable.objects.filter(order__userid=login_user).values_list('itemname_id', flat=True)
 
-                # Combine history
-                preferred_ids = set(wishlist_item_ids) | set(ordered_item_ids)
+            # Combine history
+            preferred_ids = set(wishlist_item_ids) | set(ordered_item_ids)
 
-                if preferred_ids:
-                    recommendations = recommendations.filter(
-                        Q(id__in=preferred_ids) |
-                        Q(category__items__id__in=preferred_ids)
-                    ).distinct()
+            if preferred_ids:
+                recommendations = recommendations.filter(
+                    Q(id__in=preferred_ids) |
+                    Q(category__items__id__in=preferred_ids)
+                ).distinct()
 
-            except LoginTable.DoesNotExist:
-                return Response({'error': 'Invalid user ID'}, status=400)
+        except LoginTable.DoesNotExist:
+            return Response({'error': 'User profile not found'}, status=404)
 
         recommendations = recommendations.distinct().order_by('-fast_delivery', '-newest')[:20]
         serialized = ItemSerializer(recommendations, many=True)
@@ -808,3 +801,57 @@ class UpdateFCMTokenView(APIView):
             return Response({'message': 'FCM token updated successfully.'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class PlaceOrderAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        try:
+            # Step 1: Get or validate user
+            user = LoginTable.objects.get(id=data['userid'])
+
+            # Step 2: Optional delivery person
+            delivery = None
+            if data.get('deliveryid'):
+                delivery = LoginTable.objects.get(id=data['deliveryid'])
+
+            # Step 3: Create the order
+            order = OrderTable.objects.create(
+                userid=user,
+                deliveryid=delivery,
+                totalamount=data.get('totalamount', 0),
+                orderstatus=data.get('orderstatus', 'PENDING'),
+                paymentstatus=data.get('paymentstatus', 'UNPAID'),
+                created_at=datetime.timezone.now(),
+                updated_at=datetime.timezone.now(),
+            )
+
+            # Step 4: Create order items
+            items_data = data.get('items', [])
+            for item_data in items_data:
+                item = ItemTable.objects.get(id=item_data['itemname'])
+
+                variant = None
+                if item_data.get('variant'):
+                    variant = ItemVariantSerializer.objects.get(id=item_data['variant'])
+
+                addon = None
+                if item_data.get('addon'):
+                    addon = AddonTable.objects.get(id=item_data['addon'])
+
+                OrderItemTable.objects.create(
+                    orderid=order,
+                    itemname=item,
+                    variant=variant,
+                    addon=addon,
+                    quantity=item_data.get('quantity', 1),
+                    price=item_data.get('price', 0)
+                )
+
+            # Step 5: Return serialized order
+            serializer = OrderTableSerializer(order)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

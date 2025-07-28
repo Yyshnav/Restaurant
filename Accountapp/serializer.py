@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from Accountapp.models import ChatMessage, UserRole
+from Accountapp.models import  ChatMessage, UserRole
 
 LoginTable = get_user_model()
 
