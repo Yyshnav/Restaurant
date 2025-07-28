@@ -393,7 +393,7 @@ class VoucherTable(models.Model):
 
     def __str__(self):
         return self.code
-    
+
 
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -406,6 +406,7 @@ class PrinterTable(models.Model):
 
 class ManagerTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='manager_profile')
+    BranchID = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.CharField(max_length=15, null=True, blank=True)
@@ -420,6 +421,7 @@ class ManagerTable(models.Model):
 
 class WaiterTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='waiter_profile')
+    BranchID = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.CharField(max_length=15, null=True, blank=True)

@@ -8,6 +8,7 @@ from Accountapp.models import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
+from django.contrib.auth.hashers import make_password
 
 
 
@@ -145,8 +146,80 @@ class AddOfferView(View):
     
 class RegisterStaffView(View):
     def get(self, request):
-        c = BranchTable.objects.all()
-        return render(request, 'registerstaff.html', {'branches': c})
+        branches = BranchTable.objects.all()
+        return render(request, 'registerstaff.html', {'branches': branches})
+
+    def post(self, request):
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        branch_id = request.POST.get('branch')
+        password = request.POST.get('password')
+        role = request.POST.get('role')  # manager, waiter, deliveryboy
+        qualification = request.POST.get('qualification')
+
+        idproof = request.FILES.get('employee_id')
+        image = request.FILES.get('employee_image')
+        license_pic = request.FILES.get('license')
+
+        branch = BranchTable.objects.get(id=branch_id)
+
+        # 1. Create Login User
+        login_user = LoginTable.objects.create(
+            username=email,  
+            email=email,
+            phone=phone,
+            password=make_password(password),
+            is_active=True,
+            created_at=timezone.now(),
+        )
+
+        # 2. Assign role
+        try:
+            role_obj = UserRole.objects.get(role__iexact=role.upper())  # MANAGER/WAITER/DELIVERY
+            login_user.user_roles.add(role_obj)
+        except UserRole.DoesNotExist:
+            # Create role if it doesn't exist (optional)
+            role_obj = UserRole.objects.create(role=role.upper())
+            login_user.user_roles.add(role_obj)
+
+        # 3. Insert into role-specific table
+        if role == 'manager':
+            ManagerTable.objects.create(
+                userid=login_user,
+                BranchID=branch,
+                name=name,
+                phone=phone,
+                email=email,
+                image=image,
+                idproof=idproof,
+                qualification=qualification
+            )
+
+        elif role == 'waiter':
+            WaiterTable.objects.create(
+                userid=login_user,
+                BranchID=branch,
+                name=name,
+                phone=phone,
+                email=email,
+                image=image,
+                idproof=idproof
+            )
+
+        elif role == 'deliveryboy':
+            DeliveryBoyTable.objects.create(
+                userid=login_user,
+                branch=branch,
+                name=name,
+                phone=phone,
+                email=email,
+                image=image,
+                idproof=idproof,
+                license=license_pic
+            )
+
+        return redirect('register_staff')  # Or a success page
 
 class ViewBranchReportView(View):
     def get(self, request):
