@@ -37,7 +37,12 @@
                       </div>
                       <div class="form-group">
                         <label for="branch">Branch</label>
-                        <input type="text" id="branch" name="branch" class="form-control" required>
+                        <select name="branch" id="branch" class="form-control" required>
+                          <option value="">-- Select Branch --</option>
+                          {% for i in branches %}
+                          <option value="{{ i.id }}">{{ i.name }}</option>
+                          {% endfor %}
+                        </select>
                       </div>
                       <!-- <div class="form-group">
                         <label for="national_id">Nationality ID Number</label>
@@ -53,14 +58,14 @@
                         <input type="password" id="password" name="password" class="form-control" required>
                       </div>
                       <div class="form-group">
-                        <label for="role">Select Role(s)</label>
-                        <select name="role[]" id="role" class="form-control" multiple required>
-                         
-                          <option value="manager">Manager</option>
-                          <option value="waiter">Waiter</option>
-                         
-                          <option value="deliveryboy">DeliveryBoy</option>
-                        </select>
+                        <label for="role">Select Role</label>
+                        <select name="role" id="role" class="form-control" required>
+  <option value="">-- Select Role --</option>
+  <option value="manager">Manager</option>
+  <option value="waiter">Waiter</option>
+  <option value="deliveryboy">DeliveryBoy</option>
+</select>
+
                       </div>
 <div class="form-group">
   <label for="employee_image">Upload Image</label>
@@ -78,13 +83,13 @@
                       <!-- Conditional Fields -->
                       <div id="deliveryboy-fields" style="display: none;">
                         <div class="form-group">
-                          <label for="license_number">License Number</label>
-                          <input type="text" id="license_number" name="license_number" class="form-control">
+                          <label for="license_number">License pic</label>
+                          <input type="file" id="license_number" name="license" class="form-control">
                         </div>
-                        <div class="form-group">
+                        <!-- <div class="form-group">
                           <label for="vehicle_number">Vehicle Number</label>
                           <input type="text" id="vehicle_number" name="vehicle_number" class="form-control">
-                        </div>
+                        </div> -->
                       </div>
 
                       <button type="submit" class="btn btn-primary btn-block mt-2">Register</button>
@@ -125,39 +130,40 @@
       });
     });
   </script> -->
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    $('.close-navbar').on('click', function () {
-      $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
-    });
+ <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const roleSelect = document.getElementById('role');
+  const deliveryFields = document.getElementById('deliveryboy-fields');
+  const licenseNumber = document.getElementById('license_number');
 
-    $('#role').select2({
-      placeholder: "Select role(s)",
-      width: '100%'
-    });
+  const managerQualification = document.getElementById('manager-qualification');
+  const qualificationInput = document.getElementById('qualification');
 
-    $('#role').on('change', function () {
-      const selectedRoles = $(this).val();
+  function toggleFields() {
+    const selectedRole = roleSelect.value;
 
-      // Show DeliveryBoy fields if selected
-      if (selectedRoles.includes('deliveryboy')) {
-        $('#deliveryboy-fields').slideDown();
-        $('#license_number, #vehicle_number').attr('required', true);
-      } else {
-        $('#deliveryboy-fields').slideUp();
-        $('#license_number, #vehicle_number').removeAttr('required');
-      }
+    if (selectedRole === 'deliveryboy') {
+      deliveryFields.style.display = 'block';
+      licenseNumber.setAttribute('required', true);
+    } else {
+      deliveryFields.style.display = 'none';
+      licenseNumber.removeAttribute('required');
+    }
 
-      // Show Manager Qualification field if selected
-      if (selectedRoles.includes('manager')) {
-        $('#manager-qualification').slideDown();
-        $('#qualification').attr('required', true);
-      } else {
-        $('#manager-qualification').slideUp();
-        $('#qualification').removeAttr('required');
-      }
-    });
-  });
+    if (selectedRole === 'manager') {
+      managerQualification.style.display = 'block';
+      qualificationInput.setAttribute('required', true);
+    } else {
+      managerQualification.style.display = 'none';
+      qualificationInput.removeAttribute('required');
+    }
+  }
+
+  roleSelect.addEventListener('change', toggleFields);
+  toggleFields();
+});
 </script>
+
+
 
 {% endblock %}

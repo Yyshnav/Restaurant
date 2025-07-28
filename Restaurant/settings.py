@@ -43,6 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Adminapp.middleware.DisableCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'Restaurant.urls'
@@ -124,6 +125,8 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # Password Validators
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -163,3 +166,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+

@@ -10,26 +10,29 @@
           <div class="col-12 col-md-8 col-lg-6">
             <div class="card shadow-sm">
               <div class="card-header text-center">
-                <h4 class="card-title">Branch Details</h4>
+                <h4 class="card-title">Edit Branch</h4>
               </div>
               <div class="card-body">
-                <form action="#" method="POST" enctype="multipart/form-data">
+                <form method="POST" enctype="multipart/form-data">
                   {% csrf_token %}
-                  
+
                   <div class="form-group">
                     <label for="branch_name">Branch Name</label>
-                    <input type="text" id="branch_name" name="branch_name" class="form-control" required>
+                    <input type="text" id="branch_name" name="branch_name" class="form-control" value="{{ branch.name }}" required>
                   </div>
 
                   <div class="form-group">
-                    <label for="branch_image">Branch Image</label>
+                    <label for="branch_image">Branch Image</label><br>
+                    {% if branch.image %}
+                      <img src="{{ branch.image.url }}" alt="Branch Image" class="img-thumbnail mb-2" width="150"><br>
+                    {% endif %}
                     <input type="file" id="branch_image" name="image" class="form-control" accept="image/*">
                   </div>
 
                   <div class="form-group">
                     <label for="latitude">Latitude</label>
                     <div class="input-group">
-                      <input type="text" id="latitude" name="latitude" class="form-control" readonly required>
+                      <input type="text" id="latitude" name="latitude" class="form-control" value="{{ branch.latitude }}" readonly required>
                       <div class="input-group-append">
                         <button type="button" class="btn btn-outline-primary" onclick="getLocation()">Get Location</button>
                       </div>
@@ -38,39 +41,40 @@
 
                   <div class="form-group">
                     <label for="longitude">Longitude</label>
-                    <input type="text" id="longitude" name="longitude" class="form-control" readonly required>
+                    <input type="text" id="longitude" name="longitude" class="form-control" value="{{ branch.longitude }}" readonly required>
                   </div>
 
                   <div class="form-group">
                     <label for="address">Address</label>
-                    <textarea id="address" name="address" class="form-control" rows="2" required></textarea>
+                    <textarea id="address" name="address" class="form-control" rows="2" required>{{ branch.address }}</textarea>
                   </div>
 
                   <div class="form-group">
                     <label for="city">City</label>
-                    <input type="text" id="city" name="city" class="form-control" required>
+                    <input type="text" id="city" name="city" class="form-control" value="{{ branch.place }}" required>
                   </div>
 
                   <div class="form-group">
                     <label for="floor">Floor</label>
-                    <input type="number" id="floor" name="floor" class="form-control" required>
+                    <input type="number" id="floor" name="floor" class="form-control" value="{{ branch.floors }}" required>
                   </div>
+
                   <div class="form-group">
                     <label for="fssai_lic_no">FSSAI License Number</label>
-                    <input type="text" id="fssai_lic_no" name="fssai_lic_no" class="form-control" required>
+                    <input type="text" id="fssai_lic_no" name="fssai_lic_no" class="form-control" value="{{ branch.fssai_lic_no }}" required>
                   </div>
 
                   <div class="form-group">
                     <label for="phone">Phone Number</label>
-                    <input type="text" id="phone" name="phone" class="form-control" required>
+                    <input type="text" id="phone" name="phone" class="form-control" value="{{ branch.phone }}" required>
                   </div>
 
                   <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-control">
+                    <input type="email" id="email" name="email" class="form-control" value="{{ branch.email }}">
                   </div>
 
-                  <button type="submit" class="btn btn-success btn-block mt-2">Register Branch</button>
+                  <button type="submit" class="btn btn-success btn-block mt-2">Update Branch</button>
                 </form>
               </div>
             </div>
@@ -95,5 +99,4 @@
     }
   }
 </script>
-
 {% endblock %}
