@@ -28,6 +28,8 @@ from rest_framework import status
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from Restaurant.Accountapp.serializer import ChatMessageSerializer
+
 
 # from Accountapp.serializer import ChatMessageSerializer
 from .fcm_utils import send_fcm_notification
@@ -355,7 +357,7 @@ class ForgotPasswordAPIView(APIView):
             f'Your OTP is: {otp}',
             settings.DEFAULT_FROM_EMAIL,
             [email],
-            fail_silently=True,
+            fail_silently=False,
         )
         return Response({'success': 'OTP sent to your email'}, status=status.HTTP_200_OK)
 
