@@ -53,7 +53,6 @@ class BranchTable(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     floors = models.IntegerField(null=True, blank=True) 
     fssai_lic_no = models.CharField(max_length=255, null=True, blank=True)
-    manager = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True, limit_choices_to={'user_roles__role': 'MANAGER'})
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -128,7 +127,8 @@ class ProfileTable(models.Model):
         return self.name
         
 class CategoryTable(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='category_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -136,7 +136,8 @@ class CategoryTable(models.Model):
     
 class SubCategoryTable(models.Model):
     category = models.ForeignKey(CategoryTable, on_delete=models.CASCADE, related_name='subcategories')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='subcategory_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -145,7 +146,8 @@ class SubCategoryTable(models.Model):
     
 class SubSubCategoryTable(models.Model):
     subcategory = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='subsubcategories')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    image = models.ImageField(upload_to='subsubcategory_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -264,7 +266,7 @@ class CartTable(models.Model):
     instruction = models.CharField(max_length=200, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    total_price = models.FloatField(null=True, blank=True)  # Optional: price * quantity
+    total_price = models.FloatField(null=True, blank=True) 
 
     def __str__(self):
         return f"{self.userid} - {self.fooditem} x {self.quantity}"

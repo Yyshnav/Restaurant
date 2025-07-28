@@ -3,11 +3,13 @@
 from django.urls import path
 
 from Adminapp.views import *
+from . import views
+
 
 urlpatterns = [
     path('', LoginView.as_view(), name='login'),
     path('dashboard', DashboardView.as_view(), name='dashboard'),
-    path('add-category', AddCategoryView.as_view(), name='add-category'),
+    # path('add-category', AddCategoryView.as_view(), name='add-category'),
     path('add-dish', AddDishView.as_view(), name='add-dish'),
     path('add-branch', AddBranchView.as_view(), name='add-branch'),
     path('add-carousel', AddCarouselView.as_view(), name='add-carousel'),
@@ -16,10 +18,18 @@ urlpatterns = [
     path('registerstaff', RegisterStaffView.as_view(), name='registerstaff'),
     path('branch-report', ViewBranchReportView.as_view(), name='branch-report'),
     path('view-branch', ViewBranchView.as_view(), name='view-branch'),
+    path('delete-branch/<int:branch_id>', DeleteBranchView.as_view(), name='delete-branc    h'),
+    path('branch-edit/<int:branch_id>/', EditBranchView.as_view(), name='branch-edit'),
     path('view-carousel', ViewcarouselView.as_view(), name='view-carousel'),
-    path('view-category', ViewCategoryView.as_view(), name='view-category'),
+    path('view-categories', CategoryManagerView.as_view(), name='view_categories'),
     path('view-complaint', ViewComplaintView.as_view(), name='view-complaint'),
     path('view-dishes', ViewDishesView.as_view(), name='view-dishes'),
     path('view-offer', ViewOfferView.as_view(), name='view-offer'),
     path('view-staff', ViewStaffView.as_view(), name='view-staff'),
+    path('logout', LogoutView.as_view(), name='logout'),
+    path('add-category/', views.add_category_ajax, name='add_category_ajax'),
+    path('add-subcategory/', views.add_subcategory_ajax, name='add_subcategory_ajax'),
+    path('add-subsubcategory/', views.add_subsubcategory_ajax, name='add_subsubcategory_ajax'),
+    path('delete-category/<str:type>/<str:pk>/', delete_category, name='delete_category'),
+
 ]
