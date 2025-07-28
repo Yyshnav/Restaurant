@@ -70,8 +70,7 @@ CREATE TABLE public."Accountapp_addresstable" (
     latitude double precision,
     longitude double precision,
     is_default boolean NOT NULL,
-    created_at timestamp with time zone NOT NULL,
-    orderid_id bigint
+    created_at timestamp with time zone NOT NULL
 );
 
 
@@ -1452,7 +1451,7 @@ COPY public."Accountapp_addontable" (id, name, description, image, price, create
 -- Data for Name: Accountapp_addresstable; Type: TABLE DATA; Schema: public; Owner: admin
 --
 
-COPY public."Accountapp_addresstable" (id, name, phone, address, city, state, postal_code, country, latitude, longitude, is_default, created_at, orderid_id) FROM stdin;
+COPY public."Accountapp_addresstable" (id, name, phone, address, city, state, postal_code, country, latitude, longitude, is_default, created_at) FROM stdin;
 \.
 
 
@@ -1512,8 +1511,6 @@ COPY public."Accountapp_carttable" (id, quantity, price, instruction, added_at, 
 34	1	\N	\N	2025-07-21 17:03:48.528349+05:30	2025-07-21 17:03:48.528349+05:30	150	\N	2	6
 35	1	\N	\N	2025-07-21 17:03:48.638279+05:30	2025-07-21 17:03:48.638279+05:30	150	\N	2	6
 36	1	\N	\N	2025-07-21 17:04:22.114215+05:30	2025-07-21 17:04:22.114215+05:30	160	\N	1	6
-37	1	\N	\N	2025-07-22 11:35:21.355754+05:30	2025-07-22 11:35:21.355754+05:30	150	\N	2	30
-38	2	\N	\N	2025-07-22 11:35:42.484541+05:30	2025-07-22 11:35:42.484541+05:30	300	\N	2	30
 \.
 
 
@@ -1648,7 +1645,6 @@ COPY public."Accountapp_logintable" (id, password, last_login, is_superuser, use
 5	123456	\N	f	manager2				f	2025-07-05 14:39:52+05:30	\N	\N	t	2025-07-05 14:39:52+05:30	\N
 15	!XmlPUj6cseHMG3HpGra8NaR2SXyKGcNeyC7ZZ9ci	\N	f	+912582585555				f	2025-07-14 10:15:41.394669+05:30	+912582585555	6505	t	2025-07-14 10:15:41.394669+05:30	\N
 6	!TuVwfoHsJKXjmwGlYyF9ZMf64jHWgsOGaqdd97XC	\N	f	+912582582585				f	2025-07-07 12:33:42.760072+05:30	+912582582585	4912	t	2025-07-07 12:33:42.760072+05:30	\N
-1	pbkdf2_sha256$1000000$jXhZR1sk47MYJ6Y17wlIGq$/b4SGLR5QCGyysFpYKyoFB4RybcmMaedTnoBPPpujww=	2025-07-22 11:25:00.985473+05:30	t	admin				t	2025-07-03 11:52:43.316197+05:30	\N	\N	t	2025-07-03 11:52:43.316197+05:30	\N
 22	!LT7kEW4GPKJ4d19wOBPDXNIdD2h12pPVcW5WOzaM	\N	f	+913332221110				f	2025-07-16 11:20:45.427245+05:30	+913332221110	5524	t	2025-07-16 11:20:45.427245+05:30	\N
 16	!t1cwQkA7Xl2kfArNE8xCXgmeeWxFD72yDX1zHSSj	\N	f	+912365412589				f	2025-07-14 11:19:54.038891+05:30	+912365412589	8594	t	2025-07-14 11:19:54.038891+05:30	\N
 7	!8aBHAe2Gwe7Uwda7GMdpClO9mTqTuFAhuA9BPLsQ	\N	f	+913692583698				f	2025-07-11 11:16:43.489384+05:30	+913692583698	5966	t	2025-07-11 11:16:43.489384+05:30	\N
@@ -1667,8 +1663,9 @@ COPY public."Accountapp_logintable" (id, password, last_login, is_superuser, use
 19	!Mu4kK075QCdm1Tu8RBt51czQHMKs033KGbOuPDHF	\N	f	+919999999998				f	2025-07-16 10:48:45.312005+05:30	+919999999998	8494	t	2025-07-16 10:48:45.312005+05:30	\N
 26	!K99D2lOzhf6q5ZLjwdLa9fYHu4pYorHtwpHKW8yh	\N	f	+915356568683				f	2025-07-16 14:18:45.296532+05:30	+915356568683	5755	t	2025-07-16 14:18:45.296532+05:30	\N
 20	!qDruPHcyg7hfdh2ICJ0mluQ14aQOTnpOVPJtGWsi	\N	f	+913636363632				f	2025-07-16 10:57:19.733611+05:30	+913636363632	3222	t	2025-07-16 10:57:19.733611+05:30	\N
-30	!8IgCDvYcoJ15vaJ8Cv2zzl6RckfQU1KYxOwn0ReR	\N	f	+915556454515				f	2025-07-22 11:27:34.846842+05:30	+915556454515	8285	t	2025-07-22 11:27:34.846842+05:30	\N
 27	!zyyAuCvgCQ5WIUtK4MBiMQHF6Z8CbpmniAOfbwDm	\N	f	+913333333333				f	2025-07-16 14:24:36.822049+05:30	+913333333333	1609	t	2025-07-16 14:24:36.822049+05:30	\N
+30	!8IgCDvYcoJ15vaJ8Cv2zzl6RckfQU1KYxOwn0ReR	\N	f	+915556454515				f	2025-07-22 11:27:34.846842+05:30	+915556454515	8285	t	2025-07-22 11:27:34.846842+05:30	e2JxnrjVTGCApEexOsl-ju:APA91bHicN9PH1rqOr77HH1ExRMAOqGtKEOno1vmWX8pfMzbBvrUqvbTFU0o3LzeZxKQfHLXWVPdZWH1pD3R3sHtIuSpkrDjK1VJWgTjm8R7U2fc-cTuIYg
+1	pbkdf2_sha256$1000000$jXhZR1sk47MYJ6Y17wlIGq$/b4SGLR5QCGyysFpYKyoFB4RybcmMaedTnoBPPpujww=	2025-07-25 11:50:12.543741+05:30	t	admin				t	2025-07-03 11:52:43.316197+05:30	\N	\N	t	2025-07-03 11:52:43.316197+05:30	\N
 \.
 
 
@@ -1918,6 +1915,10 @@ COPY public."Accountapp_wishlisttable" (id, added_at, fooditem_id, userid_id) FR
 25	2025-07-18 12:19:58.540099+05:30	3	6
 26	2025-07-18 12:20:17.802736+05:30	2	6
 27	2025-07-18 12:21:08.727154+05:30	1	6
+28	2025-07-23 11:40:42.155703+05:30	3	30
+29	2025-07-23 12:59:23.72854+05:30	2	30
+30	2025-07-23 12:59:34.582287+05:30	1	30
+31	2025-07-23 16:23:43.47926+05:30	1	30
 \.
 
 
@@ -2110,6 +2111,10 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 166	Can change chat message table	42	change_chatmessagetable
 167	Can delete chat message table	42	delete_chatmessagetable
 168	Can view chat message table	42	view_chatmessagetable
+169	Can add chat message	43	add_chatmessage
+170	Can change chat message	43	change_chatmessage
+171	Can delete chat message	43	delete_chatmessage
+172	Can view chat message	43	view_chatmessage
 \.
 
 
@@ -2176,6 +2181,7 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 40	authtoken	token
 41	authtoken	tokenproxy
 42	Accountapp	chatmessagetable
+43	Accountapp	chatmessage
 \.
 
 
@@ -2230,6 +2236,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 59	authtoken	0002_auto_20160226_1747	2025-07-22 11:20:05.798257+05:30
 60	authtoken	0003_tokenproxy	2025-07-22 11:20:05.810681+05:30
 61	authtoken	0004_alter_tokenproxy_options	2025-07-22 11:20:05.818778+05:30
+62	Accountapp	0024_remove_addresstable_orderid	2025-07-23 09:42:29.370255+05:30
+63	Accountapp	0002_alter_offertable_id_alter_profiletable_address	2025-07-23 15:21:14.970059+05:30
 \.
 
 
@@ -2245,6 +2253,7 @@ feq5zr6tcj39fk3aoshmc0bbw2kdzlio	.eJxVjDsOwjAQBe_iGlms7dgLJT1niPZjkwCKpTipEHeHSC
 2jpr6lytc8gtqo7hrz7adrr3rsziz0p0	.eJxVjDsOwjAQBe_iGlms7dgLJT1niPZjkwCKpTipEHeHSCmgfTPzXqandRn6teW5H9WcDZjD78YkjzxtQO803aqVOi3zyHZT7E6bvVbNz8vu_h0M1IZvXXI6inNOQvBdOYVYFDvSBMrBOUxM0YUuYioogiQs7MFHxAwFANS8P-ByN9U:1uYjZU:TrKLgN3dEaSs5EsBjR-tnRsa5AqyEYVURCTi9vILVI0	2025-07-21 16:29:40.761201+05:30
 w0anf0kj8yo2thgakkaalw69xgzz5va2	.eJxVjDsOwjAQBe_iGlms7dgLJT1niPZjkwCKpTipEHeHSCmgfTPzXqandRn6teW5H9WcDZjD78YkjzxtQO803aqVOi3zyHZT7E6bvVbNz8vu_h0M1IZvXXI6inNOQvBdOYVYFDvSBMrBOUxM0YUuYioogiQs7MFHxAwFANS8P-ByN9U:1uaCI5:TNWOGZd0RWsv_EkS_SgfTxZhf_Y4AM4owFIxB2sWGN8	2025-07-25 17:21:45.115273+05:30
 p1eiefr3bslrmw9nbnfjiieh0tr5d3ma	.eJxVjDsOwjAQBe_iGlms7dgLJT1niPZjkwCKpTipEHeHSCmgfTPzXqandRn6teW5H9WcDZjD78YkjzxtQO803aqVOi3zyHZT7E6bvVbNz8vu_h0M1IZvXXI6inNOQvBdOYVYFDvSBMrBOUxM0YUuYioogiQs7MFHxAwFANS8P-ByN9U:1ue5xs:zsNd0rp5hlbwH7uYmy5uTxQv0__bodPjMa5QDrJyQnI	2025-08-05 11:25:00.989631+05:30
+6p8cpj77v20e1j0bwjy2ox7etlc77uo7	.eJxVjDsOwjAQBe_iGlms7dgLJT1niPZjkwCKpTipEHeHSCmgfTPzXqandRn6teW5H9WcDZjD78YkjzxtQO803aqVOi3zyHZT7E6bvVbNz8vu_h0M1IZvXXI6inNOQvBdOYVYFDvSBMrBOUxM0YUuYioogiQs7MFHxAwFANS8P-ByN9U:1ufBmu:GVOfX3gDD5FMUvT0LinxP251SSVM_usPvxF88DOecoA	2025-08-08 11:50:12.548741+05:30
 \.
 
 
@@ -2287,7 +2296,7 @@ SELECT pg_catalog.setval('public."Accountapp_carousel_id_seq"', 2, true);
 -- Name: Accountapp_carttable_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
 --
 
-SELECT pg_catalog.setval('public."Accountapp_carttable_id_seq"', 38, true);
+SELECT pg_catalog.setval('public."Accountapp_carttable_id_seq"', 57, true);
 
 
 --
@@ -2518,7 +2527,7 @@ SELECT pg_catalog.setval('public."Accountapp_waitertable_id_seq"', 1, false);
 -- Name: Accountapp_wishlisttable_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
 --
 
-SELECT pg_catalog.setval('public."Accountapp_wishlisttable_id_seq"', 27, true);
+SELECT pg_catalog.setval('public."Accountapp_wishlisttable_id_seq"', 31, true);
 
 
 --
@@ -2539,7 +2548,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 168, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 172, true);
 
 
 --
@@ -2553,14 +2562,14 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 42, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 43, true);
 
 
 --
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 61, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 63, true);
 
 
 --
@@ -3123,13 +3132,6 @@ CREATE INDEX "Accountapp_addontable_item_id_4f1a1410" ON public."Accountapp_addo
 
 
 --
--- Name: Accountapp_addresstable_orderid_id_45983bb7; Type: INDEX; Schema: public; Owner: admin
---
-
-CREATE INDEX "Accountapp_addresstable_orderid_id_45983bb7" ON public."Accountapp_addresstable" USING btree (orderid_id);
-
-
---
 -- Name: Accountapp_billtable_bill_number_b60a5f4f_like; Type: INDEX; Schema: public; Owner: admin
 --
 
@@ -3667,14 +3669,6 @@ CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session U
 
 ALTER TABLE ONLY public."Accountapp_addontable"
     ADD CONSTRAINT "Accountapp_addontabl_item_id_4f1a1410_fk_Accountap" FOREIGN KEY (item_id) REFERENCES public."Accountapp_itemtable"(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: Accountapp_addresstable Accountapp_addressta_orderid_id_45983bb7_fk_Accountap; Type: FK CONSTRAINT; Schema: public; Owner: admin
---
-
-ALTER TABLE ONLY public."Accountapp_addresstable"
-    ADD CONSTRAINT "Accountapp_addressta_orderid_id_45983bb7_fk_Accountap" FOREIGN KEY (orderid_id) REFERENCES public."Accountapp_ordertable"(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
