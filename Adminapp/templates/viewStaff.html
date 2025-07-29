@@ -76,44 +76,38 @@
                           <th>Actions</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        <tr>
-                          <td>1</td>
-                          <td>Jane Doe</td>
-                          <td>HR Manager</td>
-                          <td>jane@example.com</td>
-                          <td>
-                            <label class="switch">
-                              <input type="checkbox" checked onchange="toggleStatus(this)">
-                              <span class="slider"></span>
-                            </label>
-                            <span class="status-label">Active</span>
-                          </td>
-                          <td>
-                            <button class="btn btn-sm btn-primary" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>2</td>
-                          <td>John Smith</td>
-                          <td>Accountant</td>
-                          <td>john@example.com</td>
-                          <td>
-                            <label class="switch">
-                              <input type="checkbox" onchange="toggleStatus(this)">
-                              <span class="slider"></span>
-                            </label>
-                            <span class="status-label">Inactive</span>
-                          </td>
-                          <td>
-                            <button class="btn btn-sm btn-primary" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                          </td>
-                        </tr>
-                      </tbody>
+                     <tbody>
+                          {% for staff in staffs %}
+                          <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ staff.name }}</td>
+                            <td>{{ staff.role }}</td>
+                            <td>{{ staff.email }}</td>
+                            <td>
+                              <label class="switch">
+                                <input type="checkbox"
+                                    {% if staff.userid.is_active %}checked{% endif %}
+                                    onchange="toggleStatus(this)"
+                                    data-userid="{{ staff.userid.id }}">
+
+
+                                <span class="slider"></span>
+                              </label>
+                              <span class="status-label">Active</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'edit_staff' staff.userid.id %}" 
+                                  class="btn btn-sm btn-primary" style="color: white;" title="Edit">
+                                  <i class="fas fa-edit"></i>
+                                </a>
+                              <a class="btn btn-sm btn-danger" title="Delete"  href="{% url 'delete_staff' staff.userid.id %}" onclick="return confirm('Are you sure you want to delete this staff?');"><i class="fas fa-trash-alt"></i></a>
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+
                     </table>
-                  </div> <!-- /table-responsive -->
+                  </div> 
 
                 </div>
               </div>
@@ -127,32 +121,47 @@
 
     <!-- Custom JS -->
     <script>
-      function filterTable() {
-        const input = document.getElementById("searchInput").value.toLowerCase();
-        const rows = document.querySelectorAll("#staffTable tbody tr");
-        rows.forEach(row => {
-          const cells = row.getElementsByTagName("td");
-          let match = false;
-          for (let i = 0; i < cells.length - 2; i++) {
-            if (cells[i].innerText.toLowerCase().includes(input)) {
-              match = true;
-              break;
-            }
-          }
-          row.style.display = match ? "" : "none";
-        });
-      }
+        function toggleStatus(checkbox) {
+          const userId = checkbox.getAttribute('data-userid');
+          const isChecked = checkbox.checked;
+          const label = checkbox.closest('td').querySelector('.status-label');
+          label.textContent = isChecked ? 'Active' : 'Inactive';
 
-      function toggleStatus(checkbox) {
-        const label = checkbox.closest('td').querySelector('.status-label');
-        label.textContent = checkbox.checked ? 'Active' : 'Inactive';
+          fetch("/toggle-status/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: `user_id=${userId}&status=${isChecked}`
+          }).then(response => response.json())
+            .then(data => {
+              if (!data.success) {
+                alert("Error: " + data.message);
+              }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+
+  // Get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        // Does this cookie string begin with the name we want?
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
       }
-       document.addEventListener("DOMContentLoaded", function () {
-      $('.close-navbar').on('click', function () {
-        $('.main-menu').removeClass('menu-expanded').addClass('menu-collapsed');
-      });
-    });
-    </script>
+    }
+    return cookieValue;
+  }
+</script>
+
   
 
   {% endblock %}
