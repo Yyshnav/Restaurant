@@ -31,5 +31,8 @@ urlpatterns = [
     path('add-subcategory/', views.add_subcategory_ajax, name='add_subcategory_ajax'),
     path('add-subsubcategory/', views.add_subsubcategory_ajax, name='add_subsubcategory_ajax'),
     path('delete-category/<str:type>/<str:pk>/', delete_category, name='delete_category'),
+    path('toggle-status/', views.toggle_staff_status, name='toggle_status'),
+    path('delete-staff/<int:id>/', DeleteStaff.as_view(), name='delete_staff'),
+    path('edit-staff/<int:id>/', EditStaffView.as_view(), name='edit_staff'),
 
 ]
