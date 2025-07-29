@@ -29,7 +29,9 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 from Accountapp.serializer import ChatMessageSerializer
+
 from django.contrib.auth.hashers import make_password
+
 
 
 # from Accountapp.serializer import ChatMessageSerializer
