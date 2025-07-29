@@ -8,6 +8,7 @@ from Accountapp.models import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
+from django.contrib.auth.hashers import make_password
 
 
 
@@ -143,10 +144,111 @@ class AddOfferView(View):
     def get(self, request):
         return render(request, 'offerAdd.html')
     
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+from django.contrib.auth.hashers import make_password
+from django.shortcuts import redirect
+from django.contrib import messages
+
+    
 class RegisterStaffView(View):
     def get(self, request):
-        c = BranchTable.objects.all()
-        return render(request, 'registerstaff.html', {'branches': c})
+        branches = BranchTable.objects.all()
+        return render(request, 'registerstaff.html', {'branches': branches})
+
+    def post(self, request):
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address')
+        branch_id = request.POST.get('branch')
+        password = request.POST.get('password')
+        role = request.POST.get('role')  # manager, waiter, deliveryboy
+        qualification = request.POST.get('qualification')
+
+        idproof = request.FILES.get('employee_id')
+        image = request.FILES.get('employee_image')
+        license_pic = request.FILES.get('license')
+
+        # Check if email already exists
+        if LoginTable.objects.filter(username=email).exists():
+            messages.error(request, "A user with this email already exists.")
+            return redirect('register_staff')
+
+        try:
+            branch = BranchTable.objects.get(id=branch_id)
+        except BranchTable.DoesNotExist:
+            messages.error(request, "Invalid branch selected.")
+            return redirect('register_staff')
+
+        # Create Login User
+        login_user = LoginTable.objects.create(
+            username=email,
+            email=email,
+            phone=phone,
+            password=make_password(password),
+            is_active=True,
+            created_at=timezone.now(),
+        )
+
+        # Assign Role
+        try:
+            role_obj = UserRole.objects.get(role__iexact=role.upper())
+        except UserRole.DoesNotExist:
+            role_obj = UserRole.objects.create(role=role.upper())
+        login_user.user_roles.add(role_obj)
+
+        # Role-based Table Creation
+        if role == 'manager':
+            ManagerTable.objects.create(
+                userid=login_user,
+                BranchID=branch,
+                name=name,
+                phone=phone,
+                address=address,
+                email=email,
+                image=image,
+                idproof=idproof,
+                qualification=qualification
+            )
+        elif role == 'waiter':
+            WaiterTable.objects.create(
+                userid=login_user,
+                BranchID=branch,
+                name=name,
+                phone=phone,
+                address=address,
+                email=email,
+                image=image,
+                idproof=idproof
+            )
+        elif role == 'deliveryboy':
+            DeliveryBoyTable.objects.create(
+                userid=login_user,
+                branch=branch,
+                name=name,
+                phone=phone,
+                address=address,
+                email=email,
+                image=image,
+                idproof=idproof,
+                license=license_pic
+            )
+
+        # Send Password to Email
+        subject = "Your Restaurant Staff Login Details"
+        message = f"Hello {name},\n\nYour login account has been created.\n\nUsername: {email}\nPassword: {password}\n\nPlease keep it safe."
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [email]
+
+        try:
+            send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+        except Exception as e:
+            messages.warning(request, f"User created but failed to send email: {str(e)}")
+
+        messages.success(request, "Staff registered successfully and login details sent via email.")
+        return redirect('registerstaff')
 
 class ViewBranchReportView(View):
     def get(self, request):
@@ -188,7 +290,7 @@ class EditBranchView(View):
             branch.image = request.FILES.get('image')
 
         branch.save()
-        return redirect('view-branch')  # change to your actual list view name
+        return redirect('view-branch')  
 
 class ViewcarouselView(View):
     def get(self, request):

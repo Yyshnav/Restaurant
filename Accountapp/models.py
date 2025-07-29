@@ -393,7 +393,7 @@ class VoucherTable(models.Model):
 
     def __str__(self):
         return self.code
-    
+
 
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -406,9 +406,10 @@ class PrinterTable(models.Model):
 
 class ManagerTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='manager_profile')
+    BranchID = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    email = models.CharField(max_length=15, null=True, blank=True)
+    phone = models.CharField(max_length=20)
+    email = models.CharField(max_length=100, null=True, blank=True)
     image = models.FileField(upload_to='manager_images/', null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
     idproof = models.FileField(upload_to='manager_idproofs/', null=True, blank=True)
@@ -420,9 +421,10 @@ class ManagerTable(models.Model):
 
 class WaiterTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='waiter_profile')
+    BranchID = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
-    email = models.CharField(max_length=15, null=True, blank=True)
+    email = models.CharField(max_length=100, null=True, blank=True)
     image = models.FileField(upload_to='waiter_images/', null=True, blank=True)
     address = models.CharField(max_length=255, null=True, blank=True)
     idproof = models.FileField(upload_to='waiter_idproofs/', null=True, blank=True)
