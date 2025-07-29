@@ -182,11 +182,10 @@ function renderCategories() {
 
                 <div class="mt-2 d-flex gap-1">
                   <button class="btn btn-sm btn-success" onclick='openModal("${c.id}", "${c.name}")'>+ Sub</button>
-                  <button class="btn btn-sm btn-warning" onclick='openModal("${c.parent}", "", true, ${JSON.stringify(c)})'>Edit</button>
                   <button class="btn btn-sm btn-danger" onclick='deleteCategory("${c.id}", "${c.type || getCategoryType(c)}")'>Delete</button>
                 </div>
               </div>
-            </div>
+            </div> 
           </div>
         `;
       });
