@@ -4,20 +4,6 @@ from Accountapp.models import *
 from Accountapp.serializer import LoginTableSerializer
 
 
-# class AddonSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = AddonTable
-#         fields = [
-#             'id',
-#             'item',
-#             'name',
-#             'description',
-#             'image',
-#             'price',
-#             'created_at',
-#             'updated_at',
-#         ]
-
 class AddonSerializer(serializers.ModelSerializer):
     item = serializers.PrimaryKeyRelatedField(
         queryset=ItemTable.objects.all(),
