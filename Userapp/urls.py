@@ -39,4 +39,5 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('update-fcm-token/', UpdateFCMTokenView.as_view(), name='update_fcm_token'),
     path('personalized/', PersonalizedRecommendationAPIView.as_view(), name='personalized'),
+    path('placeorder/', PlaceOrderAPIView.as_view(), name='placeorder'),
 ]
