@@ -28,6 +28,11 @@ from rest_framework import status
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from Accountapp.serializer import ChatMessageSerializer
+
+from django.contrib.auth.hashers import make_password
+
+
 
 # from Accountapp.serializer import ChatMessageSerializer
 from .fcm_utils import send_fcm_notification
@@ -51,7 +56,7 @@ from .fcm_utils import send_fcm_notification
 #         return Response(result, status=result['status_code'])
 def send_notification_view(request):
     users = LoginTable.objects.filter(notification_token__isnull=False).exclude(notification_token='')
-
+  
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         title = request.POST.get('title', 'Hello')
@@ -116,6 +121,7 @@ class DeliveryBoyLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(request.data)
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(username=username, password=password)
@@ -123,7 +129,7 @@ class DeliveryBoyLoginAPIView(APIView):
         if user is not None:
             # Check if user has 'DELIVERY' role
             if user.user_roles.filter(role='DELIVERY').exists():
-                print('55555555555555555555555555555555555555555')
+               
                 if hasattr(user, 'deliveryboy_profile'):  # Assuming profile is set up
                     # token, created = Token.objects.get_or_create(user=user)
                     refresh = RefreshToken.for_user(user)
@@ -349,13 +355,14 @@ class ForgotPasswordAPIView(APIView):
             return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
         otp = get_random_string(length=4, allowed_chars='0123456789')
         print(f"Generated OTP for {email}: {otp}")
-        OTP_STORE[email] = {'otp': otp, 'expires': datetime.now() + timedelta(minutes=10)}
+        OTP_STORE[email] = {'otp': otp, 'expires': datetime.now() + timedelta(minutes=5)}
         send_mail(
             'Your OTP for Password Reset',
-            f'Your OTP is: {otp}',
+            f'Your OTP is: {otp} valid for 5 minutes.',
+
             settings.DEFAULT_FROM_EMAIL,
             [email],
-            fail_silently=True,
+            fail_silently=False,
         )
         return Response({'success': 'OTP sent to your email'}, status=status.HTTP_200_OK)
 
@@ -370,34 +377,31 @@ class VerifyOTPAPIView(APIView):
         otp = serializer.validated_data['otp']
         otp_data = OTP_STORE.get(email)
         if not otp_data or otp_data['otp'] != otp:
-            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Invalid OTP','success':False}, status=status.HTTP_400_BAD_REQUEST)
         if datetime.now() > otp_data['expires']:
-            return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success': 'OTP verified'}, status=status.HTTP_200_OK)
+            return Response({'message': 'OTP expired','success':False}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'OTP verified','success':True}, status=status.HTTP_200_OK)
 
 class ResetPasswordAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
+        print(request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         email = serializer.validated_data['email']
-        otp = serializer.validated_data['otp']
+       
         new_password = serializer.validated_data['new_password']
-        otp_data = OTP_STORE.get(email)
-        if not otp_data or otp_data['otp'] != otp:
-            return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
-        if datetime.now() > otp_data['expires']:
-            return Response({'error': 'OTP expired'}, status=status.HTTP_400_BAD_REQUEST)
+       
         try:
             user = DeliveryBoyTable.objects.get(email=email)
         except DeliveryBoyTable.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        user.set_password(new_password)
+            return Response({'message': 'User not found','status':False}, status=status.HTTP_404_NOT_FOUND)
+        user.password = make_password(new_password)
         user.save()
         OTP_STORE.pop(email, None)
-        return Response({'success': 'Password reset successful'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Password reset successful','status':True}, status=status.HTTP_200_OK)
     
 
 
