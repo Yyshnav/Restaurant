@@ -10,7 +10,7 @@ urlpatterns = [
     path('', LoginView.as_view(), name='login'),
     path('dashboard', DashboardView.as_view(), name='dashboard'),
     # path('add-category', AddCategoryView.as_view(), name='add-category'),
-    path('add-dish', AddDishView.as_view(), name='add-dish'),
+    # path('add-dish', AddDishView.as_view(), name='add-dish'),
     path('add-branch', AddBranchView.as_view(), name='add-branch'),
     path('add-carousel', AddCarouselView.as_view(), name='add-carousel'),
     path('dish-edit', EditDishView.as_view(), name='dish-edit'),
@@ -34,5 +34,11 @@ urlpatterns = [
     path('toggle-status/', views.toggle_staff_status, name='toggle_status'),
     path('delete-staff/<int:id>/', DeleteStaff.as_view(), name='delete_staff'),
     path('edit-staff/<int:id>/', EditStaffView.as_view(), name='edit_staff'),
+    path('add-dish/', AddDishView.as_view(), name='add_dish'),
+    path('get-subcategories/', get_subcategories, name='get_subcategories'),
+    path('get-subsubcategories/', get_subsubcategories, name='get_subsubcategories'),
+    path('delete-dish/<int:id>', DeleteDishes.as_view(), name='delete-dish'),
+    path('edit-dish/<int:item_id>/', EditDishView.as_view(), name='edit_dish'),
+    path('search-dishes/', views.search_dishes, name='search-dishes'),
 
 ]

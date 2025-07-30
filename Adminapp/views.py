@@ -127,9 +127,112 @@ class AddBranchView(View):
 #     def get(self, request):
 #         return render(request, 'addCategory.html')
     
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views import View
+
 class AddDishView(View):
     def get(self, request):
-        return render(request, 'addDish.html')
+        categories = CategoryTable.objects.all()
+        branches = BranchTable.objects.all()
+        return render(request, 'addDish.html', {
+            'categories': categories,
+            'branches': branches,
+        })
+
+    def post(self, request):
+        name = request.POST.get('name')
+        category_id = request.POST.get('category')
+        subcategory_id = request.POST.get('subcategory')
+        subsubcategory_id = request.POST.get('subsubcategory')
+        is_veg = request.POST.get('is_veg') == 'True'
+        description = request.POST.get('description')
+        price = request.POST.get('price') or 0
+        inventory = request.POST.get('inventory') or 0
+        calories = request.POST.get('calories') or 0
+        preparation_time = float(request.POST.get('preparation_time') or 0)
+
+        # Automatically assign fast_delivery if prep time < 20
+        fast_delivery = preparation_time < 20
+
+        # Newest: mark as newest if added today
+        newest = True  # Default true when created; auto-remove later with cron/task
+
+        # Create Item
+        item = ItemTable.objects.create(
+            name=name,
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            subsubcategory_id=subsubcategory_id,
+            is_veg=is_veg,
+            description=description,
+            price=price,
+            preparation_time=preparation_time,
+            inventory=inventory,
+            calories=calories,
+            fast_delivery=fast_delivery,
+            newest=newest
+        )
+
+        # Assign Branches
+        branch_ids = request.POST.getlist('branches')
+        item.branches.set(branch_ids)
+
+        # Images
+        dish_images = request.FILES.getlist('dishImages[]')
+        for img in dish_images:
+            ItemImageTable.objects.create(item=item, image=img)
+
+        # Voices
+        voice_languages = request.POST.getlist('voiceLanguages[]')
+        voice_files = request.FILES.getlist('voiceFiles[]')
+        for lang, audio in zip(voice_languages, voice_files):
+            VoiceDescriptionTable.objects.create(item=item, language=lang, audio_file=audio)
+
+        # Variants
+        index = 0
+        while True:
+            name_key = f"variants[{index}][name]"
+            price_key = f"variants[{index}][price]"
+            if name_key not in request.POST or price_key not in request.POST:
+                break
+            variant_name = request.POST[name_key]
+            variant_price = request.POST[price_key]
+            ItemVariantTable.objects.create(item=item, variant_name=variant_name, price=variant_price)
+            index += 1
+
+        # Addons
+        addon_names = request.POST.getlist('addon_name[]')
+        addon_prices = request.POST.getlist('addon_price[]')
+        addon_images = request.FILES.getlist('addon_image[]')
+        addon_descriptions = request.POST.getlist('addon_description[]')
+
+        for name, price, desc, image in zip(addon_names, addon_prices, addon_descriptions, addon_images):
+            AddonTable.objects.create(
+                item=item,
+                name=name,
+                price=price or 0,
+                description=desc,
+                image=image
+            )
+
+        return redirect('view-dishes')
+    
+
+def get_subcategories(request):
+    category_id = request.GET.get('category_id')
+    if category_id:
+        subcategories = SubCategoryTable.objects.filter(category_id=category_id).values('id', 'name')
+        return JsonResponse(list(subcategories), safe=False)
+    return JsonResponse([], safe=False)
+
+def get_subsubcategories(request):
+    subcategory_id = request.GET.get('subcategory_id')
+    if subcategory_id:
+        subsubcategories = SubSubCategoryTable.objects.filter(subcategory_id=subcategory_id).values('id', 'name')
+        return JsonResponse(list(subsubcategories), safe=False)
+    return JsonResponse([], safe=False)
+
 
 class AddCarouselView(View):
     def get(self, request):
@@ -454,7 +557,23 @@ class ViewComplaintView(View):
     
 class ViewDishesView(View):
     def get(self, request):
-        return render(request, 'viewdishes.html')
+        items = ItemTable.objects.all()
+
+        items_with_images = []
+        for item in items:
+            images = ItemImageTable.objects.filter(item=item)
+            items_with_images.append({
+                'item': item,
+                'images': images
+            })
+
+        return render(request, 'viewdishes.html', {'items_with_images': items_with_images})
+    
+class DeleteDishes(View):
+    def get(self, request, id):
+        c=ItemTable.objects.get(id=id)
+        c.delete()
+        return redirect('view-dishes')
     
 class ViewOfferView(View):
     def get(self, request):
@@ -543,6 +662,11 @@ class DeleteStaff(View):
 from django.shortcuts import render, redirect, get_object_or_404
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views import View
+from django.contrib import messages
+
+
 class EditStaffView(View):
     def get(self, request, id):
         staff = None
@@ -566,16 +690,21 @@ class EditStaffView(View):
             'branches': branches
         })
 
-
     def post(self, request, id):
         login_user = get_object_or_404(LoginTable, id=id)
-        role = request.POST.get('role')
 
-        login_user.username = request.POST.get('name')
-        login_user.phone = request.POST.get('phone')
-        if request.POST.get('password'):
-            login_user.set_password(request.POST.get('password'))
-        login_user.save()
+        # Determine role from existing record
+        role = None
+        try: 
+            staff = ManagerTable.objects.get(userid=id)
+            role = 'manager'
+        except ManagerTable.DoesNotExist:
+            try:
+                staff = WaiterTable.objects.get(userid=id)
+                role = 'waiter'
+            except WaiterTable.DoesNotExist:
+                staff = get_object_or_404(DeliveryBoyTable, userid=id)
+                role = 'deliveryboy'
 
         branch = get_object_or_404(BranchTable, id=request.POST.get('branch'))
 
@@ -603,4 +732,101 @@ class EditStaffView(View):
             DeliveryBoyTable.objects.filter(userid=id).update(**data)
 
         messages.success(request, "Staff updated successfully")
-        return redirect('view-staff')  # Replace with your actual view name
+        return redirect('view-staff')
+
+
+class EditDishView(View):
+    def get(self, request, item_id):
+        item = ItemTable.objects.get(id=item_id)
+        categories = CategoryTable.objects.all()
+        subcategories = SubCategoryTable.objects.filter(category=item.category)
+        subsubcategories = SubSubCategoryTable.objects.filter(subcategory=item.subcategory)
+        branches = BranchTable.objects.all()
+        item_branches = list(item.branches.values_list('id', flat=True))
+        variants = ItemVariantTable.objects.filter(item=item)
+        voices = VoiceDescriptionTable.objects.filter(item=item)
+        images = ItemImageTable.objects.filter(item=item)
+        addons = AddonTable.objects.filter(item=item)
+        print("Selected branches:", item.branches.values_list('id', flat=True))
+        return render(request, 'edit_dish.html', {
+                'item': item,
+                'categories': categories,
+                'subcategories': subcategories,
+                'subsubcategories': subsubcategories,
+                'branches': branches,
+                'variants': variants,
+                'voices': voices,
+                'images': images,
+                'addons': addons,
+                'item_branches': item_branches  
+            })
+
+
+    def post(self, request, item_id):
+        item = ItemTable.objects.get(id=item_id)
+
+        # Basic fields
+        item.name = request.POST.get('name')
+        item.description = request.POST.get('description')
+        item.category_id = request.POST.get('category')
+        item.subcategory_id = request.POST.get('subcategory')
+        item.subsubcategory_id = request.POST.get('subsubcategory')
+        item.calories = request.POST.get('calories')
+        item.preparation_time = request.POST.get('preparation_time')
+        item.is_veg = request.POST.get('is_veg') == 'True'
+
+        # Price field
+        try:
+            item.price = float(request.POST.get('price') or 0)
+        except (ValueError, TypeError):
+            item.price = 0.0
+
+        # Inventory field (handle blank/null values)
+        inventory_val = request.POST.get('inventory')
+        if inventory_val and inventory_val.isdigit():
+            item.inventory = int(inventory_val)
+        else:
+            item.inventory = None  # or 0 if you prefer default
+
+        item.save()
+
+        # Variants
+        ItemVariantTable.objects.filter(item=item).delete()
+        variant_names = request.POST.getlist('variant_name[]')
+        variant_prices = request.POST.getlist('variant_price[]')
+        for index in range(len(variant_names)):
+            ItemVariantTable.objects.create(
+                item=item,
+                name=variant_names[index],
+                price=variant_prices[index]
+            )
+
+        # Images
+        if request.FILES.getlist('dishImages[]'):
+            ItemImageTable.objects.filter(item=item).delete()
+            for img in request.FILES.getlist('dishImages[]'):
+                ItemImageTable.objects.create(item=item, image=img)
+
+        # Voice notes
+        existing_voices = VoiceDescriptionTable.objects.filter(item=item)
+        existing_voice_dict = {v.language: v for v in existing_voices}
+
+        for i, audio in enumerate(request.FILES.getlist('voice_notes[]')):
+            lang = request.POST.getlist('voice_languages[]')[i]
+            if audio:
+                if lang in existing_voice_dict:
+                    existing_voice_dict[lang].delete()
+                VoiceDescriptionTable.objects.create(item=item, voice_note=audio, language=lang)
+
+        # Branches
+        item.branches.set(request.POST.getlist('branches'))
+
+        return redirect('view-dishes')
+
+
+def search_dishes(request):
+    query = request.GET.get('q', '')
+    if query:
+        matches = ItemTable.objects.filter(name__icontains=query).values('id', 'name')[:10]
+        return JsonResponse(list(matches), safe=False)
+    return JsonResponse([], safe=False)
