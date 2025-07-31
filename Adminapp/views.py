@@ -1,3 +1,4 @@
+from datetime import date
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -245,7 +246,44 @@ class EditDishView(View):
 
 class AddOfferView(View):
     def get(self, request):
-        return render(request, 'offerAdd.html')
+        c = ItemTable.objects.all()
+        d = BranchTable.objects.all()
+        return render(request, 'offerAdd.html', {'items': c, 'branches': d})
+    def post(self, request):
+        item_id = request.POST.get('itemid')
+        name = request.POST.get('name')
+        offer_percentage = request.POST.get('offer_percentage')
+        offer_description = request.POST.get('offer_description')
+        start_date = request.POST.get('startdate')
+        end_date = request.POST.get('enddate')
+        branch_id = request.POST.get('branch')  # Single branch ID
+
+        if not branch_id:
+            messages.error(request, "Please select a branch.")
+            return redirect('add-offer')  # Replace with your URL name
+
+        try:
+            item = ItemTable.objects.get(id=item_id)
+            branch = BranchTable.objects.get(id=branch_id)
+
+            OfferTable.objects.create(
+                itemid=item,
+                name=name,
+                offer_percentage=offer_percentage,
+                offerdescription=offer_description,
+                startdate=start_date,
+                enddate=end_date,
+                branch=branch
+            )
+
+            messages.success(request, "Offer added successfully.")
+        except ItemTable.DoesNotExist:
+            messages.error(request, "Invalid item selected.")
+        except BranchTable.DoesNotExist:
+            messages.error(request, "Invalid branch selected.")
+
+        return redirect('view-offer')  # Replace with your actual URL name
+
     
 from django.core.mail import send_mail
 from django.conf import settings
@@ -548,9 +586,12 @@ def delete_category(request, type, pk):
 
     return JsonResponse({'status': 'failed'}, status=400)
 
+class DeleteOfferView(View):
+    def post(self, request, id):
+        c = OfferTable.objects.filter(id=id)
+        c.delete()
+        return redirect('view-offer')
 
-
-    
 class ViewComplaintView(View):
     def get(self, request):
         return render(request, 'viewcomplaint.html')
@@ -575,9 +616,32 @@ class DeleteDishes(View):
         c.delete()
         return redirect('view-dishes')
     
+# class ViewOfferView(View):
+#     def get(self, request):
+#         return render(request, 'viewoffer.html')
+
+from django.utils.timezone import now
+
+
 class ViewOfferView(View):
     def get(self, request):
-        return render(request, 'viewoffer.html')
+        today = now()
+        offers = OfferTable.objects.all()
+
+        offer_data = []
+        for offer in offers:
+            offer_data.append({
+                'id': offer.id,
+                'product': offer.itemid.name if offer.itemid else '',  # corrected
+                'title': offer.name,
+                'discount': offer.offer_percentage,
+                'start_date': offer.startdate,
+                'end_date': offer.enddate,
+                'branches': offer.branch.name if offer.branch else '',  # single branch
+                'is_active': offer.startdate <= today <= offer.enddate
+            })
+
+        return render(request, 'viewoffer.html', {'offers': offer_data})
     
 class ViewStaffView(View):
     def get(self, request):
