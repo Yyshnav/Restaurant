@@ -54,7 +54,6 @@
       vertical-align: middle !important;
     }
 
-    /* Make table scrollable on mobile */
     .table-responsive {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -101,25 +100,30 @@
                 </tr>
               </thead>
               <tbody>
+  {% for offer in offers %}
                 <tr>
-                  <td>1</td>
-                  <td>Pizza</td>
-                  <td>Weekend Bonanza</td>
-                  <td>20%</td>
-                  <td>2025-07-01 to 2025-07-10</td>
-                  <td>Branch 1, Branch 2</td>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ offer.product }}</td>
+                  <td>{{ offer.title }}</td>
+                  <td>{{ offer.discount }}%</td>
+                  <td>{{ offer.start_date|date:"M d, Y, P" }} to {{ offer.end_date|date:"M d, Y, P" }}</td>
+                  <td>{{ offer.branches }}</td>
                   <td>
                     <label class="switch">
-                      <input type="checkbox" checked onchange="toggleStatus(this)">
+                      <input type="checkbox" {% if offer.is_active %}checked{% endif %} disabled>
                       <span class="slider"></span>
                     </label>
                   </td>
                   <td>
-                    <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                    <a href="/edit-offer/{{ offer.id }}" class="btn btn-sm btn-primary">
+                      <i class="fa fa-edit"></i>
+                    </a>
+                    <button onclick="return window.location='/delete-offer/{{ offer.id }}'" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
                   </td>
                 </tr>
+                {% endfor %}
               </tbody>
+
             </table>
           </div>
         </div>
