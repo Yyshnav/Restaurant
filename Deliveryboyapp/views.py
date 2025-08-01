@@ -400,7 +400,7 @@ class ResetPasswordAPIView(APIView):
         user.save()
         OTP_STORE.pop(email, None)
         return Response({'message': 'Password reset successful','status':True}, status=status.HTTP_200_OK)
-    
+     
 
 
 # class LogoutAPIView(APIView):
