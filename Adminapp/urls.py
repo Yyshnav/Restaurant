@@ -41,5 +41,6 @@ urlpatterns = [
     path('edit-dish/<int:item_id>/', EditDishView.as_view(), name='edit_dish'),
     path('search-dishes/', views.search_dishes, name='search-dishes'),
     path('delete-offer/<int:id>/', DeleteOfferView.as_view(), name='delete-offer'),
+    path('edit-offer/<int:offer_id>/', EditOfferView.as_view(), name='edit-offer'),
 
 ]

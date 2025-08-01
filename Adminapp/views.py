@@ -10,6 +10,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
+from datetime import datetime
+
+
 
 
 
@@ -237,8 +240,57 @@ def get_subsubcategories(request):
 
 class AddCarouselView(View):
     def get(self, request):
-        return render(request, 'carouselAdd.html')
-    
+        c = OfferTable.objects.all()
+        d = BranchTable.objects.all()
+        return render(request, 'carouselAdd.html', {'offers':c, 'branches':d})
+    def post(self, request):
+        image = request.FILES.get('carouselImage')
+        offer_id = request.POST.get('category')
+        branch_ids = request.POST.getlist('branches[]')  
+        offer_percentage = request.POST.get('offerPercentage')
+        start_date = request.POST.get('startDate')
+        end_date = request.POST.get('endDate')
+
+        try:
+            offer = OfferTable.objects.get(id=offer_id)
+        except OfferTable.DoesNotExist:
+            offer = None
+
+        # Correct datetime parsing
+        start_datetime = None
+        end_datetime = None
+
+        if start_date:
+            try:
+                start_datetime = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                start_datetime = None
+
+        if end_date:
+            try:
+                end_datetime = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                end_datetime = None
+
+        carousel = CarouselTable.objects.create(
+            image=image,
+            offer=offer,
+            offer_percentage=offer_percentage if offer_percentage else 0.0,
+            startdate=start_datetime,
+            enddate=end_datetime
+        )
+
+        if 'all' in branch_ids:
+            branches = BranchTable.objects.all()
+        else:
+            branches = BranchTable.objects.filter(id__in=branch_ids)
+
+        carousel.branch.set(branches)
+        carousel.save()
+
+        return redirect('add-carousel')
+
+
 class EditDishView(View):
     def get(self, request):
         return render(request, 'dish_edit.html')
@@ -254,13 +306,21 @@ class AddOfferView(View):
         name = request.POST.get('name')
         offer_percentage = request.POST.get('offer_percentage')
         offer_description = request.POST.get('offer_description')
-        start_date = request.POST.get('startdate')
-        end_date = request.POST.get('enddate')
-        branch_id = request.POST.get('branch')  # Single branch ID
+        start_date_str = request.POST.get('startdate')
+        end_date_str = request.POST.get('enddate')
+        branch_id = request.POST.get('branch')
 
         if not branch_id:
             messages.error(request, "Please select a branch.")
-            return redirect('add-offer')  # Replace with your URL name
+            return redirect('add-offer')
+
+        # Convert date-time strings to datetime objects
+        try:
+            start_datetime = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M') if start_date_str else None
+            end_datetime = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M') if end_date_str else None
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect('add-offer')
 
         try:
             item = ItemTable.objects.get(id=item_id)
@@ -271,8 +331,8 @@ class AddOfferView(View):
                 name=name,
                 offer_percentage=offer_percentage,
                 offerdescription=offer_description,
-                startdate=start_date,
-                enddate=end_date,
+                startdate=start_datetime,
+                enddate=end_datetime,
                 branch=branch
             )
 
@@ -282,7 +342,8 @@ class AddOfferView(View):
         except BranchTable.DoesNotExist:
             messages.error(request, "Invalid branch selected.")
 
-        return redirect('view-offer')  # Replace with your actual URL name
+        return redirect('view-offer')
+
 
     
 from django.core.mail import send_mail
@@ -587,10 +648,49 @@ def delete_category(request, type, pk):
     return JsonResponse({'status': 'failed'}, status=400)
 
 class DeleteOfferView(View):
-    def post(self, request, id):
+    def get(self, request, id):
         c = OfferTable.objects.filter(id=id)
         c.delete()
         return redirect('view-offer')
+
+class EditOfferView(View):
+    def get(self, request, offer_id):
+        offer = get_object_or_404(OfferTable, id=offer_id)
+        items = ItemTable.objects.all()
+        branches = BranchTable.objects.all()
+        return render(request, 'edit_offer.html', {
+            'offer': offer,
+            'items': items,
+            'branches': branches,
+        })
+    def post(self, request, offer_id):
+        offer = get_object_or_404(OfferTable, id=offer_id)
+
+        # Only update if field is present in the request
+        if 'name' in request.POST:
+            offer.name = request.POST['name']
+
+        if 'itemid' in request.POST and request.POST['itemid']:
+            offer.itemid_id = request.POST['itemid']
+
+        if 'offer_percentage' in request.POST:
+            offer.offer_percentage = request.POST['offer_percentage']
+
+        if 'offer_description' in request.POST:
+            offer.offerdescription = request.POST['offer_description']
+
+        if 'startdate' in request.POST:
+            offer.startdate = request.POST['startdate']
+
+        if 'enddate' in request.POST:
+            offer.enddate = request.POST['enddate']
+
+        if 'branch' in request.POST and request.POST['branch']:
+            offer.branch_id = request.POST['branch']
+
+        offer.save()
+        return redirect('view-offer')
+     
 
 class ViewComplaintView(View):
     def get(self, request):
