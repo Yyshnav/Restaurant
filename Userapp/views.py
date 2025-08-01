@@ -5,10 +5,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, ItemTable, LoginTable, OrderItemTable, OrderTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OrderItemTable, OrderTable, PaymentTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
-from Userapp.serializer import AddressUpdateSerializer, ProfileTableSerializer
+from Userapp.serializer import AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -16,9 +16,11 @@ from rest_framework.permissions import IsAuthenticated
 import requests
 import secrets
 from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from Userapp.serializer import CartSerializer, ProfileLocationUpdateSerializer, ProfileNameUpdateSerializer, ProfileTableSerializer, WishlistSerializer
 from math import radians, cos, sin, asin, sqrt
 from django.db.models import Q
+from django.db import transaction
 
 # Create your views here.
 #auth views
@@ -802,56 +804,156 @@ class UpdateFCMTokenView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+# class PlaceOrderAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         user = request.user
+#         data = request.data
+
+#         try:
+#             # Create order
+#             order = OrderTable.objects.create(
+#                 userid=user,
+#                 totalamount=data.get('totalamount', 0),
+#                 orderstatus=data.get('orderstatus', 'pending'),
+#                 paymentstatus=data.get('paymentstatus', 'unpaid'),
+#                 latitude=data.get('latitude'),
+#                 longitude=data.get('longitude'),
+#                 delivery_instruction=data.get('delivery_instruction', ''),
+#                 deliveryid_id=data.get('deliveryid')
+#             )
+
+#             # Loop through items and add them to the order
+#             for item in data.get('items', []):
+#                 OrderItemTable.objects.create(
+#                     orderid=order,
+#                     itemname_id=item.get('itemname'),
+#                     variant_id=item.get('variant'),  # Can be None
+#                     addon_id=item.get('addon'),      # Can be None
+#                     quantity=item.get('quantity', 1),
+#                     price=item.get('price', 0),
+#                     cooking_instruction=item.get('cooking_instruction', '')
+#                 )
+
+#             return Response({'message': 'Order placed successfully'}, status=status.HTTP_201_CREATED)
+
+#         except Exception as e:
+#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class PlaceOrderAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        data = request.data
-        try:
-            # Step 1: Get or validate user
-            user = LoginTable.objects.get(id=data['userid'])
+        print(request.data)
+        serializer = PlaceOrderSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # Step 2: Optional delivery person
-            delivery = None
-            if data.get('deliveryid'):
-                delivery = LoginTable.objects.get(id=data['deliveryid'])
+        data = serializer.validated_data
+        user = request.user
+        # print(data)
 
-            # Step 3: Create the order
-            order = OrderTable.objects.create(
-                userid=user,
-                deliveryid=delivery,
-                totalamount=data.get('totalamount', 0),
-                orderstatus=data.get('orderstatus', 'PENDING'),
-                paymentstatus=data.get('paymentstatus', 'UNPAID'),
-                created_at=datetime.timezone.now(),
-                updated_at=datetime.timezone.now(),
-            )
+        with transaction.atomic():
+            # 1. Get Address details
+            try:
+                address = AddressTable.objects.get(id=data['address_id'], user=user)
+            except AddressTable.DoesNotExist:
+                return Response({"error": "Invalid address"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Step 4: Create order items
-            items_data = data.get('items', [])
-            for item_data in items_data:
-                item = ItemTable.objects.get(id=item_data['itemname'])
+            # 2. Calculate subtotal
+            subtotal = 0
+            order_items_data = []
+            for item_data in data['items']:
+                try:
+                    item = ItemTable.objects.get(id=item_data['item_id'])
+                except ItemTable.DoesNotExist:
+                    return Response({"error": "Invalid item ID"}, status=status.HTTP_400_BAD_REQUEST)
 
                 variant = None
-                if item_data.get('variant'):
-                    variant = ItemVariantSerializer.objects.get(id=item_data['variant'])
+                price = item.price
+                if item_data.get('variant_id'):
+                    variant = ItemVariantTable.objects.get(id=item_data['variant_id'])
+                    price = variant.price
 
-                addon = None
-                if item_data.get('addon'):
-                    addon = AddonTable.objects.get(id=item_data['addon'])
+                quantity = item_data['quantity']
+                addons_total = 0
+                addon_instances = []
 
-                OrderItemTable.objects.create(
-                    orderid=order,
-                    itemname=item,
-                    variant=variant,
-                    addon=addon,
-                    quantity=item_data.get('quantity', 1),
-                    price=item_data.get('price', 0)
+                for addon_id in item_data.get('addon_ids', []):
+                    addon = AddonTable.objects.get(id=addon_id)
+                    addons_total += addon.price
+                    addon_instances.append(addon)
+
+                item_total = (price + addons_total) * quantity
+                subtotal += item_total
+
+                order_items_data.append({
+                    "item": item,
+                    "variant": variant,
+                    "quantity": quantity,
+                    "instruction": item_data.get('instruction', ''),
+                    "addons": addon_instances,
+                    "price": item_total
+                })
+
+            # 3. Apply coupon
+            discount = 0
+            coupon = None
+            if data.get('coupon_code'):
+                try:
+                    coupon = CouponTable.objects.get(code=data['coupon_code'], is_active=True)
+                    discount = coupon.discount_amount  # or apply percent logic
+                except CouponTable.DoesNotExist:
+                    return Response({"error": "Invalid coupon"}, status=status.HTTP_400_BAD_REQUEST)
+
+            tax = subtotal * 0.05  # 5% tax (example)
+            total = subtotal + tax - discount
+
+            # 4. Create Order
+            order = OrderTable.objects.create(
+                user=user,
+                branch_id=data['branch_id'],
+                address=address,
+                delivery_instruction=data.get('delivery_instruction', ''),
+                cooking_instruction=data.get('cooking_instruction', ''),
+                subtotal=subtotal,
+                tax=tax,
+                discount=discount,
+                total=total,
+                payment_method=data['payment_method'],
+                payment_status='PENDING',
+                coupon=coupon,
+                status='PLACED',
+                latitude=address.latitude,
+                longitude=address.longitude,
+                phone_number=address.phone,
+                created_at=datetime.timezone.now()
+            )
+
+            # 5. Create Order Items & Addons
+            for item_data in order_items_data:
+                order_item = OrderItemTable.objects.create(
+                    order=order,
+                    item=item_data['item'],
+                    variant=item_data['variant'],
+                    quantity=item_data['quantity'],
+                    instruction=item_data['instruction'],
+                    price=item_data['price']
                 )
+                for addon in item_data['addons']:
+                    AddonTable.objects.create(order_item=order_item, addon=addon)
 
-            # Step 5: Return serialized order
-            serializer = OrderTableSerializer(order)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # 6. Create Payment record (optional)
+            PaymentTable.objects.create(
+                order=order,
+                method=data['payment_method'],
+                amount=total,
+                status='PENDING'
+            )
 
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "message": "Order placed successfully",
+                "order_id": order.id,
+                "total": total
+            }, status=status.HTTP_201_CREATED)

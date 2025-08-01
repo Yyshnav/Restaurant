@@ -1,14 +1,12 @@
 {% extends 'sidebar.html' %}
 {% load static %}
 
-
 {% block body %}
 
-  <style>
-    .form-group label { font-weight: 600; }
-    .form-control { border-radius: 0.4rem; }
-  </style>
-
+<style>
+  .form-group label { font-weight: 600; }
+  .form-control { border-radius: 0.4rem; }
+</style>
 
 <!-- Content -->
 <div class="app-content content">
@@ -17,49 +15,58 @@
       <div class="container-fluid">
         <div class="card p-3">
           <h4 class="mb-3">Add Carousel Offer</h4>
-          <form>
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Carousel Image -->
             <div class="form-group">
               <label for="carouselImage">Carousel Image</label>
-              <input type="file" class="form-control" id="carouselImage" accept="image/*">
+              <input type="file" class="form-control" name="carouselImage" id="carouselImage" accept="image/*" required>
             </div>
+
+            <!-- Offer Selection -->
             <div class="form-group">
-              <label for="category">Category</label>
-              <select class="form-control" id="category">
-                <option>Pizza</option>
-                <option>Burger</option>
-                <option>Drinks</option>
+              <label for="category">Offers Available</label>
+              <select class="form-control" name="category" id="category" required>
+                <option value="">-- Select the Offers --</option>
+                {% for i in offers %}
+                <option value="{{ i.id }}">{{ i.name }}</option>
+                {% endfor %}
               </select>
             </div>
-         <div class="form-group">
-  <label>Select Branches</label><br>
-  <!-- <div>
-    <input type="checkbox" id="branch_all"> <label for="branch_all">All Branches</label>
-  </div> -->
-  <div>
-    <input type="checkbox" class="branch-option" id="branch1" value="branch1"> <label for="branch1">Branch 1</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch2" value="branch2"> <label for="branch2">Branch 2</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch3" value="branch3"> <label for="branch3">Branch 3</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch4" value="branch4"> <label for="branch4">Branch 4</label>
-  </div>
-</div>
+
+            <!-- Branch Selection -->
+            <div class="form-group">
+              <label>Select Branches</label><br>
+              <div>
+                <input type="checkbox" id="branch_all" value="all">
+                <label for="branch_all">All Branches</label>
+              </div>
+              {% for i in branches %}
+              <div>
+                <input type="checkbox" name="branches[]" class="branch-option" id="branch_{{ i.id }}" value="{{ i.id }}">
+                <label for="branch_{{ i.id }}">{{ i.name }}</label>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Offer Percentage -->
             <div class="form-group">
               <label for="offerPercentage">Offer Percentage</label>
-              <input type="number" class="form-control" id="offerPercentage" placeholder="e.g., 20">
+              <input type="number" class="form-control" name="offerPercentage" id="offerPercentage" placeholder="e.g., 20">
             </div>
+
+            <!-- Start and End Dates -->
             <div class="form-group">
               <label for="startDate">Start Date</label>
-              <input type="date" class="form-control" id="startDate">
+              <input type="datetime-local" class="form-control" name="startDate" id="startDate">
             </div>
+
             <div class="form-group">
               <label for="endDate">End Date</label>
-              <input type="date" class="form-control" id="endDate">
+              <input type="datetime-local" class="form-control" name="endDate" id="endDate">
             </div>
+
             <button type="submit" class="btn btn-success">Add Carousel Offer</button>
           </form>
         </div>
@@ -67,5 +74,13 @@
     </div>
   </div>
 </div>
+
+<!-- Select All Branches Script -->
+<script>
+  document.getElementById('branch_all').addEventListener('change', function () {
+    const checkboxes = document.querySelectorAll('.branch-option');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+  });
+</script>
 
 {% endblock %}
