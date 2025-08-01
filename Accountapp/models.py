@@ -513,15 +513,15 @@ class BillTable(models.Model):
 
 class CarouselTable(models.Model):
     image = models.FileField(upload_to='carousel_images/')
-    category = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE)
-    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
+    offer = models.ForeignKey(OfferTable, on_delete=models.CASCADE, null=True, blank=True, related_name='carousel_offers')
+    branch = models.ManyToManyField(BranchTable)
     offer_percentage = models.FloatField(default=0.0, null=True, blank=True)
     startdate = models.DateTimeField(null=True, blank=True)
     enddate = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.category} - {self.branch} ({self.offer_percentage}%)"
+        return f"{self.offer} - {self.branch} ({self.offer_percentage}%)"
 
 class SpotlightTable(models.Model):
     image = models.FileField(upload_to='spotlight_images/')
