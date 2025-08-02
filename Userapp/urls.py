@@ -40,4 +40,5 @@ urlpatterns = [
     path('update-fcm-token/', UpdateFCMTokenView.as_view(), name='update_fcm_token'),
     path('personalized/', PersonalizedRecommendationAPIView.as_view(), name='personalized'),
     path('placeorder/', PlaceOrderAPIView.as_view(), name='placeorder'),
+    path('useraddress/', UserAddressView.as_view(), name='get-address'),
 ]
