@@ -53,20 +53,22 @@
         <div class="container-fluid">
           <div class="card p-3">
             <h4 class="mb-3">Add New Offer</h4>
-            <form id="offerForm">
+            <form id="offerForm" method="post">
+              {% csrf_token %}
               <div class="form-group">
                 <label for="product">Product</label>
-                <select class="form-control" id="product" required>
-                  <option value="">-- Select Product --</option>
-                  <option value="1">Pizza</option>
-                  <option value="2">Burger</option>
-                  <option value="3">Pasta</option>
+                <select class="form-control" name="itemid" id="product" required>
+                  <option value="">-- Select Product --</option>  
+                  {% for i in items %}
+                  <option value="{{i.id}}">{{i.name}}</option>
+                  {% endfor %}
+                  
                 </select>
               </div>
 
               <div class="form-group">
                 <label for="offerTitle">Offer Title</label>
-                <input type="text" class="form-control" id="offerTitle" placeholder="e.g. Weekend Sale" required>
+                <input type="text" class="form-control" id="offerTitle" name="name" placeholder="e.g. Weekend Sale" required>
               </div>
 
               <!-- <div class="form-group">
@@ -79,36 +81,32 @@
 
               <div class="form-group">
                 <label for="discountValue">Discount Value</label>
-                <input type="number" class="form-control" id="discountValue" required>
+                <input type="number" name="offer_percentage" class="form-control" id="discountValue" required>
+              </div>
+              <div class="form-group">
+                <label for="discountValue">Offer Description</label>
+                <input type="text" name="offer_description" class="form-control" id="discountValue" required>
               </div>
 
               <div class="form-group">
                 <label for="startDate">Start Date</label>
-                <input type="date" class="form-control" id="startDate" required>
+                <input type="datetime-local" name="startdate" class="form-control" id="startDate" required>
               </div>
 
               <div class="form-group">
                 <label for="endDate">End Date</label>
-                <input type="date" class="form-control" id="endDate" required>
+                <input type="datetime-local" name="enddate" class="form-control" id="endDate" required>
               </div>
 <div class="form-group">
-  <label>Select Branches</label><br>
-  <div>
-    <input type="checkbox" id="branch_all"> <label for="branch_all">All Branches</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch1" value="branch1"> <label for="branch1">Branch 1</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch2" value="branch2"> <label for="branch2">Branch 2</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch3" value="branch3"> <label for="branch3">Branch 3</label>
-  </div>
-  <div>
-    <input type="checkbox" class="branch-option" id="branch4" value="branch4"> <label for="branch4">Branch 4</label>
-  </div>
-</div>
+  <label for="branch">Branch</label>
+                <select class="form-control" name="branch" id="branch" required>
+                  <option value="">-- Select Branch --</option>  
+                  {% for i in branches %}
+                  <option value="{{i.id}}">{{i.name}}</option>
+                  {% endfor %}
+                  
+                </select>
+                  </div>
 
 
 
@@ -124,28 +122,11 @@
 
  
   <script>
-    document.getElementById("offerStatus").addEventListener("change", function () {
-      document.getElementById("statusLabel").textContent = this.checked ? "Active" : "Inactive";
-    });
 
-    document.getElementById("offerForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      alert("Offer submitted!");
-      this.reset();
-      document.getElementById("statusLabel").textContent = "Active";
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-      document.querySelector('.close-navbar').addEventListener('click', function () {
-        document.querySelector('.main-menu').classList.remove('menu-expanded');
-        document.querySelector('.main-menu').classList.add('menu-collapsed');
-      });
-    });
-
-
-
-
-
-  </script>
-
+   document.addEventListener('DOMContentLoaded', function () {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("startDate").setAttribute('min', today);
+    document.getElementById("endDate").setAttribute('min', today);
+  });
+</script>
 {% endblock %}

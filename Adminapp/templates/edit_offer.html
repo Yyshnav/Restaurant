@@ -1,0 +1,117 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+{% block body %}
+<style>
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #28c76f;
+  }
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+</style>
+
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-body">
+      <div class="container-fluid">
+        <div class="card p-3">
+          <h4 class="mb-3">View Offer Details</h4>
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="product">Product</label>
+                <select class="form-control" name="itemid" required>
+                <option value="">-- Select Product --</option>
+                {% for i in items %}
+                    <option value="{{ i.id }}" {% if i.id == offer.itemid.id %}selected{% endif %}>{{ i.name }}</option>
+                {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Offer Title</label>
+                <input type="text" name="name" class="form-control" value="{{ offer.name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Discount (%)</label>
+                <input type="number" name="offer_percentage" class="form-control" value="{{ offer.offer_percentage }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="offer_description" class="form-control" value="{{ offer.offerdescription }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" name="startdate" class="form-control" value="{{ offer.startdate|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>End Date</label>
+                <input type="date" name="enddate" class="form-control" value="{{ offer.enddate|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Branch</label>
+                <select class="form-control" name="branch" required>
+                <option value="">-- Select Branch --</option>
+                {% for b in branches %}
+                    <option value="{{ b.id }}" {% if b.id == offer.branch.id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("startDate")?.setAttribute('min', today);
+    document.getElementById("endDate")?.setAttribute('min', today);
+  });
+</script>
+{% endblock %}

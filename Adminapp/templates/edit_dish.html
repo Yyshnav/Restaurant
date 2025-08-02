@@ -1,0 +1,169 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+{% block body %}
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-header row">
+      <div class="content-header-left col-md-12 mb-2">
+        <h3 class="content-header-title">Edit Dish: {{ item.name }}</h3>
+      </div>
+    </div>
+    <div class="content-body">
+      <form action="" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Basic Info -->
+        <div class="form-group">
+          <label>Dish Name</label>
+          <input type="text" name="name" class="form-control" value="{{ item.name }}" required>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" class="form-control">{{ item.description }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <select name="category" id="category" class="form-control" required>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if item.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Subcategory</label>
+          <select name="subcategory" id="subcategory" class="form-control">
+            {% for sub in subcategories %}
+              <option value="{{ sub.id }}" {% if item.subcategory and item.subcategory.id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Sub-Subcategory</label>
+          <select name="subsubcategory" id="subsubcategory" class="form-control">
+            {% for subsub in subsubcategories %}
+              <option value="{{ subsub.id }}" {% if item.subsubcategory and item.subsubcategory.id == subsub.id %}selected{% endif %}>{{ subsub.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Is Veg</label><br>
+          <input type="radio" name="is_veg" value="True" {% if item.is_veg %}checked{% endif %}> Veg
+          <input type="radio" name="is_veg" value="False" {% if not item.is_veg %}checked{% endif %}> Non-Veg
+        </div>
+
+        <!-- Price & Inventory -->
+        <div class="form-group">
+          <label>Price</label>
+          <input type="number" step="0.01" name="price" class="form-control" value="{{ item.price }}">
+        </div>
+
+        <div class="form-group">
+          <label>Preparation Time (minutes)</label>
+          <input type="number" step="1" name="preparation_time" class="form-control" value="{{ item.preparation_time }}">
+        </div>
+
+        <div class="form-group">
+          <label>Calories</label>
+          <input type="number" name="calories" class="form-control" value="{{ item.calories }}">
+        </div>
+
+        <div class="form-group">
+          <label>Inventory</label>
+          <input type="number" name="inventory" class="form-control" value="{{ item.inventory }}">
+        </div>
+
+        <!-- Branch Selection -->
+     <div class="form-group">
+        <label>Branches</label><br>
+        <div class="row">
+            {% for branch in branches %}
+            <div class="col-md-4">
+                <div class="form-check">
+                <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    name="branches" 
+                    value="{{ branch.id }}" 
+                    id="branch_{{ branch.id }}"
+                    {% if branch.id in item_branches %}checked{% endif %}
+                >
+                <label class="form-check-label" for="branch_{{ branch.id }}">
+                    {{ branch.name }}
+                </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        </div>
+
+
+        <!-- Existing Images -->
+        <label>Existing Images</label>
+        <div class="row">
+          {% for image in item.images.all %}
+            <div class="col-md-3 mb-2">
+              <img src="{{ image.image.url }}" class="img-thumbnail" style="height:100px;">
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Upload New Images -->
+        <div class="form-group mt-2">
+          <label>Upload More Images</label>
+          <input type="file" name="images" multiple class="form-control">
+        </div>
+
+        <!-- Variants -->
+        <label>Variants</label>
+        <div id="variant-section">
+          {% for variant in item.variants.all %}
+            <div class="form-row mb-2">
+              <div class="col"><input type="text" name="variant_name" class="form-control" value="{{ variant.variant_name }}"></div>
+              <div class="col"><input type="number" name="variant_price" step="0.01" class="form-control" value="{{ variant.price }}"></div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Addons -->
+        <label>Addons</label>
+        {% for addon in item.addons.all %}
+          <div class="form-row mb-2">
+            <div class="col-md-4"><input type="text" class="form-control" name="addon_name" value="{{ addon.name }}"></div>
+            <div class="col-md-3"><input type="number" class="form-control" name="addon_price" value="{{ addon.price }}"></div>
+            <div class="col-md-3"><input type="text" class="form-control" name="addon_description" value="{{ addon.description }}"></div>
+          </div>
+        {% endfor %}
+
+        <!-- Voice Descriptions -->
+        <label>Voice Descriptions</label>
+        {% if item.voice_descriptions.all %}
+            {% for voice in item.voice_descriptions.all %}
+                <div class="form-group">
+                <p><strong>{{ voice.get_language_display }}:</strong></p>
+                <audio controls>
+                    <source src="{{ voice.audio_file.url }}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                </div>
+            {% endfor %}
+            {% else %}
+            <p>No voice descriptions available.</p>
+            {% endif %}
+
+
+
+
+        <!-- Save -->
+        <button type="submit" class="btn btn-primary mt-3">Update Dish</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,3 +1,4 @@
+from datetime import date
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -9,6 +10,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
 from django.contrib.auth.hashers import make_password
+from datetime import datetime
+
+
 
 
 
@@ -127,14 +131,166 @@ class AddBranchView(View):
 #     def get(self, request):
 #         return render(request, 'addCategory.html')
     
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views import View
+
 class AddDishView(View):
     def get(self, request):
-        return render(request, 'addDish.html')
+        categories = CategoryTable.objects.all()
+        branches = BranchTable.objects.all()
+        return render(request, 'addDish.html', {
+            'categories': categories,
+            'branches': branches,
+        })
+
+    def post(self, request):
+        name = request.POST.get('name')
+        category_id = request.POST.get('category')
+        subcategory_id = request.POST.get('subcategory')
+        subsubcategory_id = request.POST.get('subsubcategory')
+        is_veg = request.POST.get('is_veg') == 'True'
+        description = request.POST.get('description')
+        price = request.POST.get('price') or 0
+        inventory = request.POST.get('inventory') or 0
+        calories = request.POST.get('calories') or 0
+        preparation_time = float(request.POST.get('preparation_time') or 0)
+
+        # Automatically assign fast_delivery if prep time < 20
+        fast_delivery = preparation_time < 20
+
+        # Newest: mark as newest if added today
+        newest = True  # Default true when created; auto-remove later with cron/task
+
+        # Create Item
+        item = ItemTable.objects.create(
+            name=name,
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            subsubcategory_id=subsubcategory_id,
+            is_veg=is_veg,
+            description=description,
+            price=price,
+            preparation_time=preparation_time,
+            inventory=inventory,
+            calories=calories,
+            fast_delivery=fast_delivery,
+            newest=newest
+        )
+
+        # Assign Branches
+        branch_ids = request.POST.getlist('branches')
+        item.branches.set(branch_ids)
+
+        # Images
+        dish_images = request.FILES.getlist('dishImages[]')
+        for img in dish_images:
+            ItemImageTable.objects.create(item=item, image=img)
+
+        # Voices
+        voice_languages = request.POST.getlist('voiceLanguages[]')
+        voice_files = request.FILES.getlist('voiceFiles[]')
+        for lang, audio in zip(voice_languages, voice_files):
+            VoiceDescriptionTable.objects.create(item=item, language=lang, audio_file=audio)
+
+        # Variants
+        index = 0
+        while True:
+            name_key = f"variants[{index}][name]"
+            price_key = f"variants[{index}][price]"
+            if name_key not in request.POST or price_key not in request.POST:
+                break
+            variant_name = request.POST[name_key]
+            variant_price = request.POST[price_key]
+            ItemVariantTable.objects.create(item=item, variant_name=variant_name, price=variant_price)
+            index += 1
+
+        # Addons
+        addon_names = request.POST.getlist('addon_name[]')
+        addon_prices = request.POST.getlist('addon_price[]')
+        addon_images = request.FILES.getlist('addon_image[]')
+        addon_descriptions = request.POST.getlist('addon_description[]')
+
+        for name, price, desc, image in zip(addon_names, addon_prices, addon_descriptions, addon_images):
+            AddonTable.objects.create(
+                item=item,
+                name=name,
+                price=price or 0,
+                description=desc,
+                image=image
+            )
+
+        return redirect('view-dishes')
+    
+
+def get_subcategories(request):
+    category_id = request.GET.get('category_id')
+    if category_id:
+        subcategories = SubCategoryTable.objects.filter(category_id=category_id).values('id', 'name')
+        return JsonResponse(list(subcategories), safe=False)
+    return JsonResponse([], safe=False)
+
+def get_subsubcategories(request):
+    subcategory_id = request.GET.get('subcategory_id')
+    if subcategory_id:
+        subsubcategories = SubSubCategoryTable.objects.filter(subcategory_id=subcategory_id).values('id', 'name')
+        return JsonResponse(list(subsubcategories), safe=False)
+    return JsonResponse([], safe=False)
+
 
 class AddCarouselView(View):
     def get(self, request):
-        return render(request, 'carouselAdd.html')
-    
+        c = OfferTable.objects.all()
+        d = BranchTable.objects.all()
+        return render(request, 'carouselAdd.html', {'offers':c, 'branches':d})
+    def post(self, request):
+        image = request.FILES.get('carouselImage')
+        offer_id = request.POST.get('category')
+        branch_ids = request.POST.getlist('branches[]')  
+        offer_percentage = request.POST.get('offerPercentage')
+        start_date = request.POST.get('startDate')
+        end_date = request.POST.get('endDate')
+
+        try:
+            offer = OfferTable.objects.get(id=offer_id)
+        except OfferTable.DoesNotExist:
+            offer = None
+
+        # Correct datetime parsing
+        start_datetime = None
+        end_datetime = None
+
+        if start_date:
+            try:
+                start_datetime = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                start_datetime = None
+
+        if end_date:
+            try:
+                end_datetime = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                end_datetime = None
+
+        carousel = CarouselTable.objects.create(
+            image=image,
+            offer=offer,
+            offer_percentage=offer_percentage if offer_percentage else 0.0,
+            startdate=start_datetime,
+            enddate=end_datetime
+        )
+
+        if 'all' in branch_ids:
+            branches = BranchTable.objects.all()
+        else:
+            branches = BranchTable.objects.filter(id__in=branch_ids)
+
+        carousel.branch.set(branches)
+        carousel.save()
+
+        return redirect('add-carousel')
+
+
 class EditDishView(View):
     def get(self, request):
         return render(request, 'dish_edit.html')
@@ -142,7 +298,53 @@ class EditDishView(View):
 
 class AddOfferView(View):
     def get(self, request):
-        return render(request, 'offerAdd.html')
+        c = ItemTable.objects.all()
+        d = BranchTable.objects.all()
+        return render(request, 'offerAdd.html', {'items': c, 'branches': d})
+    def post(self, request):
+        item_id = request.POST.get('itemid')
+        name = request.POST.get('name')
+        offer_percentage = request.POST.get('offer_percentage')
+        offer_description = request.POST.get('offer_description')
+        start_date_str = request.POST.get('startdate')
+        end_date_str = request.POST.get('enddate')
+        branch_id = request.POST.get('branch')
+
+        if not branch_id:
+            messages.error(request, "Please select a branch.")
+            return redirect('add-offer')
+
+        # Convert date-time strings to datetime objects
+        try:
+            start_datetime = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M') if start_date_str else None
+            end_datetime = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M') if end_date_str else None
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return redirect('add-offer')
+
+        try:
+            item = ItemTable.objects.get(id=item_id)
+            branch = BranchTable.objects.get(id=branch_id)
+
+            OfferTable.objects.create(
+                itemid=item,
+                name=name,
+                offer_percentage=offer_percentage,
+                offerdescription=offer_description,
+                startdate=start_datetime,
+                enddate=end_datetime,
+                branch=branch
+            )
+
+            messages.success(request, "Offer added successfully.")
+        except ItemTable.DoesNotExist:
+            messages.error(request, "Invalid item selected.")
+        except BranchTable.DoesNotExist:
+            messages.error(request, "Invalid branch selected.")
+
+        return redirect('view-offer')
+
+
     
 from django.core.mail import send_mail
 from django.conf import settings
@@ -445,20 +647,101 @@ def delete_category(request, type, pk):
 
     return JsonResponse({'status': 'failed'}, status=400)
 
+class DeleteOfferView(View):
+    def get(self, request, id):
+        c = OfferTable.objects.filter(id=id)
+        c.delete()
+        return redirect('view-offer')
 
+class EditOfferView(View):
+    def get(self, request, offer_id):
+        offer = get_object_or_404(OfferTable, id=offer_id)
+        items = ItemTable.objects.all()
+        branches = BranchTable.objects.all()
+        return render(request, 'edit_offer.html', {
+            'offer': offer,
+            'items': items,
+            'branches': branches,
+        })
+    def post(self, request, offer_id):
+        offer = get_object_or_404(OfferTable, id=offer_id)
 
-    
+        # Only update if field is present in the request
+        if 'name' in request.POST:
+            offer.name = request.POST['name']
+
+        if 'itemid' in request.POST and request.POST['itemid']:
+            offer.itemid_id = request.POST['itemid']
+
+        if 'offer_percentage' in request.POST:
+            offer.offer_percentage = request.POST['offer_percentage']
+
+        if 'offer_description' in request.POST:
+            offer.offerdescription = request.POST['offer_description']
+
+        if 'startdate' in request.POST:
+            offer.startdate = request.POST['startdate']
+
+        if 'enddate' in request.POST:
+            offer.enddate = request.POST['enddate']
+
+        if 'branch' in request.POST and request.POST['branch']:
+            offer.branch_id = request.POST['branch']
+
+        offer.save()
+        return redirect('view-offer')
+     
+
 class ViewComplaintView(View):
     def get(self, request):
         return render(request, 'viewcomplaint.html')
     
 class ViewDishesView(View):
     def get(self, request):
-        return render(request, 'viewdishes.html')
+        items = ItemTable.objects.all()
+
+        items_with_images = []
+        for item in items:
+            images = ItemImageTable.objects.filter(item=item)
+            items_with_images.append({
+                'item': item,
+                'images': images
+            })
+
+        return render(request, 'viewdishes.html', {'items_with_images': items_with_images})
     
+class DeleteDishes(View):
+    def get(self, request, id):
+        c=ItemTable.objects.get(id=id)
+        c.delete()
+        return redirect('view-dishes')
+    
+# class ViewOfferView(View):
+#     def get(self, request):
+#         return render(request, 'viewoffer.html')
+
+from django.utils.timezone import now
+
+
 class ViewOfferView(View):
     def get(self, request):
-        return render(request, 'viewoffer.html')
+        today = now()
+        offers = OfferTable.objects.all()
+
+        offer_data = []
+        for offer in offers:
+            offer_data.append({
+                'id': offer.id,
+                'product': offer.itemid.name if offer.itemid else '',  # corrected
+                'title': offer.name,
+                'discount': offer.offer_percentage,
+                'start_date': offer.startdate,
+                'end_date': offer.enddate,
+                'branches': offer.branch.name if offer.branch else '',  # single branch
+                'is_active': offer.startdate <= today <= offer.enddate
+            })
+
+        return render(request, 'viewoffer.html', {'offers': offer_data})
     
 class ViewStaffView(View):
     def get(self, request):
@@ -543,6 +826,11 @@ class DeleteStaff(View):
 from django.shortcuts import render, redirect, get_object_or_404
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views import View
+from django.contrib import messages
+
+
 class EditStaffView(View):
     def get(self, request, id):
         staff = None
@@ -566,16 +854,21 @@ class EditStaffView(View):
             'branches': branches
         })
 
-
     def post(self, request, id):
         login_user = get_object_or_404(LoginTable, id=id)
-        role = request.POST.get('role')
 
-        login_user.username = request.POST.get('name')
-        login_user.phone = request.POST.get('phone')
-        if request.POST.get('password'):
-            login_user.set_password(request.POST.get('password'))
-        login_user.save()
+        # Determine role from existing record
+        role = None
+        try: 
+            staff = ManagerTable.objects.get(userid=id)
+            role = 'manager'
+        except ManagerTable.DoesNotExist:
+            try:
+                staff = WaiterTable.objects.get(userid=id)
+                role = 'waiter'
+            except WaiterTable.DoesNotExist:
+                staff = get_object_or_404(DeliveryBoyTable, userid=id)
+                role = 'deliveryboy'
 
         branch = get_object_or_404(BranchTable, id=request.POST.get('branch'))
 
@@ -603,4 +896,101 @@ class EditStaffView(View):
             DeliveryBoyTable.objects.filter(userid=id).update(**data)
 
         messages.success(request, "Staff updated successfully")
-        return redirect('view-staff')  # Replace with your actual view name
+        return redirect('view-staff')
+
+
+class EditDishView(View):
+    def get(self, request, item_id):
+        item = ItemTable.objects.get(id=item_id)
+        categories = CategoryTable.objects.all()
+        subcategories = SubCategoryTable.objects.filter(category=item.category)
+        subsubcategories = SubSubCategoryTable.objects.filter(subcategory=item.subcategory)
+        branches = BranchTable.objects.all()
+        item_branches = list(item.branches.values_list('id', flat=True))
+        variants = ItemVariantTable.objects.filter(item=item)
+        voices = VoiceDescriptionTable.objects.filter(item=item)
+        images = ItemImageTable.objects.filter(item=item)
+        addons = AddonTable.objects.filter(item=item)
+        print("Selected branches:", item.branches.values_list('id', flat=True))
+        return render(request, 'edit_dish.html', {
+                'item': item,
+                'categories': categories,
+                'subcategories': subcategories,
+                'subsubcategories': subsubcategories,
+                'branches': branches,
+                'variants': variants,
+                'voices': voices,
+                'images': images,
+                'addons': addons,
+                'item_branches': item_branches  
+            })
+
+
+    def post(self, request, item_id):
+        item = ItemTable.objects.get(id=item_id)
+
+        # Basic fields
+        item.name = request.POST.get('name')
+        item.description = request.POST.get('description')
+        item.category_id = request.POST.get('category')
+        item.subcategory_id = request.POST.get('subcategory')
+        item.subsubcategory_id = request.POST.get('subsubcategory')
+        item.calories = request.POST.get('calories')
+        item.preparation_time = request.POST.get('preparation_time')
+        item.is_veg = request.POST.get('is_veg') == 'True'
+
+        # Price field
+        try:
+            item.price = float(request.POST.get('price') or 0)
+        except (ValueError, TypeError):
+            item.price = 0.0
+
+        # Inventory field (handle blank/null values)
+        inventory_val = request.POST.get('inventory')
+        if inventory_val and inventory_val.isdigit():
+            item.inventory = int(inventory_val)
+        else:
+            item.inventory = None  # or 0 if you prefer default
+
+        item.save()
+
+        # Variants
+        ItemVariantTable.objects.filter(item=item).delete()
+        variant_names = request.POST.getlist('variant_name[]')
+        variant_prices = request.POST.getlist('variant_price[]')
+        for index in range(len(variant_names)):
+            ItemVariantTable.objects.create(
+                item=item,
+                name=variant_names[index],
+                price=variant_prices[index]
+            )
+
+        # Images
+        if request.FILES.getlist('dishImages[]'):
+            ItemImageTable.objects.filter(item=item).delete()
+            for img in request.FILES.getlist('dishImages[]'):
+                ItemImageTable.objects.create(item=item, image=img)
+
+        # Voice notes
+        existing_voices = VoiceDescriptionTable.objects.filter(item=item)
+        existing_voice_dict = {v.language: v for v in existing_voices}
+
+        for i, audio in enumerate(request.FILES.getlist('voice_notes[]')):
+            lang = request.POST.getlist('voice_languages[]')[i]
+            if audio:
+                if lang in existing_voice_dict:
+                    existing_voice_dict[lang].delete()
+                VoiceDescriptionTable.objects.create(item=item, voice_note=audio, language=lang)
+
+        # Branches
+        item.branches.set(request.POST.getlist('branches'))
+
+        return redirect('view-dishes')
+
+
+def search_dishes(request):
+    query = request.GET.get('q', '')
+    if query:
+        matches = ItemTable.objects.filter(name__icontains=query).values('id', 'name')[:10]
+        return JsonResponse(list(matches), safe=False)
+    return JsonResponse([], safe=False)

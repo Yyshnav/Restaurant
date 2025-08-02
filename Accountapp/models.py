@@ -194,13 +194,14 @@ class ItemTable(models.Model):
     subsubcategory = models.ForeignKey(SubSubCategoryTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
     is_veg = models.BooleanField(default=True) 
     # image = models.FileField(upload_to='item_images/', null=True, blank=True)
-    description = models.CharField(max_length=200, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     # variant = models.ForeignKey(ItemVariantTable, on_delete=models.CASCADE, null=True, blank=True)
     # voice_description = models.FileField(upload_to='voice_descriptions/', null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
     preparation_time = models.FloatField(default=0.0)
     branches = models.ManyToManyField('BranchTable', related_name='item_branch', blank=True)
     inventory = models.IntegerField(default=0)
+    calories = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     fast_delivery = models.BooleanField(default=False)
@@ -268,7 +269,7 @@ class OfferTable(models.Model):
     offerdescription = models.CharField(max_length=100, null=True, blank=True)
     createdat = models.DateTimeField(auto_now_add=True)
     updatedat = models.DateTimeField(auto_now=True)
-
+    
     def __str__(self):
         return self.name
     
@@ -529,15 +530,15 @@ class BillTable(models.Model):
 
 class CarouselTable(models.Model):
     image = models.FileField(upload_to='carousel_images/')
-    category = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE)
-    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
+    offer = models.ForeignKey(OfferTable, on_delete=models.CASCADE, null=True, blank=True, related_name='carousel_offers')
+    branch = models.ManyToManyField(BranchTable)
     offer_percentage = models.FloatField(default=0.0, null=True, blank=True)
     startdate = models.DateTimeField(null=True, blank=True)
     enddate = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.category} - {self.branch} ({self.offer_percentage}%)"
+        return f"{self.offer} - {self.branch} ({self.offer_percentage}%)"
 
 class SpotlightTable(models.Model):
     image = models.FileField(upload_to='spotlight_images/')
