@@ -1,6 +1,7 @@
 import datetime
 from multiprocessing.connection import Client
 from django.shortcuts import get_object_or_404, render
+import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,7 +9,8 @@ import random
 from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OrderItemTable, OrderTable, PaymentTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
-from Userapp.serializer import AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer
+from Deliveryboyapp.serializer import OrderSerializer
+from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, TrackOrderSerializer, UserOrderSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -545,6 +547,37 @@ class WishlistDeleteAPIView(APIView):
         except WishlistTable.DoesNotExist:
             return Response({"error": "Item not found in wishlist."}, status=status.HTTP_404_NOT_FOUND)
 
+# class CartAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         cart_items = CartTable.objects.filter(userid=request.user)
+#         serializer = CartSerializer(cart_items, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def post(self, request):
+#         serializer = CartSerializer(data=request.data)
+#         print(request.data)
+#         if serializer.is_valid():
+#             fooditem = serializer.validated_data.get('fooditem')
+#             quantity = serializer.validated_data.get('quantity', 1)
+#             addon = serializer.validated_data.get('addon', None)
+
+#             # Calculate price securely from backend
+#             # base_price = fooditem.price or 0
+#             # addon_price = addon.price if addon and hasattr(addon, 'price') else 0
+
+#             # total_price = (base_price + addon_price) * quantity
+#             base_price = float(fooditem.price) if fooditem and hasattr(fooditem, 'price') else 0.0
+#             addon_price = float(addon.price) if addon and hasattr(addon, 'price') else 0.0
+#             quantity = int(quantity)
+#             total_price = (base_price + addon_price) * quantity
+
+#             serializer.save(userid=request.user, total_price=total_price)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class CartAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -554,27 +587,64 @@ class CartAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = CartSerializer(data=request.data)
         print(request.data)
-        if serializer.is_valid():
-            fooditem = serializer.validated_data.get('fooditem')
-            quantity = serializer.validated_data.get('quantity', 1)
-            addon = serializer.validated_data.get('addon', None)
+        user = request.user
 
-            # Calculate price securely from backend
-            # base_price = fooditem.price or 0
-            # addon_price = addon.price if addon and hasattr(addon, 'price') else 0
+        variant_id = request.data.get('variant')
+        fooditem_id = request.data.get('fooditem')
+        addon_id = request.data.get('addon')
+        quantity = request.data.get('quantity')
+        # instruction = request.data.get('instruction', '')
 
-            # total_price = (base_price + addon_price) * quantity
-            base_price = float(fooditem.price) if fooditem and hasattr(fooditem, 'price') else 0.0
-            addon_price = float(addon.price) if addon and hasattr(addon, 'price') else 0.0
+        # Validate fields
+        try:
             quantity = int(quantity)
-            total_price = (base_price + addon_price) * quantity
+            if quantity < 1:
+                raise ValueError("Quantity must be at least 1")
+        except (ValueError, TypeError):
+            return Response({'error': 'Invalid quantity'}, status=status.HTTP_400_BAD_REQUEST)
 
-            serializer.save(userid=request.user, total_price=total_price)
+        try:
+            variant = ItemVariantTable.objects.get(id=variant_id)
+        except ItemVariantTable.DoesNotExist:
+            return Response({'error': 'Variant not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            fooditem = ItemTable.objects.get(id=fooditem_id)
+        except ItemTable.DoesNotExist:
+            return Response({'error': 'Food item not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        addon = None
+        if addon_id:
+            try:
+                addon = AddonTable.objects.get(id=addon_id)
+            except AddonTable.DoesNotExist:
+                return Response({'error': 'Addon not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check for existing cart item
+        existing_item = CartTable.objects.filter(userid=user, fooditem=fooditem, variant=variant).first()
+
+        if existing_item:
+            # existing_item.quantity += quantity
+            existing_item.quantity = str(int(existing_item.quantity) + quantity)
+
+            # existing_item.instruction = instruction
+            existing_item.save()
+            serializer = CartSerializer(existing_item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            cart_item = CartTable.objects.create(
+                userid=user,
+                fooditem=fooditem,
+                variant=variant,
+                addon=addon,
+                quantity=quantity,
+                # instruction=instruction
+            )
+            serializer = CartSerializer(cart_item)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     
 class CartDeleteAPIView(APIView):
@@ -804,156 +874,117 @@ class UpdateFCMTokenView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+
+
 # class PlaceOrderAPIView(APIView):
 #     permission_classes = [IsAuthenticated]
 
-#     def post(self, request):
-#         user = request.user
-#         data = request.data
+#     def post(self, request, *args, **kwargs):
+#         print("Request Data:", request.data)
+#         serializer = OrderSerializer(data=request.data, context={"request": request})
+#         if serializer.is_valid():
+#             order = serializer.save()
+#             return Response({"message": "Order placed successfully", "order_id": order.id})
+#         return Response(serializer.errors, status=400)
 
-#         try:
-#             # Create order
-#             order = OrderTable.objects.create(
-#                 userid=user,
-#                 totalamount=data.get('totalamount', 0),
-#                 orderstatus=data.get('orderstatus', 'pending'),
-#                 paymentstatus=data.get('paymentstatus', 'unpaid'),
-#                 latitude=data.get('latitude'),
-#                 longitude=data.get('longitude'),
-#                 delivery_instruction=data.get('delivery_instruction', ''),
-#                 deliveryid_id=data.get('deliveryid')
-#             )
+# class PlaceOrderAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-#             # Loop through items and add them to the order
-#             for item in data.get('items', []):
-#                 OrderItemTable.objects.create(
-#                     orderid=order,
-#                     itemname_id=item.get('itemname'),
-#                     variant_id=item.get('variant'),  # Can be None
-#                     addon_id=item.get('addon'),      # Can be None
-#                     quantity=item.get('quantity', 1),
-#                     price=item.get('price', 0),
-#                     cooking_instruction=item.get('cooking_instruction', '')
-#                 )
+#     def post(self, request, *args, **kwargs):
+#         print("Request Data:", request.data)
+        
+#         # Create a mutable copy of request.data
+#         data = request.data.copy()
+#         data['userid'] = request.user.id
 
-#             return Response({'message': 'Order placed successfully'}, status=status.HTTP_201_CREATED)
+#         serializer = OrderSerializer(data=data, context={"request": request})
+#         if serializer.is_valid():
+#             try:
+#                 with transaction.atomic():
+#                     order = serializer.save()
+#                     order.calculate_totals()  # Calculate totals after order creation
+#                     return Response({
+#                         "message": "Order placed successfully",
+#                         "order_id": order.id
+#                     }, status=status.HTTP_201_CREATED)
+#             except Exception as e:
+#                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#         except Exception as e:
-#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class PlaceOrderAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        print(request.data)
-        serializer = PlaceOrderSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, *args, **kwargs):
+        print("Request Data:", request.data)
+        print("Authenticated User:", request.user)
+        print("Request User ID:", request.user.id)
 
-        data = serializer.validated_data
-        user = request.user
-        # print(data)
+        if not request.user.is_authenticated:
+            return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        with transaction.atomic():
-            # 1. Get Address details
+        # Create a mutable copy of request.data
+        data = request.data.copy()
+        data['userid'] = request.user.id
+        print(data['userid'])
+        print("Modified Data:", data)
+
+        serializer = UserOrderSerializer(data=data, context={"request": request})
+        if serializer.is_valid():
             try:
-                address = AddressTable.objects.get(id=data['address_id'], user=user)
-            except AddressTable.DoesNotExist:
-                return Response({"error": "Invalid address"}, status=status.HTTP_400_BAD_REQUEST)
+                with transaction.atomic():
+                    order = serializer.save()
+                    order.calculate_totals()
+                    print(f"Saved Order: ID={order.id}, UserID={order.userid_id}, Branch={order.branch_id}, Address={order.address_id}, Coupon={order.coupon_id}")
+                    return Response({
+                        "message": "Order placed successfully",
+                        "order_id": order.id
+                    }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                print(f"Error during order creation: {str(e)}")
+                return Response({"error": f"Failed to create order: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print("Serializer Errors:", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            # 2. Calculate subtotal
-            subtotal = 0
-            order_items_data = []
-            for item_data in data['items']:
-                try:
-                    item = ItemTable.objects.get(id=item_data['item_id'])
-                except ItemTable.DoesNotExist:
-                    return Response({"error": "Invalid item ID"}, status=status.HTTP_400_BAD_REQUEST)
+class UserAddressView(APIView):
+    permission_classes = [IsAuthenticated]
 
-                variant = None
-                price = item.price
-                if item_data.get('variant_id'):
-                    variant = ItemVariantTable.objects.get(id=item_data['variant_id'])
-                    price = variant.price
 
-                quantity = item_data['quantity']
-                addons_total = 0
-                addon_instances = []
+    def get(self, request, *args, **kwargs):
+        address_id = kwargs.get('address_id')
+        try:
+            if address_id:
+                # Retrieve a single address
+                address = AddressTable.objects.get(id=address_id, userid=request.user.id)
+                serializer = AddressTableSerializer(address)
+                print(f"Retrieved address ID {address_id} for user ID {request.user.id}")
+                return Response({
+                    "message": "Address retrieved successfully",
+                    "data": serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                # List all addresses for the user
+                addresses = AddressTable.objects.filter(userid=request.user.id)
+                serializer = AddressTableSerializer(addresses, many=True)
+                print(f"Retrieved {len(addresses)} addresses for user ID {request.user.id}")
+                return Response({
+                    "message": "Addresses retrieved successfully",
+                    "data": serializer.data
+                }, status=status.HTTP_200_OK)
+        except AddressTable.DoesNotExist:
+            print(f"Address ID {address_id} not found for user ID {request.user.id}")
+            return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(f"Error retrieving addresses: {str(e)}")
+            return Response({"error": f"Failed to retrieve addresses: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class TrackOrderAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
-                for addon_id in item_data.get('addon_ids', []):
-                    addon = AddonTable.objects.get(id=addon_id)
-                    addons_total += addon.price
-                    addon_instances.append(addon)
-
-                item_total = (price + addons_total) * quantity
-                subtotal += item_total
-
-                order_items_data.append({
-                    "item": item,
-                    "variant": variant,
-                    "quantity": quantity,
-                    "instruction": item_data.get('instruction', ''),
-                    "addons": addon_instances,
-                    "price": item_total
-                })
-
-            # 3. Apply coupon
-            discount = 0
-            coupon = None
-            if data.get('coupon_code'):
-                try:
-                    coupon = CouponTable.objects.get(code=data['coupon_code'], is_active=True)
-                    discount = coupon.discount_amount  # or apply percent logic
-                except CouponTable.DoesNotExist:
-                    return Response({"error": "Invalid coupon"}, status=status.HTTP_400_BAD_REQUEST)
-
-            tax = subtotal * 0.05  # 5% tax (example)
-            total = subtotal + tax - discount
-
-            # 4. Create Order
-            order = OrderTable.objects.create(
-                user=user,
-                branch_id=data['branch_id'],
-                address=address,
-                delivery_instruction=data.get('delivery_instruction', ''),
-                cooking_instruction=data.get('cooking_instruction', ''),
-                subtotal=subtotal,
-                tax=tax,
-                discount=discount,
-                total=total,
-                payment_method=data['payment_method'],
-                payment_status='PENDING',
-                coupon=coupon,
-                status='PLACED',
-                latitude=address.latitude,
-                longitude=address.longitude,
-                phone_number=address.phone,
-                created_at=datetime.timezone.now()
-            )
-
-            # 5. Create Order Items & Addons
-            for item_data in order_items_data:
-                order_item = OrderItemTable.objects.create(
-                    order=order,
-                    item=item_data['item'],
-                    variant=item_data['variant'],
-                    quantity=item_data['quantity'],
-                    instruction=item_data['instruction'],
-                    price=item_data['price']
-                )
-                for addon in item_data['addons']:
-                    AddonTable.objects.create(order_item=order_item, addon=addon)
-
-            # 6. Create Payment record (optional)
-            PaymentTable.objects.create(
-                order=order,
-                method=data['payment_method'],
-                amount=total,
-                status='PENDING'
-            )
-
-            return Response({
-                "message": "Order placed successfully",
-                "order_id": order.id,
-                "total": total
-            }, status=status.HTTP_201_CREATED)
+    def get(self, request, orderid):
+        try:
+            order = OrderTable.objects.get(orderid=orderid, userid=request.user)
+            serializer = TrackOrderSerializer(order)
+            return Response({'success': True, 'data': serializer.data})
+        except OrderTable.DoesNotExist:
+            return Response({'success': False, 'message': 'Order not found'}, status=404)
