@@ -376,3 +376,28 @@ class UserOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Failed to create order item: {str(e)}")
 
         return order
+    
+class TrackOrderSerializer(serializers.ModelSerializer):
+    deliveryboy_phone = serializers.SerializerMethodField()
+    deliveryboy_latitude = serializers.SerializerMethodField()
+    deliveryboy_longitude = serializers.SerializerMethodField()
+    items = OrderItemSerializer(many=True)
+
+    class Meta:
+        model = OrderTable
+        fields = ['orderid', 'status', 'deliveryboy_phone', 'deliveryboy_latitude', 'deliveryboy_longitude', 'items']
+
+    def get_deliveryboy_phone(self, obj):
+        if obj.deliveryboy:
+            return obj.deliveryboy.phone_number
+        return None
+
+    def get_deliveryboy_latitude(self, obj):
+        if obj.deliveryboy:
+            return getattr(obj.deliveryboy.deliveryboy, 'latitude', None)
+        return None
+
+    def get_deliveryboy_longitude(self, obj):
+        if obj.deliveryboy:
+            return getattr(obj.deliveryboy.deliveryboy, 'longitude', None)
+        return None

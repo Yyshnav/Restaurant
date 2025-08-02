@@ -10,7 +10,7 @@ from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTab
 from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
 from Deliveryboyapp.serializer import OrderSerializer
-from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
+from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, TrackOrderSerializer, UserOrderSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -949,14 +949,6 @@ class PlaceOrderAPIView(APIView):
 class UserAddressView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # def get(self, request):
-    #     try:
-    #         address = AddressTable.objects.get(userid=request.user)
-    #         serializer = AddressTableSerializer(address)
-    #         print("Address Data:", serializer.data)
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #     except AddressTable.DoesNotExist:
-    #         return Response({'detail': 'Address not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     def get(self, request, *args, **kwargs):
         address_id = kwargs.get('address_id')
@@ -985,4 +977,14 @@ class UserAddressView(APIView):
         except Exception as e:
             print(f"Error retrieving addresses: {str(e)}")
             return Response({"error": f"Failed to retrieve addresses: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+        
+class TrackOrderAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, orderid):
+        try:
+            order = OrderTable.objects.get(orderid=orderid, userid=request.user)
+            serializer = TrackOrderSerializer(order)
+            return Response({'success': True, 'data': serializer.data})
+        except OrderTable.DoesNotExist:
+            return Response({'success': False, 'message': 'Order not found'}, status=404)
