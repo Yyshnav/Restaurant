@@ -8,6 +8,7 @@ from Accountapp.models import AddressTable, BranchTable, CartTable, CouponTable,
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSerializer
+# from Deliveryboyapp.serializer import DeliveryBoyTableSerializer
 
 LoginTable = get_user_model()
 
@@ -186,45 +187,38 @@ class PlaceOrderSerializer(serializers.ModelSerializer):
         ]
 
 # class OrderItemSerializer(serializers.Serializer):
-#     item_id = serializers.IntegerField()
+#     itemname_id = serializers.IntegerField()
 #     fooditem_price = serializers.DecimalField(max_digits=10, decimal_places=2)
 #     quantity = serializers.IntegerField()
 #     variant_id = serializers.IntegerField(required=False, allow_null=True)
 #     instruction = serializers.CharField(required=False, allow_blank=True)
 #     addon_id = serializers.IntegerField(required=False, allow_null=True)
 
-class OrderItemSerializer(serializers.Serializer):
-    item_id = serializers.IntegerField()
-    fooditem_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    quantity = serializers.IntegerField()
-    variant_id = serializers.IntegerField(required=False, allow_null=True)
-    instruction = serializers.CharField(required=False, allow_blank=True)
-    addon_id = serializers.IntegerField(required=False, allow_null=True)
+#     def validate(self, data):
+#         item_id = data.get('item_id')
+#         variant_id = data.get('variant_id')
+#         addon_id = data.get('addon_id')
 
-    def validate(self, data):
-        item_id = data.get('item_id')
-        variant_id = data.get('variant_id')
-        addon_id = data.get('addon_id')
-
-        if not ItemTable.objects.filter(id=item_id).exists():
-            raise serializers.ValidationError(f"Item with id {item_id} does not exist.")
-        if variant_id and not ItemVariantTable.objects.filter(id=variant_id, item_id=item_id).exists():
-            raise serializers.ValidationError(f"Variant with id {variant_id} does not exist for item {item_id}.")
-        if addon_id and not ItemTable.objects.filter(id=addon_id).exists():
-            raise serializers.ValidationError(f"Addon with id {addon_id} does not exist.")
-        return data
+#         if not ItemTable.objects.filter(id=item_id).exists():
+#             raise serializers.ValidationError(f"Item with id {item_id} does not exist.")
+#         if variant_id and not ItemVariantTable.objects.filter(id=variant_id, item_id=item_id).exists():
+#             raise serializers.ValidationError(f"Variant with id {variant_id} does not exist for item {item_id}.")
+#         if addon_id and not ItemTable.objects.filter(id=addon_id).exists():
+#             raise serializers.ValidationError(f"Addon with id {addon_id} does not exist.")
+#         return data
 
 
 class UserOrderItemSerializer(serializers.Serializer):
-    item_id = serializers.IntegerField()
-    fooditem_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    # item_id = serializers.IntegerField()
+    itemname = serializers.PrimaryKeyRelatedField(queryset=ItemTable.objects.all())
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
     quantity = serializers.IntegerField()
     variant_id = serializers.IntegerField(required=False, allow_null=True)
     instruction = serializers.CharField(required=False, allow_blank=True)
     addon_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate(self, data):
-        item_id = data.get('item_id')
+        item_id = data.get('itemname')
         variant_id = data.get('variant_id')
         addon_id = data.get('addon_id')
 
@@ -364,7 +358,7 @@ class UserOrderSerializer(serializers.ModelSerializer):
                 order_item = OrderItemTable.objects.create(
                     order=order,
                     itemname=item,
-                    price=item_data['fooditem_price'],
+                    price=item_data['price'],
                     quantity=str(item_data['quantity']),
                     variant_id=item_data.get('variant_id'),
                     instruction=item_data.get('instruction', ''),
@@ -377,27 +371,78 @@ class UserOrderSerializer(serializers.ModelSerializer):
 
         return order
     
-class TrackOrderSerializer(serializers.ModelSerializer):
-    deliveryboy_phone = serializers.SerializerMethodField()
-    deliveryboy_latitude = serializers.SerializerMethodField()
-    deliveryboy_longitude = serializers.SerializerMethodField()
-    items = OrderItemSerializer(many=True)
+# class TrackOrderSerializer(serializers.ModelSerializer):
+#     deliveryid_phone = serializers.SerializerMethodField()
+#     deliveryid_latitude = serializers.SerializerMethodField()
+#     deliveryid_longitude = serializers.SerializerMethodField()
+#     order_item = OrderItemSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = OrderTable
-        fields = ['orderid', 'status', 'deliveryboy_phone', 'deliveryboy_latitude', 'deliveryboy_longitude', 'items']
 
-    def get_deliveryboy_phone(self, obj):
-        if obj.deliveryboy:
-            return obj.deliveryboy.phone_number
-        return None
+#     class Meta:
+#         model = OrderTable
+#         fields = ['id', 'orderstatus', 'deliveryid_phone', 'deliveryid_latitude', 'deliveryid_longitude', 'items']
 
-    def get_deliveryboy_latitude(self, obj):
-        if obj.deliveryboy:
-            return getattr(obj.deliveryboy.deliveryboy, 'latitude', None)
-        return None
+#     def get_deliveryid_phone(self, obj):
+#         if obj.deliveryid:
+#             return obj.deliveryid.phone_number
+#         return None
 
-    def get_deliveryboy_longitude(self, obj):
-        if obj.deliveryboy:
-            return getattr(obj.deliveryboy.deliveryboy, 'longitude', None)
-        return None
+#     def get_deliveryid_latitude(self, obj):
+#         if obj.deliveryid:
+#             return getattr(obj.deliveryid.deliveryboy, 'latitude', None)
+#         return None
+
+#     def get_deliveryid_longitude(self, obj):
+#         if obj.deliveryid:
+#             return getattr(obj.deliveryid.deliveryboy, 'longitude', None)
+#         return None
+
+
+# class TrackOrderSerializer(serializers.ModelSerializer):
+#     deliveryid_phone = serializers.SerializerMethodField()
+#     deliveryid_latitude = serializers.SerializerMethodField()
+#     deliveryid_longitude = serializers.SerializerMethodField()
+#     items = OrderItemSerializer(source='order_item', many=True, read_only=True)
+
+#     class Meta:
+#         model = OrderTable
+#         fields = ['id', 'orderstatus', 'deliveryid_phone', 'deliveryid_latitude', 'deliveryid_longitude', 'items']
+
+#     def get_deliveryid_phone(self, obj):
+#         if obj.deliveryid:
+#             return obj.deliveryid.phone_number
+#         return None
+
+#     def get_deliveryid_latitude(self, obj):
+#         if obj.deliveryid:
+#             return getattr(obj.deliveryid.deliveryboy, 'latitude', None)
+#         return None
+
+#     def get_deliveryid_longitude(self, obj):
+#         if obj.deliveryid:
+#             return getattr(obj.deliveryid.deliveryboy, 'longitude', None)
+#         return None
+
+
+# class TrackOrderSerializer(serializers.ModelSerializer):
+#     delivery_details = DeliveryBoyTableSerializer(source='deliveryid', read_only=True)
+#     items = OrderItemSerializer(source='order_item', many=True, read_only=True)
+
+#     class Meta:
+#         model = OrderTable
+#         fields = [
+#             'id',
+#             'orderstatus',
+#             'paymentstatus',
+#             'subtotal',
+#             'tax',
+#             'discount',
+#             'totalamount',
+#             'latitude',
+#             'longitude',
+#             'phone_number',
+#             'created_at',
+#             'updated_at',
+#             'delivery_details',
+#             'items'
+#         ]

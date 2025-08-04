@@ -9,8 +9,9 @@ import random
 from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OrderItemTable, OrderTable, PaymentTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
-from Deliveryboyapp.serializer import OrderSerializer
-from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, TrackOrderSerializer, UserOrderSerializer
+# from Deliveryboyapp.serializer import OrderSerializer
+from Deliveryboyapp.serializer import TrackOrderSerializer
+from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -978,12 +979,15 @@ class UserAddressView(APIView):
             print(f"Error retrieving addresses: {str(e)}")
             return Response({"error": f"Failed to retrieve addresses: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-class TrackOrderAPIView(APIView):
+class TrackAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, orderid):
+        print('------------------------------------------------------')
+        print(f"Tracking order ID: {orderid} for user ID: {request.user.id}")
         try:
-            order = OrderTable.objects.get(orderid=orderid, userid=request.user)
+            order = OrderTable.objects.get(id=orderid, userid_id=request.user.id)
+            print("User orders:", order.userid_id)
             serializer = TrackOrderSerializer(order)
             return Response({'success': True, 'data': serializer.data})
         except OrderTable.DoesNotExist:

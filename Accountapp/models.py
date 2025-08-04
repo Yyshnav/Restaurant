@@ -93,14 +93,28 @@ class CouponTable(models.Model):
 
     def __str__(self):
         return self.code
+    
+class DeliveryBoyTable(models.Model):
+    name = models.CharField(max_length=400)
+    phone = models.CharField(max_length=15)
+    email = models.CharField(max_length=100, null=True, blank=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
+    address = models.CharField(max_length=255)
+    image = models.FileField(upload_to='deliveryboy_images/', null=True, blank=True)
+    idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
+    license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
+    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
+
+    def __str__(self):
+        return f"{self.name} ({self.phone})"
 
     
 class OrderTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
     coupon = models.ForeignKey(CouponTable, on_delete=models.SET_NULL, null=True, blank=True)
-    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, null=True, blank=True)  # New field
-
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, null=True, blank=True)
+    deliveryid = models.ForeignKey(DeliveryBoyTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -355,19 +369,7 @@ class ComplaintTable(models.Model):
     def __str__(self):
         return f"Complaint by {self.userid} (Delivery: {self.deliveryid})"
     
-class DeliveryBoyTable(models.Model):
-    name = models.CharField(max_length=400)
-    phone = models.CharField(max_length=15)
-    email = models.CharField(max_length=100, null=True, blank=True)
-    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
-    address = models.CharField(max_length=255)
-    image = models.FileField(upload_to='deliveryboy_images/', null=True, blank=True)
-    idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
-    license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
 
-    def __str__(self):
-        return f"{self.name} ({self.phone})"
 
 class PaymentTable(models.Model):
     PAYMENT_METHOD_CHOICES = [
