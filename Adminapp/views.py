@@ -1,4 +1,5 @@
 from datetime import date
+from time import localtime
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -242,11 +243,12 @@ class AddCarouselView(View):
     def get(self, request):
         c = OfferTable.objects.all()
         d = BranchTable.objects.all()
-        return render(request, 'carouselAdd.html', {'offers':c, 'branches':d})
+        return render(request, 'carouselAdd.html', {'offers': c, 'branches': d})
+
     def post(self, request):
         image = request.FILES.get('carouselImage')
         offer_id = request.POST.get('category')
-        branch_ids = request.POST.getlist('branches[]')  
+        branch_ids = request.POST.getlist('branches[]')
         offer_percentage = request.POST.get('offerPercentage')
         start_date = request.POST.get('startDate')
         end_date = request.POST.get('endDate')
@@ -256,7 +258,7 @@ class AddCarouselView(View):
         except OfferTable.DoesNotExist:
             offer = None
 
-        # Correct datetime parsing
+        # Convert input date strings to datetime
         start_datetime = None
         end_datetime = None
 
@@ -272,6 +274,7 @@ class AddCarouselView(View):
             except ValueError:
                 end_datetime = None
 
+        # Create carousel
         carousel = CarouselTable.objects.create(
             image=image,
             offer=offer,
@@ -280,6 +283,7 @@ class AddCarouselView(View):
             enddate=end_datetime
         )
 
+        # Add branches
         if 'all' in branch_ids:
             branches = BranchTable.objects.all()
         else:
@@ -288,7 +292,7 @@ class AddCarouselView(View):
         carousel.branch.set(branches)
         carousel.save()
 
-        return redirect('add-carousel')
+        return redirect('view-carousel')
 
 
 class EditDishView(View):
@@ -296,11 +300,15 @@ class EditDishView(View):
         return render(request, 'dish_edit.html')
 
 
+from django.utils.timezone import now, make_aware, is_naive
+
+
 class AddOfferView(View):
     def get(self, request):
         c = ItemTable.objects.all()
         d = BranchTable.objects.all()
         return render(request, 'offerAdd.html', {'items': c, 'branches': d})
+
     def post(self, request):
         item_id = request.POST.get('itemid')
         name = request.POST.get('name')
@@ -314,12 +322,23 @@ class AddOfferView(View):
             messages.error(request, "Please select a branch.")
             return redirect('add-offer')
 
-        # Convert date-time strings to datetime objects
         try:
+            ist = pytz.timezone('Asia/Kolkata')
+
             start_datetime = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M') if start_date_str else None
             end_datetime = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M') if end_date_str else None
+
+            if start_datetime and is_naive(start_datetime):
+                start_datetime = ist.localize(start_datetime)
+            if end_datetime and is_naive(end_datetime):
+                end_datetime = ist.localize(end_datetime)
+
+            current_time = datetime.now(pytz.utc).astimezone(ist)
+
+            is_active = start_datetime <= current_time <= end_datetime if (start_datetime and end_datetime) else False
+
         except ValueError:
-            messages.error(request, "Invalid date format.")
+            messages.error(request, "Invalid date/time format.")
             return redirect('add-offer')
 
         try:
@@ -333,7 +352,8 @@ class AddOfferView(View):
                 offerdescription=offer_description,
                 startdate=start_datetime,
                 enddate=end_datetime,
-                branch=branch
+                branch=branch,
+                is_active=is_active,
             )
 
             messages.success(request, "Offer added successfully.")
@@ -343,7 +363,6 @@ class AddOfferView(View):
             messages.error(request, "Invalid branch selected.")
 
         return redirect('view-offer')
-
 
     
 from django.core.mail import send_mail
@@ -496,7 +515,32 @@ class EditBranchView(View):
 
 class ViewcarouselView(View):
     def get(self, request):
-        return render(request, 'viewcarousel.html')
+        carousels = CarouselTable.objects.all()
+        current_time = now()
+        print("Current Server Time (UTC or your TZ):", current_time)
+
+        updated_carousels = []
+
+        for carousel in carousels:
+            print("Start:", carousel.startdate)
+            print("End:", carousel.enddate)
+
+            is_active = (
+                carousel.startdate <= current_time <= carousel.enddate
+                if carousel.startdate and carousel.enddate
+                else False
+            )
+
+            branch_names = ", ".join(branch.name for branch in carousel.branch.all())
+
+            carousel.start_ist = localtime(carousel.startdate).strftime('%d-%m-%Y %I:%M %p') if carousel.startdate else ""
+            carousel.end_ist = localtime(carousel.enddate).strftime('%d-%m-%Y %I:%M %p') if carousel.enddate else ""
+            carousel.is_active = is_active
+            carousel.branch_names = branch_names
+
+            updated_carousels.append(carousel)
+
+        return render(request, 'viewcarousel.html', {'carousels': updated_carousels})
     
 from django.http import JsonResponse
 from django.views import View
@@ -653,20 +697,39 @@ class DeleteOfferView(View):
         c.delete()
         return redirect('view-offer')
 
+from django.utils.timezone import make_aware
+
+from django.utils.timezone import now
+from django.utils.timezone import make_aware
+from django.shortcuts import get_object_or_404, render, redirect
+from django.views import View
+from Accountapp.models import OfferTable, ItemTable, BranchTable
+from datetime import datetime
+import pytz
+
 class EditOfferView(View):
     def get(self, request, offer_id):
         offer = get_object_or_404(OfferTable, id=offer_id)
         items = ItemTable.objects.all()
         branches = BranchTable.objects.all()
+
+        # Convert to naive IST for datetime-local input
+        ist = pytz.timezone('Asia/Kolkata')
+        if offer.startdate:
+            offer.startdate = offer.startdate.astimezone(ist).replace(tzinfo=None)
+        if offer.enddate:
+            offer.enddate = offer.enddate.astimezone(ist).replace(tzinfo=None)
+
         return render(request, 'edit_offer.html', {
             'offer': offer,
             'items': items,
             'branches': branches,
         })
+
     def post(self, request, offer_id):
         offer = get_object_or_404(OfferTable, id=offer_id)
+        ist = pytz.timezone('Asia/Kolkata')
 
-        # Only update if field is present in the request
         if 'name' in request.POST:
             offer.name = request.POST['name']
 
@@ -680,16 +743,33 @@ class EditOfferView(View):
             offer.offerdescription = request.POST['offer_description']
 
         if 'startdate' in request.POST:
-            offer.startdate = request.POST['startdate']
+            try:
+                start_naive = datetime.strptime(request.POST['startdate'], '%Y-%m-%dT%H:%M')
+                offer.startdate = ist.localize(start_naive)
+            except ValueError:
+                pass
 
         if 'enddate' in request.POST:
-            offer.enddate = request.POST['enddate']
+            try:
+                end_naive = datetime.strptime(request.POST['enddate'], '%Y-%m-%dT%H:%M')
+                offer.enddate = ist.localize(end_naive)
+            except ValueError:
+                pass
 
         if 'branch' in request.POST and request.POST['branch']:
             offer.branch_id = request.POST['branch']
 
+        # Update is_active based on current IST time
+        current_time_ist = now().astimezone(ist)
+        offer.is_active = (
+            offer.startdate and offer.enddate and
+            offer.startdate <= current_time_ist <= offer.enddate
+        )
+
         offer.save()
         return redirect('view-offer')
+
+
      
 
 class ViewComplaintView(View):
@@ -720,28 +800,43 @@ class DeleteDishes(View):
 #     def get(self, request):
 #         return render(request, 'viewoffer.html')
 
+
+
+from django.shortcuts import render
+from django.views import View
 from django.utils.timezone import now
 
 
 class ViewOfferView(View):
     def get(self, request):
-        today = now()
-        offers = OfferTable.objects.all()
+        utc_now = now()
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time_ist = utc_now.astimezone(ist)
 
-        offer_data = []
+        offers = OfferTable.objects.select_related('itemid', 'branch').order_by('-startdate')
+
         for offer in offers:
-            offer_data.append({
-                'id': offer.id,
-                'product': offer.itemid.name if offer.itemid else '',  # corrected
-                'title': offer.name,
-                'discount': offer.offer_percentage,
-                'start_date': offer.startdate,
-                'end_date': offer.enddate,
-                'branches': offer.branch.name if offer.branch else '',  # single branch
-                'is_active': offer.startdate <= today <= offer.enddate
-            })
+            offer.product = offer.itemid.name if offer.itemid else "N/A"
+            offer.title = offer.name
+            offer.discount = offer.offer_percentage
+            offer.start_date = offer.startdate.astimezone(ist) if offer.startdate else None
+            offer.end_date = offer.enddate.astimezone(ist) if offer.enddate else None
+            offer.branches = offer.branch.name if offer.branch else "All"
 
-        return render(request, 'viewoffer.html', {'offers': offer_data})
+            # Use UTC time for DB logic, IST only for display
+            new_status = (
+                offer.startdate and offer.enddate and
+                offer.startdate <= utc_now <= offer.enddate
+            )
+
+            if offer.is_active != new_status:
+                offer.is_active = new_status
+                offer.save(update_fields=['is_active'])
+
+        return render(request, 'viewoffer.html', {'offers': offers})
+
+
+
     
 class ViewStaffView(View):
     def get(self, request):
@@ -994,3 +1089,10 @@ def search_dishes(request):
         matches = ItemTable.objects.filter(name__icontains=query).values('id', 'name')[:10]
         return JsonResponse(list(matches), safe=False)
     return JsonResponse([], safe=False)
+
+
+class DeleteCarousel(View):
+    def get(self, request, id):
+        c = CarouselTable.objects.get(id=id)
+        c.delete()
+        return redirect('view-carousel')

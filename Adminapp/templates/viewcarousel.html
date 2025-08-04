@@ -1,45 +1,43 @@
 {% extends 'sidebar.html' %}
 {% load static %}
 
-
 {% block body %}
-  
-  <style>
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 40px;
-      height: 20px;
-    }
-    .switch input { display: none; }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0;
-      right: 0; bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 20px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 16px;
-      width: 16px;
-      left: 2px;
-      bottom: 2px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #28a745;
-    }
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
-  </style>
 
+<style>
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+  }
+  .switch input { display: none; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0;
+    right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #28a745;
+  }
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+</style>
 
 <!-- Content -->
 <div class="app-content content">
@@ -67,26 +65,37 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>1</td>
-                  <td><img src="uploads/sample.jpg" width="80" alt="Carousel" /></td>
-                  <td>Pizza</td>
-                  <td>Branch 1</td>
-                  <td>20%</td>
-                  <td>2025-07-01</td>
-                  <td>2025-07-10</td>
-                  <td>
-                    <label class="switch">
-                      <input type="checkbox" checked>
-                      <span class="slider"></span>
-                    </label>
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
-                  </td>
-                </tr>
-                <!-- Repeat rows dynamically if needed -->
+                {% for carousel in carousels %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                      <img src="{{ carousel.image.url }}" width="80" alt="Carousel" />
+                    </td>
+                    <td>
+                      {% if carousel.offer %}
+                        {{ carousel.offer.name }}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                    <td>{{ carousel.branch_names }}</td>
+                    <td>{{ carousel.offer_percentage }}%</td>
+                    <td>{{ carousel.start_ist }}</td>
+                    <td>{{ carousel.end_ist }}</td>
+                    <td>
+                      <label class="switch">
+                        <input type="checkbox" {% if carousel.is_active %}checked{% endif %} disabled>
+                        <span class="slider"></span>
+                      </label>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
+                      <button onclick="window.location='/delete-carousel/{{ carousel.id }}/'" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="9" class="text-center">No carousel offers available.</td></tr>
+                {% endfor %}
               </tbody>
             </table>
           </div>

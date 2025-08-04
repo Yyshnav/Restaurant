@@ -92,7 +92,12 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 
+USE_TZ = True
+TIME_ZONE = 'Asia/Kolkata'
 
+from django.utils.timezone import now
+
+current_time = now()
 
 # Database
 # DATABASES = {
