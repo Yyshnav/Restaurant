@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from Accountapp import serializer
 from Accountapp.models import *
-from Userapp.serializer import ProfileTableSerializer,OrderItemTableSerializer,DeliveryTableSerializer,AddressTableSerializer
+from Userapp.serializer import ProfileTableSerializer,OrderItemTableSerializer,DeliveryTableSerializer,AddressTableSerializer, UserOrderItemSerializer
 from Adminapp.serializer import BranchTableSerializer 
 
 
@@ -93,3 +93,27 @@ class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     # otp = serializers.CharField(max_length=6)
     new_password = serializers.CharField(min_length=6)
+
+
+class TrackOrderSerializer(serializers.ModelSerializer):
+    delivery_details = DeliveryBoyTableSerializer(source='deliveryid', read_only=True)
+    items = UserOrderItemSerializer(source='order_item', many=True, read_only=True)
+
+    class Meta:
+        model = OrderTable
+        fields = [
+            'id',
+            'orderstatus',
+            'paymentstatus',
+            'subtotal',
+            'tax',
+            'discount',
+            'totalamount',
+            'latitude',
+            'longitude',
+            'phone_number',
+            'created_at',
+            'updated_at',
+            'delivery_details',
+            'items'
+        ]

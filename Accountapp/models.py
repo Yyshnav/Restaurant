@@ -1,7 +1,10 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.utils.timezone import now, localtime
+
+from rest_framework.views import APIView
 
 
 # ------------------------
@@ -62,6 +65,7 @@ class BranchTable(models.Model):
         return self.name
     
 class AddressTable(models.Model):
+    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True)  # Added userid
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     address = models.CharField(max_length=455, null=True, blank=True)
@@ -76,41 +80,84 @@ class AddressTable(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.address}, {self.city}"
+    
+class CouponTable(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    description = models.TextField(null=True, blank=True)
+    discount_percentage = models.FloatField(null=True, blank=True)
+    max_discount_amount = models.FloatField(null=True, blank=True)
+    min_order_amount = models.FloatField(null=True, blank=True)
+    valid_from = models.CharField(max_length=25, null=True, blank=True)
+    valid_to = models.CharField(max_length=25, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    usage_limit = models.CharField(max_length=25, null=True, blank=True)
+    used_count = models.CharField(max_length=25, null=True, blank=True)
+
+    def __str__(self):
+        return self.code
+    
+class DeliveryBoyTable(models.Model):
+    name = models.CharField(max_length=400)
+    phone = models.CharField(max_length=15)
+    email = models.CharField(max_length=100, null=True, blank=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
+    address = models.CharField(max_length=255)
+    image = models.FileField(upload_to='deliveryboy_images/', null=True, blank=True)
+    idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
+    license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
+    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
+
+    def __str__(self):
+        return f"{self.name} ({self.phone})"
 
     
 class OrderTable(models.Model):
-    ORDER_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('CONFIRMED', 'Confirmed'),
-        ('PREPARING', 'Preparing'),
-        ('OUT_FOR_DELIVERY', 'Out for Delivery'),
-        ('DELIVERED', 'Delivered'),
-        ('CANCELLED', 'Cancelled'),
-    ]
-    PAYMENT_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('PAID', 'Paid'),
-        ('FAILED', 'Failed'),
-        ('REFUNDED', 'Refunded'),
-    ]
-    address= models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='order_address', null=True, blank=True)
-    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='order_user')
-    totalamount = models.FloatField(null=True, blank=True)
-    orderstatus = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='PENDING')
-    paymentstatus = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
-    deliveryid = models.ForeignKey(LoginTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='deliveries')
+    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True)
+    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
+    coupon = models.ForeignKey(CouponTable, on_delete=models.SET_NULL, null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, null=True, blank=True)
+    deliveryid = models.ForeignKey(DeliveryBoyTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    totalamount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    paymentstatus = models.CharField(max_length=50, choices=[
+        ("PENDING", "Pending"), ("PAID", "Paid"), ("FAILED", "Failed")
+    ], default="PENDING")
+
+    orderstatus = models.CharField(max_length=50, choices=[
+        ("PENDING", "Pending"), ("ACCEPTED", "Accepted"), ("REJECTED", "Rejected"),
+        ("CANCELLED", "Cancelled"), ("DELIVERED", "Delivered")
+    ], default="PENDING")
+
+    cooking_instructions = models.TextField(blank=True, null=True)
+    delivery_instructions = models.TextField(blank=True, null=True)
+    payment_method = models.CharField(max_length=50, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def calculate_totals(self):
+        # Ensure all arithmetic uses Decimal
+        subtotal = sum(
+            item.price * Decimal(item.quantity)
+            for item in self.order_item.all()
+            if item.quantity and item.quantity.strip().isdigit()
+        )
+        self.subtotal = subtotal
+        self.tax = subtotal * Decimal('0.05')  # 5% tax as Decimal
+        self.discount = self.coupon.discount_amount if self.coupon else Decimal('0')
+        self.totalamount = self.subtotal + self.tax - self.discount
+        self.save()
+
     def __str__(self):
-        return f"Order #{self.id} by {self.userid} - {self.orderstatus}"
-    
-    
+        return f"Order #{self.id} by {self.userid}"
 
-    
-
-    
 class ProfileTable(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
@@ -286,8 +333,9 @@ class CartTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='cart_items')
     fooditem = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='cart_entries')
     quantity = models.CharField(max_length=100, null=True, blank=True)
-    price = models.FloatField(null=True, blank=True)  # Price at the time item was added
+    price = models.FloatField(null=True, blank=True)
     addon = models.ForeignKey(AddonTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_addons')
+    variant = models.ForeignKey(ItemVariantTable, on_delete=models.SET_NULL, null=True, blank=True)
     instruction = models.CharField(max_length=200, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -311,13 +359,13 @@ class OrderItemTable(models.Model):
     quantity = models.CharField(max_length=100, blank=True, null=True, default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     instruction = models.TextField(null=True, blank=True)
+    variant = models.ForeignKey(ItemVariantTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='variant_items')
     addon = models.ForeignKey(ItemTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='addon_order_items')
 
     def __str__(self):
         return f"{self.order} - {self.itemname} x {self.quantity}"
     
 
-    
 class DeliveryTable(models.Model):
     order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name='order_items',null=True, blank=True)
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveries_info')
@@ -345,19 +393,7 @@ class ComplaintTable(models.Model):
     def __str__(self):
         return f"Complaint by {self.userid} (Delivery: {self.deliveryid})"
     
-class DeliveryBoyTable(models.Model):
-    name = models.CharField(max_length=400)
-    phone = models.CharField(max_length=15)
-    email = models.CharField(max_length=100, null=True, blank=True)
-    branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, null=True, blank=True)
-    address = models.CharField(max_length=255)
-    image = models.FileField(upload_to='deliveryboy_images/', null=True, blank=True)
-    idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
-    license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
 
-    def __str__(self):
-        return f"{self.name} ({self.phone})"
 
 class PaymentTable(models.Model):
     PAYMENT_METHOD_CHOICES = [
@@ -378,23 +414,6 @@ class PaymentTable(models.Model):
     def __str__(self):
         return f"Payment {self.transaction_id} for Order #{self.order.id}"
 
-
-
-
-class CouponTable(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    description = models.TextField(null=True, blank=True)
-    discount_percentage = models.FloatField(null=True, blank=True)
-    max_discount_amount = models.FloatField(null=True, blank=True)
-    min_order_amount = models.FloatField(null=True, blank=True)
-    valid_from = models.CharField(max_length=25, null=True, blank=True)
-    valid_to = models.CharField(max_length=25, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    usage_limit = models.CharField(max_length=25, null=True, blank=True)
-    used_count = models.CharField(max_length=25, null=True, blank=True)
-
-    def __str__(self):
-        return self.code
 
 class FeedbackTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='feedbacks')

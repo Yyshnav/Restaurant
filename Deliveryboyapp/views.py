@@ -29,9 +29,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 from Accountapp.serializer import ChatMessageSerializer
-
 from django.contrib.auth.hashers import make_password
-
 
 
 # from Accountapp.serializer import ChatMessageSerializer
@@ -402,7 +400,7 @@ class ResetPasswordAPIView(APIView):
         user.save()
         OTP_STORE.pop(email, None)
         return Response({'message': 'Password reset successful','status':True}, status=status.HTTP_200_OK)
-    
+     
 
 
 # class LogoutAPIView(APIView):
