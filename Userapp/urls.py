@@ -41,6 +41,6 @@ urlpatterns = [
     path('personalized/', PersonalizedRecommendationAPIView.as_view(), name='personalized'),
     path('placeorder/', PlaceOrderAPIView.as_view(), name='placeorder'),
     path('useraddress/', UserAddressView.as_view(), name='get-address'),
-    path("trackorder/<int:orderid>/", TrackOrderAPIView.as_view(), name='trackorder'),
+    path("trackorders/<int:orderid>/", TrackAPIView.as_view(), name='trackorder'),
 ]
 
