@@ -25,7 +25,7 @@ admin.site.register(SubCategoryTable)
 admin.site.register(SubSubCategoryTable)
 
 admin.site.register(AddonTable)
-admin.site.register(OfferTable)
+# admin.site.register(OfferTable)
 admin.site.register(AddressTable)
 
 

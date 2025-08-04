@@ -55,7 +55,7 @@
 
             <div class="form-group">
                 <label for="product">Product</label>
-                <select class="form-control" name="itemid" required>
+                <select class="form-control" name="itemid" >
                 <option value="">-- Select Product --</option>
                 {% for i in items %}
                     <option value="{{ i.id }}" {% if i.id == offer.itemid.id %}selected{% endif %}>{{ i.name }}</option>
@@ -65,32 +65,33 @@
 
             <div class="form-group">
                 <label>Offer Title</label>
-                <input type="text" name="name" class="form-control" value="{{ offer.name }}" required>
+                <input type="text" name="name" class="form-control" value="{{ offer.name }}" >
             </div>
 
             <div class="form-group">
                 <label>Discount (%)</label>
-                <input type="number" name="offer_percentage" class="form-control" value="{{ offer.offer_percentage }}" required>
+                <input type="number" name="offer_percentage" class="form-control" value="{{ offer.offer_percentage }}" >
             </div>
 
             <div class="form-group">
                 <label>Description</label>
-                <input type="text" name="offer_description" class="form-control" value="{{ offer.offerdescription }}" required>
+                <input type="text" name="offer_description" class="form-control" value="{{ offer.offerdescription }}" >
             </div>
 
             <div class="form-group">
                 <label>Start Date</label>
-                <input type="date" name="startdate" class="form-control" value="{{ offer.startdate|date:'Y-m-d' }}" required>
+                <input type="datetime-local" name="startdate" class="form-control" value="{{ offer.startdate|date:'Y-m-d\\TH:i' }}" >
             </div>
 
             <div class="form-group">
                 <label>End Date</label>
-                <input type="date" name="enddate" class="form-control" value="{{ offer.enddate|date:'Y-m-d' }}" required>
+                <input type="datetime-local" name="enddate" class="form-control" value="{{ offer.enddate|date:'Y-m-d\\TH:i' }}" >
             </div>
-
+            <!-- <p>Debug Start: {{ offer.startdate }}</p>
+            <p>Formatted for Input: {{ offer.startdate|date:'Y-m-d\\TH:i' }}</p> -->
             <div class="form-group">
                 <label>Branch</label>
-                <select class="form-control" name="branch" required>
+                <select class="form-control" name="branch" >
                 <option value="">-- Select Branch --</option>
                 {% for b in branches %}
                     <option value="{{ b.id }}" {% if b.id == offer.branch.id %}selected{% endif %}>{{ b.name }}</option>
@@ -107,11 +108,8 @@
   </div>
 </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("startDate")?.setAttribute('min', today);
-    document.getElementById("endDate")?.setAttribute('min', today);
-  });
-</script>
+
+
+
+
 {% endblock %}
