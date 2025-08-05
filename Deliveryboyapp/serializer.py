@@ -4,9 +4,14 @@ from Accountapp.models import *
 from Userapp.serializer import ProfileTableSerializer,OrderItemTableSerializer,DeliveryTableSerializer,AddressTableSerializer, UserOrderItemSerializer
 from Adminapp.serializer import BranchTableSerializer 
 
+class DeliveryBoyLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryBoyLocation
+        fields = ['latitude', 'longitude', 'updated_at']
 
 class DeliveryBoyTableSerializer(serializers.ModelSerializer):
     userid = serializer.LoginTableSerializer(read_only=True)
+    location = DeliveryBoyLocationSerializer(read_only=True)
 
     class Meta:
         model = DeliveryBoyTable
@@ -98,6 +103,9 @@ class ResetPasswordSerializer(serializers.Serializer):
 class TrackOrderSerializer(serializers.ModelSerializer):
     delivery_details = DeliveryBoyTableSerializer(source='deliveryid', read_only=True)
     items = UserOrderItemSerializer(source='order_item', many=True, read_only=True)
+    user_profile = ProfileTableSerializer(source='loginid.profile', read_only=True)
+    restaurant_details = BranchTableSerializer(source='branch', read_only=True)
+    branch_id = serializers.IntegerField(source='branch.id', read_only=True)
 
     class Meta:
         model = OrderTable
@@ -115,5 +123,8 @@ class TrackOrderSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'delivery_details',
-            'items'
+            'user_profile',
+            'items',
+            'restaurant_details',
+            'branch_id'
         ]

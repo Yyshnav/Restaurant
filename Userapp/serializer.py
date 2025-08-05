@@ -186,27 +186,6 @@ class PlaceOrderSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
-# class OrderItemSerializer(serializers.Serializer):
-#     itemname_id = serializers.IntegerField()
-#     fooditem_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-#     quantity = serializers.IntegerField()
-#     variant_id = serializers.IntegerField(required=False, allow_null=True)
-#     instruction = serializers.CharField(required=False, allow_blank=True)
-#     addon_id = serializers.IntegerField(required=False, allow_null=True)
-
-#     def validate(self, data):
-#         item_id = data.get('item_id')
-#         variant_id = data.get('variant_id')
-#         addon_id = data.get('addon_id')
-
-#         if not ItemTable.objects.filter(id=item_id).exists():
-#             raise serializers.ValidationError(f"Item with id {item_id} does not exist.")
-#         if variant_id and not ItemVariantTable.objects.filter(id=variant_id, item_id=item_id).exists():
-#             raise serializers.ValidationError(f"Variant with id {variant_id} does not exist for item {item_id}.")
-#         if addon_id and not ItemTable.objects.filter(id=addon_id).exists():
-#             raise serializers.ValidationError(f"Addon with id {addon_id} does not exist.")
-#         return data
-
 
 class UserOrderItemSerializer(serializers.Serializer):
     # item_id = serializers.IntegerField()
@@ -222,7 +201,7 @@ class UserOrderItemSerializer(serializers.Serializer):
         variant_id = data.get('variant_id')
         addon_id = data.get('addon_id')
 
-        if not ItemTable.objects.filter(id=item_id).exists():
+        if not ItemTable.objects.filter(id=item_id.id).exists():
             raise serializers.ValidationError(f"Item with id {item_id} does not exist.")
         if variant_id and not ItemVariantTable.objects.filter(id=variant_id, item_id=item_id).exists():
             raise serializers.ValidationError(f"Variant with id {variant_id} does not exist for item {item_id}.")
@@ -354,7 +333,8 @@ class UserOrderSerializer(serializers.ModelSerializer):
         # Create order items
         try:
             for item_data in items_data:
-                item = ItemTable.objects.get(id=item_data['item_id'])
+                # item = ItemTable.objects.get(id=item_data['itemname'])
+                item = item_data['itemname']
                 order_item = OrderItemTable.objects.create(
                     order=order,
                     itemname=item,

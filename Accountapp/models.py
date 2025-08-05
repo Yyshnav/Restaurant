@@ -108,6 +108,15 @@ class DeliveryBoyTable(models.Model):
     def __str__(self):
         return f"{self.name} ({self.phone})"
 
+class DeliveryBoyLocation(models.Model):
+    delivery_boy = models.OneToOneField(DeliveryBoyTable, on_delete=models.CASCADE, related_name='location')
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.delivery_boy.name} - Lat: {self.latitude}, Long: {self.longitude}"
+
     
 class OrderTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True)
