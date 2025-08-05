@@ -2,6 +2,8 @@ from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.utils.timezone import now, localtime
+
 from rest_framework.views import APIView
 
 
@@ -14,7 +16,7 @@ class UserRole(models.Model):
         ('MANAGER', 'Manager'),
         ('KITCHEN', 'Kitchen'),
         ('WAITER', 'Waiter'),
-        ('DELIVERY', 'Delivery Boy'),
+        ('DELIVERY', 'Delivery Boy'),   
         ('USER', 'User'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, unique=True)
@@ -281,7 +283,11 @@ class AddonTable(models.Model):
     
 
 
-            
+import pytz
+
+from django.db import models
+from django.utils.timezone import now
+
 class OfferTable(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
     startdate = models.DateTimeField(null=True, blank=True)
@@ -292,9 +298,27 @@ class OfferTable(models.Model):
     offerdescription = models.CharField(max_length=100, null=True, blank=True)
     createdat = models.DateTimeField(auto_now_add=True)
     updatedat = models.DateTimeField(auto_now=True)
-    
+    is_active = models.BooleanField(default=False)
+
+
+    def save(self, *args, **kwargs):
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time = now().astimezone(ist)
+
+        print("Saving Offer:", self.name)
+        print("Current Time (IST):", current_time)
+        print("Start Time:", self.startdate)
+        print("End Time:", self.enddate)
+
+        if self.startdate and self.enddate:
+            self.is_active = self.startdate <= current_time <= self.enddate
+            print("Offer is_active:", self.is_active)
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
+
     
 
 class RatingTable(models.Model):
@@ -547,6 +571,7 @@ class CarouselTable(models.Model):
     startdate = models.DateTimeField(null=True, blank=True)
     enddate = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.offer} - {self.branch} ({self.offer_percentage}%)"
