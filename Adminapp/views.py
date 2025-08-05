@@ -524,7 +524,7 @@ class ViewcarouselView(View):
         for carousel in carousels:
             print("Start:", carousel.startdate)
             print("End:", carousel.enddate)
-
+ 
             is_active = (
                 carousel.startdate <= current_time <= carousel.enddate
                 if carousel.startdate and carousel.enddate
@@ -541,6 +541,7 @@ class ViewcarouselView(View):
             updated_carousels.append(carousel)
 
         return render(request, 'viewcarousel.html', {'carousels': updated_carousels})
+    
     
 from django.http import JsonResponse
 from django.views import View
