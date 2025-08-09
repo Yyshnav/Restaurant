@@ -752,7 +752,7 @@ class PersonalizedRecommendationAPIView(APIView):
             wishlist_item_ids = WishlistTable.objects.filter(userid=login_user).values_list('fooditem_id', flat=True)
 
             # Order history-based
-            ordered_item_ids = OrderItemTable.objects.filter(order__userid=login_user).values_list('itemname_id', flat=True)
+            ordered_item_ids = OrderItemTable.objects.filter(order__userid__loginid=login_user).values_list('itemname_id', flat=True)
 
             # Combine history
             preferred_ids = set(wishlist_item_ids) | set(ordered_item_ids)
@@ -913,6 +913,40 @@ class UpdateFCMTokenView(APIView):
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class PlaceOrderAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, *args, **kwargs):
+#         print("Request Data:", request.data)
+#         print("Authenticated User:", request.user)
+#         print("Request User ID:", request.user.id)
+
+#         if not request.user.is_authenticated:
+#             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         # Create a mutable copy of request.data
+#         data = request.data.copy()
+#         data['userid'] = request.user.id
+#         print(data['userid'])
+#         print("Modified Data:", data)
+
+#         serializer = UserOrderSerializer(data=data, context={"request": request})
+#         if serializer.is_valid():
+#             try:
+#                 with transaction.atomic():
+#                     order = serializer.save()
+#                     order.calculate_totals()
+#                     print(f"Saved Order: ID={order.id}, UserID={order.userid_id}, Branch={order.branch_id}, Address={order.address_id}, Coupon={order.coupon_id}")
+#                     return Response({
+#                         "message": "Order placed successfully",
+#                         "order_id": order.id
+#                     }, status=status.HTTP_201_CREATED)
+#             except Exception as e:
+#                 print(f"Error during order creation: {str(e)}")
+#                 return Response({"error": f"Failed to create order: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         print("Serializer Errors:", serializer.errors)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class PlaceOrderAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -924,10 +958,15 @@ class PlaceOrderAPIView(APIView):
         if not request.user.is_authenticated:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
 
+        try:
+            # ✅ Fetch the related ProfileTable instance
+            profile = ProfileTable.objects.get(loginid=request.user)
+        except ProfileTable.DoesNotExist:
+            return Response({"error": "Profile not found for this user"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Create a mutable copy of request.data
         data = request.data.copy()
-        data['userid'] = request.user.id
-        print(data['userid'])
+        data['userid'] = profile.loginid.id # ✅ Set correct ProfileTable ID
         print("Modified Data:", data)
 
         serializer = UserOrderSerializer(data=data, context={"request": request})
@@ -983,12 +1022,18 @@ class TrackAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, orderid):
-        print('------------------------------------------------------')
-        print(f"Tracking order ID: {orderid} for user ID: {request.user.id}")
+        # print('------------------------------------------------------')
+        # print(f"Tracking order ID: {orderid} for user ID: {request.user.id}")
         try:
-            order = OrderTable.objects.get(id=orderid, userid_id=request.user.id)
-            print("User orders:", order.userid_id)
+            profile = ProfileTable.objects.get(loginid=request.user)
+        except ProfileTable.DoesNotExist:
+            return Response({'success': False, 'message': 'User profile not found'}, status=404)
+        
+        try:
+            order = OrderTable.objects.get(id=orderid, userid_id=profile)
+            # print("User orders:", order)
             serializer = TrackOrderSerializer(order)
+            # print(f"Order details for tracking: {serializer.data}")
             return Response({'success': True, 'data': serializer.data})
         except OrderTable.DoesNotExist:
             return Response({'success': False, 'message': 'Order not found'}, status=404)
