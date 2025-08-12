@@ -1,7 +1,7 @@
 
 from django.urls import path
 
-from .views import *
+from Managerapp.views import *
 
 urlpatterns = [
     path('managerdash/', ManagerDash.as_view(), name='manager_dashboard'),
@@ -12,5 +12,5 @@ urlpatterns = [
     path('addtable/', AddTableView.as_view(), name='add_table'),
     path('takeorders/', TakeOrdersView.as_view(), name='take_orders'),
     path('vieworders/', ViewOrderView.as_view(), name='view_orders'),
-    path('viewstaff/', ViewStaff.as_view(), name='view_staff'),
+    path('viewstaffman/', ViewStaff.as_view(), name='view_staff'),
 ]

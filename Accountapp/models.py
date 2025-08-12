@@ -470,7 +470,7 @@ class VoucherTable(models.Model):
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='printers')
-    subsubcategories = models.ManyToManyField(SubSubCategoryTable, blank=True, related_name='category')
+    subcategories = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='printers')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     def __str__(self):

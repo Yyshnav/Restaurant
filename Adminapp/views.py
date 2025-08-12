@@ -395,7 +395,7 @@ class RegisterStaffView(View):
         # Check if email already exists
         if LoginTable.objects.filter(username=email).exists():
             messages.error(request, "A user with this email already exists.")
-            return redirect('register_staff')
+            return redirect('')
 
         try:
             branch = BranchTable.objects.get(id=branch_id)
@@ -469,7 +469,7 @@ class RegisterStaffView(View):
             messages.warning(request, f"User created but failed to send email: {str(e)}")
 
         messages.success(request, "Staff registered successfully and login details sent via email.")
-        return redirect('registerstaff')
+        return redirect('view-staff')
 
 class ViewBranchReportView(View):
     def get(self, request):

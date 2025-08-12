@@ -31,8 +31,14 @@ class OnlineOrdersView(View):
     
 class PrinterView(View):
     def get(self, request):
-        return render(request, 'printer.html')
-    
+        categories = CategoryTable.objects.prefetch_related('subcategories').all()
+        printers = PrinterTable.objects.all()
+
+        return render(request, 'printer.html', {
+            'categories': categories,
+            'printers': printers
+        })
+
 class AddTableView(View):
     def get(self, request):
         return render(request, 'table.html')
@@ -47,4 +53,4 @@ class ViewOrderView(View):
     
 class ViewStaff(View):
     def get(self, request):
-        return render(request, 'viewstaff.html')
+        return render(request, 'viewstaffman.html')
