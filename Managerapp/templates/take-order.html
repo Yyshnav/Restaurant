@@ -1,0 +1,346 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+  <style>
+    .app-content {
+      position: relative;
+      transition: margin-left 0.3s;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: 250px;
+      background-color: #f8f9fa;
+      padding-top: 56px; /* Adjust based on navbar height */
+    }
+    .content-area {
+      margin-left: 250px;
+      padding: 15px;
+    }
+    .dish-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      transition: 0.3s;
+      height: 100%;
+    }
+    .dish-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    .dish-card .btn {
+      font-size: 0.9rem;
+    }
+    .note-input {
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    .order-item-note {
+      font-style: italic;
+      color: #666;
+    }
+    #selectedList {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #menuList {
+      height: 500px;
+      overflow: auto;
+    }
+    #menuList::-webkit-scrollbar,
+    #selectedList::-webkit-scrollbar {
+      display: none;
+    }
+    @media (max-width: 767px) {
+      .sidebar {
+        position: relative;
+        width: 100%;
+      }
+      .content-area {
+        margin-left: 0;
+      }
+    }
+    @media (min-width: 768px) and (max-width: 1199px) {
+      .sidebar {
+        width: 250px;
+      }
+      .content-area {
+        margin-left: 250px;
+      }
+    }
+    @media (min-width: 1200px) {
+      .sidebar {
+        width: 300px; /* Slightly wider sidebar on large screens */
+      }
+      .content-area {
+        margin-left: 300px; /* Match sidebar width */
+      }
+    }
+   
+  </style>
+
+
+
+
+
+
+  <!-- Main Content -->
+  <div class="app-content ">
+    <div class="content-area">
+      <div class="container-fluid py-1">
+        <div class="row">
+          <div class="col-12 col-md-4 mt-5">
+            <h4>Create Order</h4>
+            <select class="form-select mb-1" id="orderType" onchange="toggleFields()">
+              <option value="dining">Dining</option>
+              <option value="takeaway">Takeaway</option>
+              <option value="online">Online Delivery</option>
+            </select>
+
+            <div id="diningFields">
+              <input type="text" class="form-control mb-1" placeholder="Table Number" id="tableNo" />
+              <select id="waiterSelect" class="form-control" style="width: 100%"></select>
+            </div>
+
+            <div id="customerFields" style="display: none;">
+              <input type="text" class="form-control mb-1" placeholder="Customer Name" id="custName" />
+              <input type="text" class="form-control mb-1" placeholder="Phone Number" id="custPhone" />
+
+              <select class="form-select mb-1" id="deliveryType" onchange="toggleDeliveryBoy()" style="display: none;">
+                <option value="direct">Direct</option>
+                <option value="thirdparty">Third Party</option>
+              </select>
+
+              <input type="text" class="form-control mb-1" placeholder="Delivery Boy Name" id="deliveryBoy" style="display: none;" />
+            </div>
+
+            <h5 class="mt-1">Selected Dishes</h5>
+            <ul class="list-group mb-1" id="selectedList"></ul>
+
+            <div class="mb-1">
+              <strong>Total: $<span id="totalAmount" class="text-danger">0.00</span></strong>
+            </div>
+            <div class="d-flex align-items-center gap-3 mb-1">
+              <input type="number" class="form-control w-50" placeholder="Amount received" id="receivedAmount" oninput="calculateBalance()" />
+              <div>
+                <strong>Balance: $<span id="balanceAmount">0.00</span></strong>
+              </div>
+            </div>
+
+            <button class="btn btn-success w-100" onclick="submitOrder()">Submit Order</button>
+          </div>
+
+          <div class="col-12 col-md-8">
+            <div class="d-flex gap-2 mb-3">
+              <input type="text" id="searchBar" class="form-control" placeholder="Search dishes..." oninput="renderMenu()" />
+              <select class="form-select" id="categoryFilter" onchange="renderMenu()">
+                <option value="">All</option>
+                <option value="starter">Starter</option>
+                <option value="main">Main</option>
+                <option value="drink">Drink</option>
+              </select>
+            </div>
+            <div class="row" id="menuList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Section -->
+  <script>
+    const dishes = [
+      { name: "Spring Rolls", price: 5, image: "https://via.placeholder.com/160", category: "starter" },
+      { name: "Chicken Curry", image: "https://via.placeholder.com/160", category: "main", variants: [
+        { name: "Full", price: 12 }, { name: "Half", price: 7 }
+      ]},
+      { name: "Grilled Steak", image: "https://via.placeholder.com/160", category: "main", variants: [
+        { name: "Full", price: 18 }, { name: "Quarter", price: 6 }
+      ]},
+      { name: "Cola", price: 2, image: "https://via.placeholder.com/160", category: "drink" },
+      { name: "Mango Lassi", price: 3, image: "https://via.placeholder.com/160", category: "drink" }
+    ];
+
+    let selected = {};
+
+    function renderMenu() {
+      const search = document.getElementById('searchBar').value.toLowerCase();
+      const category = document.getElementById('categoryFilter').value;
+      const menuList = document.getElementById('menuList');
+      menuList.innerHTML = "";
+
+      dishes
+        .filter(d => d.name.toLowerCase().includes(search) && (category === "" || d.category === category))
+        .forEach(dish => {
+          const col = document.createElement('div');
+          col.className = 'col-sm-6 col-lg-4 col-xl-3 mb-3';
+
+          let variantSelectHTML = "";
+          if (dish.variants) {
+            variantSelectHTML = `
+              <select class="form-select form-select-sm mb-2" id="variant-${dish.name.replace(/\s+/g, '')}">
+                <option value="">Select Variant</option>
+                ${dish.variants.map(v => `<option value="${v.name}|${v.price}">${v.name} - $${v.price}</option>`).join('')}
+              </select>
+            `;
+          }
+
+          col.innerHTML = `
+            <div class="dish-card h-100 d-flex flex-column">
+              <img src="${dish.image}" alt="${dish.name}">
+              <h6 class="mt-2">${dish.name}</h6>
+              ${variantSelectHTML}
+              <p class="mb-1">${!dish.variants ? "$" + dish.price.toFixed(2) : ""}</p>
+              <button class="btn btn-sm btn-primary mt-auto" onclick="addToOrder('${dish.name}')">Add</button>
+            </div>
+          `;
+          menuList.appendChild(col);
+        });
+    }
+
+    function addToOrder(name) {
+      const dish = dishes.find(d => d.name === name);
+
+      if (dish.variants) {
+        const selectId = `variant-${name.replace(/\s+/g, '')}`;
+        const select = document.getElementById(selectId);
+        const selectedValue = select.value;
+
+        if (!selectedValue) {
+          alert("Please select a variant.");
+          return;
+        }
+
+        const [variantName, variantPrice] = selectedValue.split("|");
+        const key = `${name} (${variantName})`;
+        const price = parseFloat(variantPrice);
+
+        if (!selected[key]) {
+          selected[key] = { qty: 1, price, note: "", variant: variantName };
+        } else {
+          selected[key].qty++;
+        }
+
+      } else {
+        if (!selected[name]) {
+          selected[name] = { qty: 1, price: dish.price, note: "", variant: null };
+        } else {
+          selected[name].qty++;
+        }
+      }
+
+      updateSelected();
+    }
+
+    function updateSelected() {
+      const list = document.getElementById('selectedList');
+      list.innerHTML = "";
+
+      let total = 0;
+
+      Object.entries(selected).forEach(([name, item]) => {
+        if (item.qty === 0) return;
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+
+        const li = document.createElement('li');
+        li.className = "list-group-item d-flex flex-column";
+
+        li.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <strong>${name}</strong>
+            <span>$${itemTotal.toFixed(2)}</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 my-1">
+            <button class="btn btn-sm btn-outline-secondary" onclick="changeQty('${name}', -1)">−</button>
+            <span>${item.qty}</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="changeQty('${name}', 1)">+</button>
+            <button class="btn btn-sm btn-danger ms-auto" onclick="removeItem('${name}')">Delete</button>
+          </div>
+          <input class="form-control note-input mt-1" placeholder="Add note..." 
+            value="${item.note}" onchange="updateNote('${name}', this.value)">
+        `;
+        list.appendChild(li);
+      });
+
+      document.getElementById('totalAmount').textContent = total.toFixed(2);
+      calculateBalance();
+    }
+
+    function changeQty(name, delta) {
+      selected[name].qty = Math.max(0, selected[name].qty + delta);
+      if (selected[name].qty === 0) delete selected[name];
+      updateSelected();
+    }
+
+    function removeItem(name) {
+      delete selected[name];
+      updateSelected();
+    }
+
+    function updateNote(name, value) {
+      selected[name].note = value;
+    }
+
+    function calculateBalance() {
+      const total = parseFloat(document.getElementById('totalAmount').textContent);
+      const received = parseFloat(document.getElementById('receivedAmount').value) || 0;
+      const balance = received - total;
+      document.getElementById('balanceAmount').textContent = balance.toFixed(2);
+    }
+
+    function toggleFields() {
+      const type = document.getElementById("orderType").value;
+      const customerFields = document.getElementById("customerFields");
+      const deliveryType = document.getElementById("deliveryType");
+      const deliveryBoy = document.getElementById("deliveryBoy");
+
+      document.getElementById("diningFields").style.display = (type === "dining") ? "block" : "none";
+      customerFields.style.display = (type !== "dining") ? "block" : "none";
+
+      if (type === "online") {
+        deliveryType.style.display = "block";
+        toggleDeliveryBoy();
+      } else {
+        deliveryType.style.display = "none";
+        deliveryBoy.style.display = "none";
+      }
+    }
+
+    function toggleDeliveryBoy() {
+      const deliveryType = document.getElementById("deliveryType").value;
+      const deliveryBoy = document.getElementById("deliveryBoy");
+      deliveryBoy.style.display = (deliveryType === "direct") ? "block" : "none";
+    }
+
+    function submitOrder() {
+      const type = document.getElementById("orderType").value;
+      const order = {
+        type,
+        items: Object.entries(selected).map(([name, { qty, price, note, variant }]) => ({ name, qty, price, note, variant }))
+      };
+
+      if (type === "dining") {
+        order.table = document.getElementById("tableNo").value;
+        order.waiter = document.getElementById("waiterSelect").value;
+      } else {
+        order.name = document.getElementById("custName").value;
+        order.phone = document.getElementById("custPhone").value;
+      }
+
+      order.total = parseFloat(document.getElementById("totalAmount").textContent);
+      order.received = parseFloat(document.getElementById("receivedAmount").value) || 0;
+      order.balance = order.received - order.total;
+
+      console.log("Order Submitted:", order);
+      alert("Order submitted successfully!");
+      location.reload();
+    }
+
+    renderMenu();
+  </script>
+
+{% endblock %}  

@@ -109,6 +109,23 @@ class DeliveryBoyTable(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.phone})"
+    
+class ProfileTable(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+    dob = models.CharField(max_length=20, null=True, blank=True)
+    # latitude = models.FloatField(null=True, blank=True)
+    # longitude = models.FloatField(null=True, blank=True)
+    # place = models.CharField(max_length=255, null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, related_name='deliverie', null=True, blank=True)
+    loginid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='profile')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 class DeliveryBoyLocation(models.Model):
     delivery_boy = models.OneToOneField(DeliveryBoyTable, on_delete=models.CASCADE, related_name='location')
@@ -453,7 +470,7 @@ class VoucherTable(models.Model):
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='printers')
-    subsubcategories = models.ManyToManyField(SubSubCategoryTable, blank=True, related_name='category')
+    subcategories = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='printers')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     def __str__(self):

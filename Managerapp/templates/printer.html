@@ -1,0 +1,162 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-header row">
+      <div class="content-header-left col-md-6 col-12 mb-2">
+        <h3 class="content-header-title text-dark">Assign Printers to Categories</h3>
+      </div>
+      <div class="content-header-right col-md-6 col-12">
+        <div class="form-group float-right">
+          <button class="btn btn-primary" data-toggle="modal" data-target="#addPrinterModal">Add Printer</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-body">
+      <div class="table-responsive">
+        <table class="table table-striped" id="categoriesTable">
+          <thead>
+            <tr>
+              <th>Category Name</th>
+              <th>Subcategories</th>
+              <th>Assigned Printer</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="categoriesBody">
+            {% for category in categories %}
+              <tr>
+                <td>{{ category.name }}</td>
+                <td>
+                  {% if category.subcategories.all %}
+                    {{ category.subcategories.all|join:", " }}
+                  {% else %}
+                    None
+                  {% endif %}
+                </td>
+                <td>Not Assigned</td>
+                <td>
+                  <button class="btn btn-sm btn-info assign-printer-btn" 
+                          data-category="{{ category.name }}">Assign Printer</button>
+                </td>
+              </tr>
+              {% for sub in category.subcategories.all %}
+                <tr>
+                  <td style="padding-left: 20px;">{{ sub.name }} (Subcategory)</td>
+                  <td></td>
+                  <td>Not Assigned</td>
+                  <td>
+                    <button class="btn btn-sm btn-info assign-printer-btn" 
+                            data-category="{{ sub.name }}" 
+                            data-parent="{{ category.name }}">Assign Printer</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Printer Modal -->
+<div class="modal fade" id="addPrinterModal" tabindex="-1" role="dialog" aria-labelledby="addPrinterModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addPrinterModalLabel">Add New Printer</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="printerId">Printer ID</label>
+          <input type="text" class="form-control" id="printerId" required>
+        </div>
+        <div class="form-group">
+          <label for="printerName">Printer Name</label>
+          <input type="text" class="form-control" id="printerName" required>
+        </div>
+        <button class="btn btn-primary" onclick="addPrinter()">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Printer Modal -->
+<div class="modal fade" id="assignPrinterModal" tabindex="-1" role="dialog" aria-labelledby="assignPrinterModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="assignPrinterModalLabel">Assign Printer</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Category/Subcategory:</strong> <span id="categoryNameDetail"></span></p>
+        <div class="form-group">
+          <label for="printerSelect">Select Printer</label>
+          <select class="form-control" id="printerSelect">
+            <option value="">Select a Printer</option>
+            {% for printer in printers %}
+              <option value="{{ printer.name }}">{{ printer.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="assignPrinter()">Assign</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+<script>
+  function addPrinter() {
+    const id = $('#printerId').val();
+    const name = $('#printerName').val();
+    if (id && name) {
+      $('#printerSelect').append(`<option value="${name}">${name}</option>`);
+      alert(`Printer ${id} (${name}) added successfully.`);
+      $('#addPrinterModal').modal('hide');
+      $('#printerId').val('');
+      $('#printerName').val('');
+    } else {
+      alert('Please enter both Printer ID and Name.');
+    }
+  }
+
+  function assignPrinter() {
+    const category = $('#categoryNameDetail').data('category');
+    const printer = $('#printerSelect').val();
+    if (printer) {
+      $(`#categoriesBody button[data-category='${category}']`)
+        .closest('tr')
+        .find('td:nth-child(3)')
+        .text(printer);
+      alert(`Printer ${printer} assigned to ${category}`);
+      $('#assignPrinterModal').modal('hide');
+    } else {
+      alert('Please select a printer.');
+    }
+  }
+
+  $(document).ready(function () {
+    $('.assign-printer-btn').on('click', function () {
+      const category = $(this).data('category');
+      const parent = $(this).data('parent');
+      $('#categoryNameDetail')
+        .text(category + (parent ? ' (Subcategory of ' + parent + ')' : ''))
+        .data('category', category);
+      $('#assignPrinterModal').modal('show');
+    });
+  });
+
+</script>
+
+{% endblock %}
