@@ -43,5 +43,11 @@ urlpatterns = [
     path('delete-offer/<int:id>/', DeleteOfferView.as_view(), name='delete-offer'),
     path('edit-offer/<int:offer_id>/', EditOfferView.as_view(), name='edit-offer'),
     path('delete-carousel/<int:id>/', DeleteCarousel.as_view(), name='delete-carousel'),
+    # path('editcarousel/<int:carousel_id>/', EditCarousel.as_view(), name='editcarousel'),
+    path('view-coupon', ViewCouponView.as_view(), name='view-coupon'),
+    path('add-coupon', AddCouponView.as_view(), name='add-coupon'),
+    path('edit-coupon/<int:coupon_id>/', EditCouponView.as_view(), name='edit_coupon'),
+    path('delete-coupon/<int:id>', DeleteCouponView.as_view(), name='delete-coupon'),
+
 
 ]

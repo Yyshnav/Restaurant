@@ -460,7 +460,7 @@ class RegisterStaffView(View):
         # Send Password to Email
         subject = "Your Restaurant Staff Login Details"
         message = f"Hello {name},\n\nYour login account has been created.\n\nUsername: {email}\nPassword: {password}\n\nPlease keep it safe."
-        from_email = settings.DEFAULT_FROM_EMAIL
+        from_email = settings.DEFAULT_FROM_EMAIL 
         recipient_list = [email]
 
         try:
@@ -1097,3 +1097,179 @@ class DeleteCarousel(View):
         c = CarouselTable.objects.get(id=id)
         c.delete()
         return redirect('view-carousel')
+    
+
+
+# class EditCarousel(View):
+#     def get(self, request, carousel_id):
+#         carousel = get_object_or_404(CarouselTable, id=carousel_id)
+#         offer = carousel.offer
+#         items = ItemTable.objects.all()
+#         branches = BranchTable.objects.all()
+
+#         # Convert to local time (IST)
+#         startdate = timezone.localtime(carousel.startdate) if carousel.startdate else None
+#         enddate = timezone.localtime(carousel.enddate) if carousel.enddate else None
+
+#         return render(request, 'editcarousel.html', {
+#             'offer': offer,
+#             'carousel': carousel,
+#             'items': items,
+#             'branches': branches,
+#             'startdate': startdate.strftime('%Y-%m-%dT%H:%M') if startdate else '',
+#             'enddate': enddate.strftime('%Y-%m-%dT%H:%M') if enddate else '',
+#         })
+
+#     def post(self, request, carousel_id):
+#         carousel = get_object_or_404(CarouselTable, id=carousel_id)
+#         offer = carousel.offer
+
+#         # 1. Get form fields
+#         name = request.POST.get('name')
+#         offer_percentage = request.POST.get('offer_percentage')
+#         offer_description = request.POST.get('offer_description')
+#         itemid = request.POST.get('itemid')
+#         branch_ids = request.POST.getlist('branch')
+#         start_date = request.POST.get('startdate')
+#         end_date = request.POST.get('enddate')
+
+#         # 2. Convert input date strings to timezone-aware datetime (IST → UTC)
+#         ist = pytz.timezone('Asia/Kolkata')
+#         start_datetime = None
+#         end_datetime = None
+
+#         if start_date:
+#             try:
+#                 start_naive = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+#                 start_datetime = make_aware(start_naive, ist)
+#             except ValueError:
+#                 pass
+
+#         if end_date:
+#             try:
+#                 end_naive = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+#                 end_datetime = make_aware(end_naive, ist)
+#             except ValueError:
+#                 pass
+
+#         # 3. Update Offer
+#         if offer:
+#             offer.name = name
+#             offer.offer_percentage = offer_percentage
+#             offer.offerdescription = offer_description
+#             offer.startdate = start_datetime
+#             offer.enddate = end_datetime
+#             offer.itemid_id = itemid
+#             if branch_ids:
+#                 offer.branch_id = branch_ids[0]  # assuming one branch
+#             offer.save()
+
+#         # 4. Update Carousel
+#         carousel.offer_percentage = offer_percentage
+#         carousel.startdate = start_datetime
+#         carousel.enddate = end_datetime
+#         if branch_ids:
+#             carousel.branch.set(branch_ids)
+#         if 'image' in request.FILES:
+#             carousel.image = request.FILES['image']
+#         carousel.save()
+
+#         return redirect('view-carousel')
+
+class ViewCouponView(View):
+    def get(self, request):
+        today = datetime.now().date()
+
+        coupons = CouponTable.objects.all()
+
+        for coupon in coupons:
+            # Check if it's still active based on date range
+            if coupon.valid_from and coupon.valid_to:
+                try:
+                    valid_from_date = datetime.strptime(coupon.valid_from, '%Y-%m-%d').date()
+                    valid_to_date = datetime.strptime(coupon.valid_to, '%Y-%m-%d').date()
+                    coupon.is_active = valid_from_date <= today <= valid_to_date
+                except ValueError:
+                    coupon.is_active = False
+
+        return render(request, 'coupenview.html', {'coupons': coupons})
+    
+    
+
+class AddCouponView(View):
+    def get(self, request):
+        return render(request, 'coupon.html')
+    
+    def post(self, request):
+        try:
+            code = request.POST.get('code')
+            description = request.POST.get('description')
+            discount_type = request.POST.get('discount_type')
+            discount_percentage = request.POST.get('discount_percentage') if discount_type == 'percentage' else None
+            max_discount_amount = request.POST.get('max_discount_amount') if discount_type == 'amount' else None
+            min_order_amount = request.POST.get('min_order_amount')
+            valid_from = request.POST.get('valid_from')
+            valid_to = request.POST.get('valid_to')
+            usage_limit = request.POST.get('usage_limit')
+
+            # Parse valid_from and valid_to to date objects
+            valid_from_date = datetime.strptime(valid_from, "%Y-%m-%d").date() if valid_from else None
+            valid_to_date = datetime.strptime(valid_to, "%Y-%m-%d").date() if valid_to else None
+            today = date.today()
+
+            # Determine is_active
+            is_active = False
+            if valid_from_date and valid_to_date:
+                is_active = valid_from_date <= today <= valid_to_date
+
+            # Save the coupon
+            coupon = CouponTable.objects.create(
+                code=code,
+                description=description,
+                discount_percentage=discount_percentage or None,
+                max_discount_amount=max_discount_amount or None,
+                min_order_amount=min_order_amount,
+                valid_from=valid_from,
+                valid_to=valid_to,
+                usage_limit=usage_limit,
+                used_count='0',
+                is_active=is_active
+            )
+
+            return redirect('view-coupon')
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+class EditCouponView(View):
+    def get(self, request, coupon_id):
+        coupon = get_object_or_404(CouponTable, id=coupon_id)
+        return render(request, 'editcoupon.html', {'coupon': coupon})
+
+    def post(self, request, coupon_id):
+        coupon = get_object_or_404(CouponTable, id=coupon_id)
+
+        coupon.code = request.POST.get('code')
+        coupon.description = request.POST.get('description')
+        coupon.discount_percentage = request.POST.get('discount_percentage') or None
+        coupon.max_discount_amount = request.POST.get('max_discount_amount') or None
+        coupon.min_order_amount = request.POST.get('min_order_amount') or None
+        coupon.valid_from = request.POST.get('valid_from')
+        coupon.valid_to = request.POST.get('valid_to')
+        coupon.usage_limit = request.POST.get('usage_limit')
+
+        # Ensure only one discount type is used
+        discount_type = request.POST.get('discount_type')
+        if discount_type == "percentage":
+            coupon.max_discount_amount = None
+        elif discount_type == "amount":
+            coupon.discount_percentage = None
+
+        coupon.save()
+        return redirect('/view-coupon')  
+    
+class DeleteCouponView(View):
+    def get(self, request, id):
+        c = CouponTable.objects.get(id=id)
+        c.delete()
+        return redirect('view-coupon')

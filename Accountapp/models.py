@@ -105,14 +105,31 @@ class DeliveryBoyTable(models.Model):
     image = models.FileField(upload_to='deliveryboy_images/', null=True, blank=True)
     idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
     license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
+    userid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
 
     def __str__(self):
         return f"{self.name} ({self.phone})"
+    
+class ProfileTable(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+    dob = models.CharField(max_length=20, null=True, blank=True)
+    # latitude = models.FloatField(null=True, blank=True)
+    # longitude = models.FloatField(null=True, blank=True)
+    # place = models.CharField(max_length=255, null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, related_name='deliverie', null=True, blank=True)
+    loginid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='profile')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
     
 class OrderTable(models.Model):
-    userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, blank=True, null=True)
+    userid = models.ForeignKey(ProfileTable, on_delete=models.CASCADE, blank=True, null=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, blank=True, null=True)
     coupon = models.ForeignKey(CouponTable, on_delete=models.SET_NULL, null=True, blank=True)
     address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, null=True, blank=True)
@@ -158,22 +175,7 @@ class OrderTable(models.Model):
     def __str__(self):
         return f"Order #{self.id} by {self.userid}"
 
-class ProfileTable(models.Model):
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    image = models.FileField(upload_to='profile_images/', null=True, blank=True)
-    email = models.EmailField(max_length=255, null=True, blank=True)
-    dob = models.CharField(max_length=20, null=True, blank=True)
-    # latitude = models.FloatField(null=True, blank=True)
-    # longitude = models.FloatField(null=True, blank=True)
-    # place = models.CharField(max_length=255, null=True, blank=True)
-    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, related_name='deliverie', null=True, blank=True)
-    loginid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='profile')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
         
 class CategoryTable(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)

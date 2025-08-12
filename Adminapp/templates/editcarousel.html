@@ -1,0 +1,103 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+{% block body %}
+
+<style>
+  .form-group label { font-weight: 600; }
+  .form-control { border-radius: 0.4rem; }
+</style>
+
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-body">
+      <div class="container-fluid">
+        <div class="card p-3">
+          <h4 class="mb-3">Edit Carousel Offer</h4>
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Carousel Image -->
+            <div class="form-group">
+              <label for="image">Carousel Image</label>
+              <input type="file" class="form-control" name="image" id="image" accept="image/*">
+              {% if carousel.image %}
+              <div class="mt-2">
+                <img src="{{ carousel.image.url }}" height="100" alt="Current Image" />
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Offer Selection -->
+            <div class="form-group">
+              <label for="itemid">Offers Available</label>
+              <select class="form-control" name="itemid" id="itemid" required>
+                <option value="">-- Select the Offer Product --</option>
+                {% for i in items %}
+                  <option value="{{ i.id }}" {% if offer and i.id == offer.itemid.id %}selected{% endif %}>{{ i.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Offer Title -->
+            <div class="form-group">
+              <label for="name">Offer Title</label>
+              <input type="text" class="form-control" name="name" id="name" value="{{ offer.name }}">
+            </div>
+
+            <!-- Offer Description -->
+            <div class="form-group">
+              <label for="offer_description">Offer Description</label>
+              <input type="text" class="form-control" name="offer_description" id="offer_description" value="{{ offer.offerdescription }}">
+            </div>
+
+            <!-- Offer Percentage -->
+            <div class="form-group">
+              <label for="offer_percentage">Offer Percentage</label>
+              <input type="number" class="form-control" name="offer_percentage" id="offer_percentage" value="{{ offer.offer_percentage }}">
+            </div>
+
+            <!-- Start and End Dates -->
+            <div class="form-group">
+              <label for="startdate">Start Date</label>
+                <input type="datetime-local" class="form-control" name="startdate" id="startDate" value="{{ startdate }}">
+            </div>
+
+            <div class="form-group">
+              <label for="enddate">End Date</label>
+              <input type="datetime-local" class="form-control" name="enddate" id="enddate" value="{{ enddate }}">
+            </div>
+
+            <!-- Branch Selection -->
+            <div class="form-group">
+              <label>Select Branches</label><br>
+              <div>
+                <input type="checkbox" id="branch_all" value="all">
+                <label for="branch_all">All Branches</label>
+              </div>
+              {% for b in branches %}
+                <div>
+                  <input type="checkbox" name="branch" class="branch-option" id="branch_{{ b.id }}" value="{{ b.id }}"
+                         {% if b in carousel.branch.all %}checked{% endif %}>
+                  <label for="branch_{{ b.id }}">{{ b.name }}</label>
+                </div>
+              {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-success">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Select/Deselect all branches
+  document.getElementById('branch_all').addEventListener('change', function () {
+    const checkboxes = document.querySelectorAll('.branch-option');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+    <!-- Navbar -->
+    <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
+      <div class="navbar-wrapper">
+        <div class="navbar-container content">
+          <div class="collapse navbar-collapse show" id="navbar-mobile">
+            <ul class="nav navbar-nav mr-auto">
+              <li class="nav-item d-md-none"><a class="nav-link menu-toggle"><i class="ft-menu"></i></a></li>
+              <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true" data-img="../../theme-assets/images/backgrounds/02.jpg">
+      <div class="navbar-header">
+        <ul class="nav navbar-nav flex-row">
+          <li class="nav-item mr-auto"><a class="navbar-brand"><img class="brand-logo" src="../../theme-assets/images/logo/logo.png" />
+              <h3 class="brand-text">Manager</h3></a></li>
+          <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
+        </ul>
+      </div>
+      <div class="main-menu-content">
+        <ul class="navigation navigation-main" id="main-menu-navigation">
+            <li class="nav-item active"><a href="dashboard.html"><i class="ft-home"></i><span class="menu-title">Dashboard</span></a></li>
+          <li class="nav-item "><a href="printer.html"><i class="ft-printer"></i><span class="menu-title">Assign Printers</span></a></li>
+          <li class="nav-item"><a href="dishes.html"><i class="ft-box"></i><span class="menu-title">Dishes</span></a></li>
+          <li class="nav-item"><a href="view-orders.html"><i class="ft-shopping-cart"></i><span class="menu-title">Orders</span></a></li>
+           <li class="nav-item"><a href="take-order.html"><i class="ft-globe"></i><span class="menu-title">Take Orders</span></a></li>
+          <li class="nav-item"><a href="onlineOrders.html"><i class="ft-globe"></i><span class="menu-title">Online Orders</span></a></li>
+          <li class="nav-item active"><a href="viewstaff.html"><i class="ft-users"></i><span class="menu-title">View Staff</span></a></li>
+          <li class="nav-item"><a href="table.html"><i class="ft-layers"></i><span class="menu-title">Tables & Chairs</span></a></li>
+          <li class="nav-item"><a href="#"><i class="ft-power"></i><span class="menu-title">Logout</span></a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="app-content content">
+      <div class="content-wrapper">
+        <div class="content-header row">
+          <div class="content-header-left col-md-6 col-12 mb-2">
+            <h3 class="content-header-title text-dark">View Staff</h3>
+          </div>
+          <div class="content-header-right col-md-6 col-12">
+            <div class="form-group float-right">
+              <select id="filterStaff" class="form-control">
+                <option value="all">All Staff</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-body">
+          <div class="table-responsive">
+            <table class="table table-striped" id="staffTable">
+              <thead>
+                <tr>
+                  <th>Staff ID</th>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Join Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#S001</td>
+                  <td>Sam Wilson</td>
+                  <td>Waiter</td>
+                  <td><span class="badge badge-success">Active</span></td>
+                  <td>2025-06-01</td>
+                  <td><button class="btn btn-sm btn-primary view-btn" data-id="S001">View</button></td>
+                </tr>
+                <tr>
+                  <td>#S002</td>
+                  <td>Sara Johnson</td>
+                  <td>Chef</td>
+                  <td><span class="badge badge-success">Active</span></td>
+                  <td>2025-05-15</td>
+                  <td><button class="btn btn-sm btn-primary view-btn" data-id="S002">View</button></td>
+                </tr>
+                <tr>
+                  <td>#S003</td>
+                  <td>Steve Brown</td>
+                  <td>Manager</td>
+                  <td><span class="badge badge-secondary">Inactive</span></td>
+                  <td>2025-04-20</td>
+                  <td><button class="btn btn-sm btn-primary view-btn" data-id="S003">View</button></td>
+                </tr>
+                <!-- More rows as needed -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staff Details Modal -->
+    <div class="modal fade" id="staffModal" tabindex="-1" role="dialog" aria-labelledby="staffModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Staff Details</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">×</button>
+          </div>
+          <div class="modal-body">
+            <p><strong>Staff ID:</strong> <span id="staffIdDetail"></span></p>
+            <p><strong>Name:</strong> <span id="nameDetail">Sam Wilson</span></p>
+            <p><strong>Role:</strong> <span id="roleDetail">Waiter</span></p>
+            <p><strong>Status:</strong> <span class="badge badge-success">Active</span></p>
+            <p><strong>Join Date:</strong> <span id="joinDateDetail">2025-06-01</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Filter staff
+      $('#filterStaff').on('change', function () {
+        const value = $(this).val();
+        $('#staffTable tbody tr').each(function () {
+          const status = $(this).find('.badge').text().toLowerCase();
+          if (value === 'all' || value === status) {
+            $(this).show();
+          } else {
+            $(this).hide();
+          }
+        });
+      });
+
+      // View staff (example data only)
+      $('.view-btn').on('click', function () {
+        const staffId = $(this).data('id');
+        $('#staffIdDetail').text('#' + staffId);
+        // You can use AJAX to fetch real data here
+        $('#staffModal').modal('show');
+      });
+    </script>
+
+{% endblock %}
