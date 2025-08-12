@@ -150,16 +150,21 @@ class LatestPendingOrdersAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    
-
     def get(self, request):
         user = request.user 
         # Ensure user has DELIVERY role
         
         if not user.user_roles.filter(role='DELIVERY').exists():
             return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            # Get the DeliveryBoyTable object for this user
+            delivery_boy = DeliveryBoyTable.objects.get(userid=user)
+        except DeliveryBoyTable.DoesNotExist:
+            return Response({'error': 'DeliveryBoyTable not found for user'}, status=status.HTTP_404_NOT_FOUND)
+        
         # Get latest orders assigned to this delivery boy with status 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=user, orderstatus='PENDING').order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus='PENDING').order_by('-id')
         serializer = OrderSerializer(orders, many=True)
         print("Orders:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)

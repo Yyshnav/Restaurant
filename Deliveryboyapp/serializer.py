@@ -1,12 +1,17 @@
 from rest_framework import serializers
 from Accountapp import serializer
 from Accountapp.models import *
-from Userapp.serializer import ProfileTableSerializer,OrderItemTableSerializer,DeliveryTableSerializer,AddressTableSerializer, UserOrderItemSerializer
-from Adminapp.serializer import BranchTableSerializer 
+from Userapp.serializer import ProfileTableSerializer,OrderItemTableSerializer,DeliveryTableSerializer,AddressTableSerializer
+from Adminapp.serializer import AddonSerializer, BranchTableSerializer, ItemSerializer, ItemVariantSerializer 
 
+class DeliveryBoyLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryBoyLocation
+        fields = ['latitude', 'longitude', 'updated_at']
 
 class DeliveryBoyTableSerializer(serializers.ModelSerializer):
     userid = serializer.LoginTableSerializer(read_only=True)
+    location = DeliveryBoyLocationSerializer(read_only=True)
 
     class Meta:
         model = DeliveryBoyTable
@@ -22,7 +27,7 @@ class OrderSerializer(serializers.ModelSerializer):
     userid = serializers.SerializerMethodField()
     branch = BranchTableSerializer(read_only=True)
     address=AddressTableSerializer(read_only=True)
-    order_item = OrderItemTableSerializer(read_only=True, many=True)
+    order_item = OrderTableSerializer(read_only=True, many=True)
     delivery_details = serializers.SerializerMethodField()
 
     class Meta:
@@ -95,9 +100,83 @@ class ResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(min_length=6)
 
 
+# class OrderItemDetailSerializer(serializers.ModelSerializer):
+#     itemname = ItemSerializer()
+#     variant = serializers.SerializerMethodField()
+#     addon = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = OrderItemTable
+#         fields = ['id', 'itemname', 'price', 'quantity', 'variant', 'instruction', 'addon']
+
+#     def get_variant(self, obj):
+#         variant_id = obj.variant_id
+#         if variant_id:
+#             try:
+#                 variant = ItemVariantTable.objects.get(id=variant_id)
+#                 return {
+#                     "id": variant.id,
+#                     "variant_name": variant.variant_name,
+#                     "price": variant.price
+#                 }
+#             except ItemVariantTable.DoesNotExist:
+#                 return None
+#         return None
+
+#     def get_addon(self, obj):
+#         addon_id = obj.addon_id
+#         if addon_id:
+#             try:
+#                 addon = ItemTable.objects.get(id=addon_id)
+#                 return AddonSerializer(addon).data
+#             except ItemTable.DoesNotExist:
+#                 return None
+#         return None
+
+class OrderItemDetailSerializer(serializers.ModelSerializer):
+    itemname = ItemSerializer()
+    addon = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItemTable
+        fields = ['id', 'itemname', 'price', 'quantity', 'instruction', 'addon']
+
+    def get_addon(self, obj):
+        addon_id = obj.addon_id
+        if addon_id:
+            try:
+                addon = ItemTable.objects.get(id=addon_id)
+                return AddonSerializer(addon).data
+            except ItemTable.DoesNotExist:
+                return None
+        return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        # Inject selected variant into the itemname field
+        try:
+            variant = ItemVariantTable.objects.get(id=instance.variant_id)
+            data['itemname']['variant'] = {
+                "id": variant.id,
+                "variant_name": variant.variant_name,
+                "price": variant.price
+            }
+        except ItemVariantTable.DoesNotExist:
+            data['itemname']['variant'] = None
+
+        return data
+
+
 class TrackOrderSerializer(serializers.ModelSerializer):
     delivery_details = DeliveryBoyTableSerializer(source='deliveryid', read_only=True)
-    items = UserOrderItemSerializer(source='order_item', many=True, read_only=True)
+
+    items = OrderItemDetailSerializer(source='order_item', many=True, read_only=True)
+
+    username = serializers.CharField(source='userid.name', read_only=True)
+
+    restaurant_details = BranchTableSerializer(source='branch', read_only=True)
+    branch_id = serializers.IntegerField(source='branch.id', read_only=True)
 
     class Meta:
         model = OrderTable
@@ -112,8 +191,12 @@ class TrackOrderSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'phone_number',
+            'username',
             'created_at',
             'updated_at',
             'delivery_details',
-            'items'
+            # 'user_profile',
+            'items',
+            'restaurant_details',
+            'branch_id'
         ]
