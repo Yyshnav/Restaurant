@@ -166,7 +166,7 @@ class LatestPendingOrdersAPIView(APIView):
         # Get latest orders assigned to this delivery boy with status 'PENDING'
         orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus='PENDING').order_by('-id')
         serializer = OrderSerializer(orders, many=True)
-        print("Orders:", serializer.data)
+        # print("Orders:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -191,22 +191,44 @@ class UpdateOrderStatusAPIView(APIView):
 
     
 
-    def post(self, request):
+    # def post(self, request):
+    def post(self, request, order_id):
+        user = request.user.id
+        try:
+            delivery_boy = DeliveryBoyTable.objects.get(userid=user)
+            print(f"Delivery Boy: {delivery_boy}")
+        except DeliveryBoyTable.DoesNotExist:
+            return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = InputSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        order_id = serializer.validated_data['order_id']
+        # order_id = serializer.validated_data['order_id']
+        if serializer.validated_data['order_id'] != order_id:
+           return Response({'error': 'Order ID mismatch'}, status=status.HTTP_400_BAD_REQUEST)
         new_status = serializer.validated_data['status']
+        payment_done = serializer.validated_data.get('paymentDone', False)
+        payment_type = serializer.validated_data.get('paymentType')
 
         try:
-            order = OrderTable.objects.get(id=order_id, deliveryid=request.user)
+            order = OrderTable.objects.get(id=order_id, deliveryid=delivery_boy)
         except OrderTable.DoesNotExist:
             return Response({'error': 'Order not found or not assigned to you'}, status=status.HTTP_404_NOT_FOUND)
 
         order.orderstatus = new_status
+        if payment_done and payment_type:
+           order.paymentstatus = 'PAID'
+           order.payment_method = payment_type
+        elif payment_done:
+            return Response({'error': 'Payment type is required when payment is done'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            order.paymentstatus = 'PENDING'
+            order.payment_method = 'PENDING'
         order.save()
-        return Response({'success': f'Order status updated to {new_status}'}, status=status.HTTP_200_OK)
+        print(f"Updated Order: {order.__dict__}")
+        # return Response({'success': f'Order status updated to {new_status}'}, status=status.HTTP_200_OK)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 
 class OrderDetailAPIView(APIView):
@@ -219,7 +241,11 @@ class OrderDetailAPIView(APIView):
         if not user.user_roles.filter(role='DELIVERY').exists():
             return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
         try:
-            order = OrderTable.objects.get(id=order_id, deliveryid=user)
+            delivery_boy = DeliveryBoyTable.objects.get(userid=user)
+        except DeliveryBoyTable.DoesNotExist:
+            return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            order = OrderTable.objects.get(id=order_id, deliveryid=delivery_boy)
         except OrderTable.DoesNotExist:
             return Response({'error': 'Order not found or not assigned to you'}, status=status.HTTP_404_NOT_FOUND)
         serializer = OrderSerializer(order)
@@ -306,11 +332,16 @@ class OrderHistoryAPIView(APIView):
 
     def get(self, request):
         user = request.user
+        try:
+            delivery_boy = DeliveryBoyTable.objects.get(userid=user)
+            print(f"Delivery Boy: {delivery_boy}")
+        except DeliveryBoyTable.DoesNotExist:
+            return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
         # Ensure user has DELIVERY role
         if not user.user_roles.filter(role='DELIVERY').exists():
             return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
         # Fetch orders assigned to this delivery boy that are not 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=user).exclude(orderstatus='PENDING').order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=delivery_boy).exclude(orderstatus='PENDING').order_by('-id')
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -405,68 +436,6 @@ class ResetPasswordAPIView(APIView):
         user.save()
         OTP_STORE.pop(email, None)
         return Response({'message': 'Password reset successful','status':True}, status=status.HTTP_200_OK)
-     
-
-
-# class LogoutAPIView(APIView):
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         try:
-#             # request.user.auth_token.delete()
-
-#         except Exception:
-#             return Response({'error': 'Logout failed'}, status=status.HTTP_400_BAD_REQUEST)
-#         return Response({'success': 'Logged out successfully'}, status=status.HTTP_200_OK) 
-
-
-# class ChatMessageAPIView(APIView):
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request, order_id):
-#         try:
-#             chats = ChatMessageTable.objects.filter(order_id=order_id)
-#             serializer = ChatMessageSerializer(chats, many=True)
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-#     def post(self, request, order_id):
-#         try:
-#             order = OrderTable.objects.get(id=order_id)
-
-#             sender_type = request.data.get('sender_type')  # "USER" or "DELIVERYBOY"
-#             message = request.data.get('message')
-
-#             if not message or not sender_type:
-#                 return Response({'error': 'sender_type and message required'}, status=status.HTTP_400_BAD_REQUEST)
-
-#             if sender_type == 'USER':
-#                 user = request.user
-#                 delivery_boy = order.delivery_boy
-#             elif sender_type == 'DELIVERYBOY':
-#                 delivery_boy = request.user.deliveryboy  # assuming OneToOne relationship
-#                 user = order.user
-#             else:
-#                 return Response({'error': 'Invalid sender_type'}, status=status.HTTP_400_BAD_REQUEST)
-
-#             chat = ChatMessageTable.objects.create(
-#                 order=order,
-#                 user=user,
-#                 delivery_boy=delivery_boy,
-#                 sender_type=sender_type,
-#                 message=message
-#             ) 
-
-#             serializer = ChatMessageSerializer(chat)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-#         except OrderTable.DoesNotExist:
-#             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class ChatHistoryAPIView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -480,3 +449,93 @@ class ChatHistoryAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class SubmitFeedbackAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user.id
+        print(f"User ID: {user}, Request Data: {request.data}")
+        try:
+            delivery_boy = DeliveryBoyTable.objects.get(userid=user)
+            print(f"Delivery Boy: {delivery_boy}")
+        except DeliveryBoyTable.DoesNotExist:
+            return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserFeedbackSerializer(data=request.data)
+        if not serializer.is_valid():
+            print(f"Serializer errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        order_id = serializer.validated_data['order_id']
+        rating = serializer.validated_data['rating']
+        feedback = serializer.validated_data.get('feedback')
+
+        try:
+            order = OrderTable.objects.get(id=order_id, deliveryid=delivery_boy)
+        except OrderTable.DoesNotExist:
+            return Response({'error': 'Order not found or not assigned to you'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Save feedback to FeedbackTable (assumed model)
+        UserFeedbackTable.objects.create(
+            order=order,
+            delivery_boy=delivery_boy,
+            rating=rating,
+            feedback=feedback
+        )
+        print(f"Feedback saved: Order {order_id}, Rating {rating}, Feedback {feedback}")
+        return Response({'success': 'Feedback submitted successfully'}, status=status.HTTP_201_CREATED)
+    
+class UpdateDeliveryBoyLocationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Get the authenticated delivery boy
+            delivery_boy = DeliveryBoyTable.objects.get(user=request.user)
+            
+            # Validate request data using serializer
+            serializer = DeliveryBoyLocationSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {"errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Extract validated data
+            validated_data = serializer.validated_data
+
+            # Update or create the location
+            location, created = DeliveryBoyLocation.objects.update_or_create(
+                delivery_boy=delivery_boy,
+                defaults={
+                    'latitude': validated_data['latitude'],
+                    'longitude': validated_data['longitude']
+                }
+            )
+
+            return Response(
+                {
+                    "message": "Location updated successfully",
+                    "latitude": location.latitude,
+                    "longitude": location.longitude,
+                    "updated_at": location.updated_at
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except DeliveryBoyTable.DoesNotExist:
+            print(f"Delivery boy not found for user: {request.user}")
+            return Response(
+                {"error": "Delivery boy not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            print(f"Error updating location: {e}")
+            return Response(
+                {"error": f"Failed to update location: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

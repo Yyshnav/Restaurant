@@ -233,6 +233,7 @@ class ItemTable(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     fast_delivery = models.BooleanField(default=False)
     newest = models.BooleanField(default=True)
+    available = models.BooleanField(default=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -453,7 +454,7 @@ class VoucherTable(models.Model):
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='printers')
-    subsubcategories = models.ManyToManyField(SubSubCategoryTable, blank=True, related_name='category')
+    subcategories = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='printers')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     def __str__(self):
@@ -607,3 +608,13 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f'{self.sender_type} -> {self.message_type}'
+    
+class UserFeedbackTable(models.Model):
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE)
+    delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE)
+    rating = models.FloatField()
+    feedback = models.TextField(max_length=500, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback for Order #{self.order.id} by Delivery Boy {self.delivery_boy.id}"

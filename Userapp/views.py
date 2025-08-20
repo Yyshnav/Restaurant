@@ -11,7 +11,7 @@ from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
 # from Deliveryboyapp.serializer import OrderSerializer
 from Deliveryboyapp.serializer import TrackOrderSerializer
-from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
+from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, OrderHistorySerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -1037,3 +1037,21 @@ class TrackAPIView(APIView):
             return Response({'success': True, 'data': serializer.data})
         except OrderTable.DoesNotExist:
             return Response({'success': False, 'message': 'Order not found'}, status=404)
+        
+    class OrderHistoryView(APIView):
+        permission_classes = [IsAuthenticated]
+
+        def get(self, request, *args, **kwargs):
+            try:
+                profile = ProfileTable.objects.get(loginid=request.user)
+            except ProfileTable.DoesNotExist:
+                return Response({'error': 'Profile not found for this user'}, status=404)
+
+            orders = OrderTable.objects.filter(userid=profile).order_by('-created_at')
+
+            serializer = OrderHistorySerializer(orders, many=True)
+            return Response({
+                "success": True,
+                "count": len(serializer.data),
+                "orders": serializer.data
+            }, status=200)

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Food Ordering UI</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="webpagecss.css">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="#">Rawabi</a>
+    <button id="cart-toggle" class="d-md-none">
+      <i class="fas fa-shopping-cart"></i>
+      <span id="cart-badge" class="badge bg-danger">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Cart Overlay -->
+<div id="cart-overlay"></div>
+
+<!-- Mobile Cart Sidebar -->
+<div id="mobile-cart">
+  <div id="mobile-cart-header">
+    <h5 class="mb-0">Your Cart</h5>
+    <button id="close-cart" class="btn btn-light btn-sm">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <div id="mobile-cart-content">
+    <!-- Cart items will appear here -->
+  </div>
+  <div id="mobile-cart-footer">
+    <div class="total fw-bold fs-5 d-flex justify-content-end mb-3" id="mobile-cart-total">
+      Total: $ <span>0.00</span>
+    </div>
+    <div class="table-btn-grid">
+      <button class="table-btn">1</button>
+      <button class="table-btn">2</button>
+      <button class="table-btn">3</button>
+      <button class="table-btn">4</button>
+      <button class="table-btn">5</button>
+      <button class="table-btn">6</button>
+    </div>
+    <button class="place-order-btn">Place Order</button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="container-fluid h-100">
+  <div class="row h-100">
+    <!-- Cart Section (Desktop) -->
+    <div class="col-md-4 col-lg-3 bg-white p-3 h-100 d-flex flex-column d-none d-md-block" id="cart-section">
+      <div class="cart-container">
+        <div class="cart-items-container" id="cart-items">
+          <!-- Cart items will appear here -->
+        </div>
+        
+        <div class="cart-footer">
+          <div class="total fw-bold fs-5 d-flex justify-content-end mb-3" id="cart-total">
+            Total: $ <span>0.00</span>
+          </div>
+          
+          <div class="table-btn-grid">
+            <button class="table-btn">1</button>
+            <button class="table-btn">2</button>
+            <button class="table-btn">3</button>
+            <button class="table-btn">4</button>
+            <button class="table-btn">5</button>
+            <button class="table-btn">6</button>
+          </div>
+          
+          <button class="place-order-btn">Place Order</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Section -->
+    <div class="col-md-8 col-lg-9 p-3 h-100">
+      <div class="products-container">
+        <div class="products-topbar">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="category-buttons">
+              <button class="btn btn-outline-primary btn-sm category-btn active" data-category="all">
+                <i class="fa-solid fa-house"></i>
+              </button>
+              <button class="btn btn-outline-secondary btn-sm category-btn" data-category="food">Food</button>
+              <button class="btn btn-outline-secondary btn-sm category-btn" data-category="beverages">Beverages</button>
+              <button class="btn btn-outline-secondary btn-sm category-btn" data-category="starters">Starters</button>
+              <button class="btn btn-outline-secondary btn-sm category-btn" data-category="others">Others</button>
+            </div>
+
+            <div class="search-row">
+              <!-- Search Area -->
+              <div class="position-relative d-flex align-items-center" id="search-wrapper">
+                <input type="text" class="form-control mt-0 desktop-search" id="search-input" placeholder="Search product">
+                <i class="fa-solid fa-magnifying-glass fs-5" id="search-icon" style="cursor: pointer;"></i>
+              </div>
+            </div>
+          </div>
+          
+          <input type="text" class="form-control mobile-search-input" id="mobile-search-input" placeholder="Search product">
+        </div>
+
+
+      <div class="row g-3 products-grid pt-1 pb-5" id="product-container">
+  <!-- Example Products -->
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80" alt="Bacon Burger">
+      </div>
+      <div class="product-name">Bacon Burger</div>
+      <div class="price">$ 8.63</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=500&q=80" alt="Mango Juice">
+      </div>
+      <div class="product-name">Mango Juice</div>
+      <div class="price">$ 2.50</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="starters">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=500&q=80" alt="Chicken Tikka">
+      </div>
+      <div class="product-name">Chicken Tikka</div>
+      <div class="price">$ 4.25</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="French Fries">
+      </div>
+      <div class="product-name">French Fries</div>
+      <div class="price">$ 2.00</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="Onion Rings">
+      </div>
+      <div class="product-name">Onion Rings</div>
+      <div class="price">$ 3.50</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&w=500&q=80" alt="Margherita Pizza">
+      </div>
+      <div class="product-name">Margherita Pizza</div>
+      <div class="price">$ 10.99</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=500&q=80" alt="Iced Coffee">
+      </div>
+      <div class="product-name">Iced Coffee</div>
+      <div class="price">$ 3.75</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80" alt="Bacon Burger">
+      </div>
+      <div class="product-name">Bacon Burger</div>
+      <div class="price">$ 8.63</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=500&q=80" alt="Mango Juice">
+      </div>
+      <div class="product-name">Mango Juice</div>
+      <div class="price">$ 2.50</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="starters">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=500&q=80" alt="Chicken Tikka">
+      </div>
+      <div class="product-name">Chicken Tikka</div>
+      <div class="price">$ 4.25</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="French Fries">
+      </div>
+      <div class="product-name">French Fries</div>
+      <div class="price">$ 2.00</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="Onion Rings">
+      </div>
+      <div class="product-name">Onion Rings</div>
+      <div class="price">$ 3.50</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&w=500&q=80" alt="Margherita Pizza">
+      </div>
+      <div class="product-name">Margherita Pizza</div>
+      <div class="price">$ 10.99</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
+    <div class="product-card">
+      <div class="product-image-container">
+        <img src="https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=500&q=80" alt="Iced Coffee">
+      </div>
+      <div class="product-name">Iced Coffee</div>
+      <div class="price">$ 3.75</div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popups -->
+<!-- Quantity Popup -->
+<div id="quantity-popup">
+  <div class="popup-box">
+    <div class="popup-title" id="popup-product-name">Bacon Burger</div>
+    
+    <div class="mb-3">
+      <label for="quantity-input" class="form-label fw-bold">Select Portion & Quantity</label>
+    </div>
+    
+    <div id="portion-grid" class="portion-grid">
+      <!-- Portion options will be added dynamically -->
+    </div>
+
+    <div class="quantity-control">
+      <button id="decrement-quantity"><i class="fas fa-minus"></i></button>
+      <input type="number" id="quantity-input" class="form-control" min="1" value="1" />
+      <button id="increment-quantity"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+      <button id="add-to-cart-btn" class="btn btn-success flex-grow-1 me-2">Add to Cart</button>
+      <button id="cancel-btn" class="btn btn-secondary flex-grow-1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Message Popup -->
+<div id="popup-msg">
+  <div class="popup-msg-box">
+    <p id="popup-msg-text" class="mb-3"></p>
+    <button id="popup-msg-close" class="btn btn-sm btn-secondary">Close</button>
+  </div>
+</div>
+
+<!-- Note Popup -->
+<div id="note-popup">
+  <div class="popup-msg-box">
+    <label for="note-input" class="form-label fw-bold">Add Note:</label>
+    <textarea id="note-input" class="form-control mb-3" rows="3" placeholder="Add special instructions..."></textarea>
+    <div class="d-flex justify-content-end">
+      <button id="note-popup-close" class="btn btn-sm btn-secondary me-2">Cancel</button>
+      <button id="save-note-btn" class="btn btn-sm btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Popup -->
+<div id="confirm-popup">
+  <div class="confirm-popup-box">
+    <p class="mb-3 fw-bold">Are you sure you want to remove this item?</p>
+    <div class="text-center">
+      <button id="confirm-yes" class="btn btn-danger me-2">Yes, Remove</button>
+      <button id="confirm-cancel" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// State variables
+let selectedProduct = null;
+let editingCartItem = null;
+const cartMap = new Map();
+let selectedPortion = "Full";
+let currentQuantity = 1;
+let isFoodProduct = false;
+let productsInCart = new Set();
+
+const portionPrices = {
+  "Quarter": 0.25,
+  "Half": 0.5,
+  "3/4": 0.75,
+  "Full": 1.0
+};
+
+// Initialize the application
+function initApp() {
+  // Attach product card click events
+  document.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('click', handleProductClick);
+  });
+
+  // Popup quantity controls
+  document.getElementById('increment-quantity').addEventListener('click', incrementQuantity);
+  document.getElementById('decrement-quantity').addEventListener('click', decrementQuantity);
+  document.getElementById('quantity-input').addEventListener('input', handleQuantityInput);
+  
+  // Popup buttons
+  document.getElementById('add-to-cart-btn').addEventListener('click', addToCart);
+  document.getElementById('cancel-btn').addEventListener('click', closePopup);
+  
+  // Message popup
+  document.getElementById('popup-msg-close').addEventListener('click', closeMessagePopup);
+  
+  // Note popup
+  document.getElementById('save-note-btn').addEventListener('click', saveNote);
+  document.getElementById('note-popup-close').addEventListener('click', closeNotePopup);
+  
+  // Confirm popup
+  document.getElementById('confirm-yes').addEventListener('click', confirmDelete);
+  document.getElementById('confirm-cancel').addEventListener('click', closeConfirmPopup);
+  
+  // Search toggle
+  document.getElementById('search-icon').addEventListener('click', toggleSearch);
+  
+  // Category filtering
+  document.querySelectorAll(".category-btn").forEach(button => {
+    button.addEventListener("click", handleCategoryFilter);
+  });
+  
+  // Table selection
+  document.querySelectorAll(".table-btn").forEach(btn => {
+    btn.addEventListener("click", handleTableSelection);
+  });
+  
+  // Place Order button
+  document.querySelectorAll('.place-order-btn').forEach(btn => {
+    btn.addEventListener('click', handlePlaceOrder);
+  });
+  
+  // Search functionality
+  document.getElementById('search-input').addEventListener('input', handleSearch);
+  document.getElementById('mobile-search-input').addEventListener('input', handleSearch);
+  
+  // Mobile cart toggle
+  document.getElementById('cart-toggle').addEventListener('click', openMobileCart);
+  document.getElementById('close-cart').addEventListener('click', closeMobileCart);
+  document.getElementById('cart-overlay').addEventListener('click', closeMobileCart);
+  
+  // Initialize values
+  updateTotal();
+  updateCartBadge();
+}
+
+// Function to attach event listeners to cart items
+function attachCartItemEvents(item) {
+  const minusBtn = item.querySelector('.minus-btn');
+  const plusBtn = item.querySelector('.plus-btn');
+  const noteBtn = item.querySelector('.note-btn');
+  const deleteBtn = item.querySelector('.delete-btn');
+
+  minusBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    handleMinusClick(item);
+  });
+
+  plusBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    handlePlusClick(item);
+  });
+
+  noteBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    editingCartItem = item;
+    document.getElementById('note-input').value = editingCartItem.querySelector('.item-note').textContent;
+    document.getElementById('note-popup').style.display = 'block';
+  });
+
+  deleteBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    editingCartItem = item;
+    document.getElementById('confirm-popup').style.display = 'block';
+  });
+}
+
+// Handle minus button click
+function handleMinusClick(item) {
+  let quantity = parseInt(item.querySelector('.quantity-value').textContent);
+  
+  if (quantity > 1) {
+    quantity--;
+    updateCartItemQuantity(item, quantity);
+  } else {
+    editingCartItem = item;
+    document.getElementById('confirm-popup').style.display = 'block';
+  }
+}
+
+// Handle plus button click
+function handlePlusClick(item) {
+  let quantity = parseInt(item.querySelector('.quantity-value').textContent);
+  quantity++;
+  updateCartItemQuantity(item, quantity);
+}
+
+// Update cart item quantity (Corrected Function)
+function updateCartItemQuantity(item, quantity) {
+  const key = item.dataset.key;
+  
+  // Update all items with this key (desktop and mobile)
+  document.querySelectorAll(`.item[data-key="${key}"]`).forEach(el => {
+    el.querySelector('.quantity-value').textContent = quantity;
+    
+    // Get detail text
+    const detailText = el.querySelector('.item-detail').textContent;
+    
+    // Extract price per item from detail text
+    const priceMatch = detailText.match(/x \$(\d+\.\d{2})/);
+    if (priceMatch) {
+      const pricePerItem = parseFloat(priceMatch[1]);
+      const totalPrice = (pricePerItem * quantity).toFixed(2);
+      el.querySelector('.item-price').textContent = `$ ${totalPrice}`;
+    }
+    
+    // Update detail text
+    const newDetail = detailText.replace(/^\d+ x/, `${quantity} x`);
+    el.querySelector('.item-detail').textContent = newDetail;
+  });
+  
+  updateTotal();
+}
+
+// Product click handler
+function handleProductClick() {
+  const name = this.querySelector('.product-name').textContent;
+  const price = parseFloat(this.querySelector('.price').textContent.replace('$', ''));
+  const category = this.closest('.product-item').getAttribute('data-category');
+  isFoodProduct = (category === "food");
+
+  selectedProduct = { name, price, category };
+  document.getElementById('popup-product-name').textContent = name;
+  
+  const portionGrid = document.getElementById('portion-grid');
+  portionGrid.innerHTML = '';
+  
+  // Create portion options for food products
+  if (isFoodProduct) {
+    for (const [portion, multiplier] of Object.entries(portionPrices)) {
+      const portionPrice = (price * multiplier).toFixed(2);
+      const option = document.createElement('div');
+      option.classList.add('portion-option');
+      if (portion === "Full") option.classList.add('selected');
+      option.setAttribute('data-portion', portion);
+      option.setAttribute('data-price', portionPrice);
+      
+      option.innerHTML = `
+        <div class="portion-title">${portion}</div>
+        <div class="price">$ ${portionPrice}</div>
+      `;
+      portionGrid.appendChild(option);
+    }
+    
+    // Add portion selection event listeners
+    document.querySelectorAll('.portion-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelector('.portion-option.selected').classList.remove('selected');
+        this.classList.add('selected');
+        selectedPortion = this.getAttribute('data-portion');
+      });
+    });
+  } else {
+    // For non-food products, show a single portion option
+    const option = document.createElement('div');
+    option.classList.add('portion-option', 'selected');
+    option.setAttribute('data-portion', 'Full');
+    option.setAttribute('data-price', price.toFixed(2));
+    
+    option.innerHTML = `
+      <div class="portion-title">Standard</div>
+      <div class="price">$ ${price.toFixed(2)}</div>
+    `;
+    portionGrid.appendChild(option);
+    selectedPortion = "Full";
+  }
+
+  // Reset quantity to 1
+  currentQuantity = 1;
+  document.getElementById('quantity-input').value = "1";
+
+  editingCartItem = null;
+  document.getElementById('quantity-popup').style.display = 'flex';
+}
+
+// Quantity controls in popup
+function incrementQuantity() {
+  currentQuantity = parseInt(document.getElementById('quantity-input').value) + 1;
+  document.getElementById('quantity-input').value = currentQuantity;
+}
+
+function decrementQuantity() {
+  currentQuantity = parseInt(document.getElementById('quantity-input').value);
+  if (currentQuantity > 1) {
+    currentQuantity--;
+    document.getElementById('quantity-input').value = currentQuantity;
+  }
+}
+
+function handleQuantityInput() {
+  currentQuantity = parseInt(this.value) || 1;
+  if (currentQuantity < 1) currentQuantity = 1;
+  this.value = currentQuantity;
+}
+
+// Close popup
+function closePopup() {
+  document.getElementById('quantity-popup').style.display = 'none';
+  editingCartItem = null;
+}
+
+// Add/update cart
+function addToCart() {
+  const quantity = parseInt(document.getElementById('quantity-input').value);
+  const portion = selectedPortion;
+  
+  // Calculate price based on portion
+  const portionMultiplier = isFoodProduct ? portionPrices[portion] : 1;
+  const portionPrice = (selectedProduct.price * portionMultiplier).toFixed(2);
+  const totalPrice = (portionPrice * quantity).toFixed(2);
+  
+  // Create unique key for food items
+  const itemKey = isFoodProduct ? 
+    `${selectedProduct.name}_${portion}` : 
+    selectedProduct.name;
+
+  // Check if item already in cart
+  if (cartMap.has(itemKey)) {
+    showMessage('Item already in cart. Please edit in the cart section.');
+    return;
+  }
+
+  // New item
+  const itemDiv = document.createElement('div');
+  itemDiv.classList.add('item');
+  itemDiv.dataset.name = selectedProduct.name;
+  itemDiv.dataset.category = selectedProduct.category;
+  itemDiv.dataset.key = itemKey;
+
+  const headerDiv = document.createElement('div');
+  headerDiv.classList.add('item-header');
+
+  const nameEl = document.createElement('div');
+  nameEl.classList.add('item-name');
+  nameEl.textContent = selectedProduct.name;
+
+  const priceEl = document.createElement('div');
+  priceEl.classList.add('item-price');
+  priceEl.textContent = `$ ${totalPrice}`;
+
+  headerDiv.append(nameEl, priceEl);
+
+  const detailEl = document.createElement('div');
+  detailEl.classList.add('item-detail');
+  
+  if (isFoodProduct) {
+    detailEl.textContent = `${quantity} x $${portionPrice} | Portion: ${portion}`;
+  } else {
+    detailEl.textContent = `${quantity} x $${portionPrice}`;
+  }
+
+  const noteEl = document.createElement('div');
+  noteEl.classList.add('item-note');
+  noteEl.textContent = '';
+
+  const actionDiv = document.createElement('div');
+  actionDiv.classList.add('item-actions');
+
+  // Quantity controls for both food and non-food
+  const quantityDiv = document.createElement('div');
+  quantityDiv.classList.add('item-quantity');
+  
+  const minusBtn = document.createElement('div');
+  minusBtn.classList.add('quantity-btn', 'minus-btn');
+  minusBtn.innerHTML = '<i class="fas fa-minus"></i>';
+  
+  const quantityValue = document.createElement('div');
+  quantityValue.classList.add('quantity-value');
+  quantityValue.textContent = quantity;
+  
+  const plusBtn = document.createElement('div');
+  plusBtn.classList.add('quantity-btn', 'plus-btn');
+  plusBtn.innerHTML = '<i class="fas fa-plus"></i>';
+  
+  quantityDiv.append(minusBtn, quantityValue, plusBtn);
+  actionDiv.appendChild(quantityDiv);
+
+  // Note button
+  const noteBtn = document.createElement('div');
+  noteBtn.classList.add('action-btn', 'note-btn');
+  noteBtn.innerHTML = '<i class="fas fa-edit"></i>';
+  
+  // Delete button
+  const deleteBtn = document.createElement('div');
+  deleteBtn.classList.add('action-btn', 'delete-btn');
+  deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+  
+  actionDiv.append(noteBtn, deleteBtn);
+  itemDiv.append(headerDiv, detailEl, noteEl, actionDiv);
+  
+  // Attach event listeners to the item
+  attachCartItemEvents(itemDiv);
+  
+  // Create a clone for the desktop cart
+  const desktopItem = itemDiv.cloneNode(true);
+  attachCartItemEvents(desktopItem);
+  
+  // Add to both carts
+  document.getElementById('cart-items').appendChild(desktopItem);
+  document.getElementById('mobile-cart-content').appendChild(itemDiv);
+  
+  cartMap.set(itemKey, true);
+  productsInCart.add(selectedProduct.name);
+  updateProductHighlighting();
+  updateCartBadge();
+  updateTotal();
+  
+  document.getElementById('quantity-popup').style.display = 'none';
+  editingCartItem = null;
+}
+
+// Update total calculation
+function updateTotal() {
+  let total = 0;
+  
+  // Desktop cart
+  document.querySelectorAll('#cart-items .item-price').forEach(priceEl => {
+    total += parseFloat(priceEl.textContent.replace('$', ''));
+  });
+  document.querySelector('#cart-total span').textContent = total.toFixed(2);
+  
+  // Mobile cart
+  document.querySelector('#mobile-cart-total span').textContent = total.toFixed(2);
+}
+
+// Update cart badge
+function updateCartBadge() {
+  const cartCount = document.querySelectorAll('#cart-items .item').length;
+  document.getElementById('cart-badge').textContent = cartCount;
+}
+
+// Show message popup
+function showMessage(message) {
+  document.getElementById('popup-msg-text').textContent = message;
+  document.getElementById('popup-msg').style.display = 'block';
+}
+
+// Close message popup
+function closeMessagePopup() {
+  document.getElementById('popup-msg').style.display = 'none';
+}
+
+// Save note
+function saveNote() {
+  const note = document.getElementById('note-input').value.trim();
+  if (editingCartItem) {
+    const key = editingCartItem.dataset.key;
+    
+    // Update note for both desktop and mobile items
+    document.querySelectorAll(`.item[data-key="${key}"]`).forEach(item => {
+      let noteEl = item.querySelector('.item-note');
+      noteEl.textContent = note;
+      
+      // Show note div only if there's content
+      if (note) {
+        noteEl.style.display = 'block';
+      } else {
+        noteEl.style.display = 'none';
+      }
+    });
+  }
+  document.getElementById('note-popup').style.display = 'none';
+}
+
+// Close note popup
+function closeNotePopup() {
+  document.getElementById('note-popup').style.display = 'none';
+}
+
+// Confirm delete
+function confirmDelete() {
+  if (editingCartItem) {
+    const key = editingCartItem.dataset.key;
+    const name = editingCartItem.querySelector('.item-name').textContent;
+    
+    cartMap.delete(key);
+    productsInCart.delete(name);
+    
+    // Remove from both carts
+    document.querySelectorAll(`.item[data-key="${key}"]`).forEach(item => {
+      item.remove();
+    });
+    
+    updateTotal();
+    updateCartBadge();
+    updateProductHighlighting();
+  }
+  document.getElementById('confirm-popup').style.display = 'none';
+}
+
+// Close confirm popup
+function closeConfirmPopup() {
+  document.getElementById('confirm-popup').style.display = 'none';
+}
+
+// Toggle search
+function toggleSearch() {
+  const input = document.getElementById('search-input');
+  input.style.display = input.style.display === 'none' ? 'block' : 'none';
+  if (input.style.display === 'block') input.focus();
+}
+
+// Category filtering
+function handleCategoryFilter() {
+  // Remove active class from all buttons
+  document.querySelectorAll(".category-btn").forEach(btn => {
+    btn.classList.remove("active");
+  });
+  
+  // Add active class to clicked button
+  this.classList.add("active");
+  
+  const category = this.getAttribute("data-category");
+  document.querySelectorAll(".product-item").forEach(item => {
+    item.style.display = (category === "all" || item.getAttribute("data-category") === category) ? "block" : "none";
+  });
+}
+
+// Table selection
+function handleTableSelection() {
+  document.querySelectorAll(".table-btn").forEach(b => {
+    b.classList.remove("selected");
+  });
+  this.classList.add("selected");
+}
+
+// Place order
+function handlePlaceOrder() {
+  if (document.querySelectorAll('#cart-items .item').length === 0) {
+    showMessage('Your cart is empty!');
+  } else {
+    showMessage('Order placed successfully!');
+    
+    // Clear cart after order placement
+    document.getElementById('cart-items').innerHTML = '';
+    document.getElementById('mobile-cart-content').innerHTML = '';
+    cartMap.clear();
+    productsInCart.clear();
+    updateTotal();
+    updateCartBadge();
+    updateProductHighlighting();
+  }
+}
+
+// Search functionality
+function handleSearch() {
+  const searchTerm = this.value.toLowerCase();
+  
+  document.querySelectorAll('.product-item').forEach(item => {
+    const productName = item.querySelector('.product-name').textContent.toLowerCase();
+    if (productName.includes(searchTerm)) {
+      item.style.display = 'block';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+// Update product highlighting
+function updateProductHighlighting() {
+  document.querySelectorAll('.product-card').forEach(card => {
+    const name = card.querySelector('.product-name').textContent;
+    card.classList.toggle('in-cart', productsInCart.has(name));
+  });
+}
+
+// Mobile cart functions
+function openMobileCart() {
+  document.getElementById('mobile-cart').style.left = '0';
+  document.getElementById('cart-overlay').style.display = 'block';
+}
+
+function closeMobileCart() {
+  document.getElementById('mobile-cart').style.left = '-100%';
+  document.getElementById('cart-overlay').style.display = 'none';
+}
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+
+</body>
+</html>
