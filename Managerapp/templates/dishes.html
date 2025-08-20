@@ -1,0 +1,148 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+  
+
+    <!-- Main Content -->
+    <div class="app-content content">
+      <div class="content-wrapper">
+        <div class="content-header row">
+          <div class="content-header-left col-md-6 col-12 mb-2">
+            <h3 class="content-header-title text-dark">Manage Dishes</h3>
+          </div>
+          <div class="content-header-right col-md-6 col-12">
+            <div class="form-group float-right">
+              <select id="filterAvailability" class="form-control">
+                <option value="all">All Dishes</option>
+                <option value="available">Available Only</option>
+                <option value="unavailable">Unavailable Only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-body">
+          <div class="table-responsive">
+            <table class="table table-striped" id="dishesTable">
+              <thead>
+                <tr>
+                  <th>Dish Name</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Margherita Pizza</td>
+                  <td>$<span class="dish-price">9.99</span></td>
+                  <td><span class="badge badge-success">Available</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-info update-price-btn" data-name="Margherita Pizza" data-price="9.99">Update Price</button>
+                    <button class="btn btn-sm btn-danger toggle-btn">Disable</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Chicken Biryani</td>
+                  <td>$<span class="dish-price">11.50</span></td>
+                  <td><span class="badge badge-danger">Unavailable</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-info update-price-btn" data-name="Chicken Biryani" data-price="11.50">Update Price</button>
+                    <button class="btn btn-sm btn-success toggle-btn">Enable</button>
+                  </td>
+                </tr>
+                <!-- Add more dishes here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Price Modal -->
+    <div class="modal fade" id="priceModal" tabindex="-1" role="dialog" aria-labelledby="priceModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Update Price</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <form id="priceForm">
+              <input type="hidden" id="modalDishRow" />
+              <div class="form-group">
+                <label>Dish Name</label>
+                <input type="text" id="modalDishName" class="form-control" readonly />
+              </div>
+              <div class="form-group">
+                <label>New Price ($)</label>
+                <input type="number" step="0.01" id="modalDishPrice" class="form-control" required />
+              </div>
+              <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    
+
+    <script>
+      // Open modal with current price
+      $('.update-price-btn').on('click', function () {
+        const row = $(this).closest('tr');
+        const name = $(this).data('name');
+        const price = $(this).data('price');
+
+        $('#modalDishRow').val(row.index());
+        $('#modalDishName').val(name);
+        $('#modalDishPrice').val(price);
+
+        $('#priceModal').modal('show');
+      });
+
+      // Submit modal form
+      $('#priceForm').on('submit', function (e) {
+        e.preventDefault();
+        const index = $('#modalDishRow').val();
+        const newPrice = $('#modalDishPrice').val();
+        const row = $('#dishesTable tbody tr').eq(index);
+
+        row.find('.dish-price').text(parseFloat(newPrice).toFixed(2));
+        $('#priceModal').modal('hide');
+      });
+
+      // Toggle Enable/Disable
+      $('.toggle-btn').on('click', function () {
+        const row = $(this).closest('tr');
+        const badge = row.find('td:nth-child(3) span');
+
+        if (badge.hasClass('badge-success')) {
+          badge.removeClass('badge-success').addClass('badge-danger').text('Unavailable');
+          $(this).removeClass('btn-danger').addClass('btn-success').text('Enable');
+        } else {
+          badge.removeClass('badge-danger').addClass('badge-success').text('Available');
+          $(this).removeClass('btn-success').addClass('btn-danger').text('Disable');
+        }
+      });
+
+      // Filter dishes by availability
+      $('#filterAvailability').on('change', function () {
+        const value = $(this).val();
+        $('#dishesTable tbody tr').each(function () {
+          const isAvailable = $(this).find('.badge').hasClass('badge-success');
+          if (
+            value === 'all' ||
+            (value === 'available' && isAvailable) ||
+            (value === 'unavailable' && !isAvailable)
+          ) {
+            $(this).show();
+          } else {
+            $(this).hide();
+          }
+        });
+      });
+    </script>
+
+{% endblock %}
