@@ -443,7 +443,7 @@
           deliveryBoy: ""
         },
         {
-          id: "O001",
+          id: "0001",
           customer: "Alice Brown",
           platform: "Appthrough",
           total: 35.75,
@@ -459,7 +459,7 @@
           deliveryBoy: ""
         },
         {
-          id: "O002",
+          id: "0002",
           customer: "Bob Carter",
           platform: "Online",
           total: 22.50,
@@ -475,7 +475,7 @@
           deliveryBoy: ""
         },
         {
-          id: "O003",
+          id: "0003",
           customer: "Clara Davis",
           platform: "Appthrough",
           total: 18.00,
@@ -604,7 +604,7 @@
 
       // Show order details
       function showOrderDetails(orderId) {
-        const order = orders.find(o => o.id === orderId) || {};
+        const order = orders.find(o => o.id == orderId) || {};
         $('#orderIdDetail').text(`#${orderId}`);
         $('#customerDetail').text(order.customer || 'N/A');
         $('#platformDetail').text(order.platform || 'N/A');
@@ -638,7 +638,7 @@
 
       // Show accept confirmation modal
       function showAcceptConfirmation(orderId) {
-        const order = orders.find(o => o.id === orderId);
+        const order = orders.find(o => o.id == orderId);
         if (!order) {
           showToast('error', `Order #${orderId} not found.`);
           return;
@@ -656,7 +656,7 @@
 
       // Show reject confirmation modal
       function showRejectConfirmation(orderId) {
-        const order = orders.find(o => o.id === orderId);
+        const order = orders.find(o => o.id == orderId);
         if (!order) {
           showToast('error', `Order #${orderId} not found.`);
           return;
@@ -675,7 +675,7 @@
           $('#acceptModal').modal('hide');
           return;
         }
-        const order = orders.find(o => o.id === orderId);
+        const order = orders.find(o => o.id == orderId);
         if (!order) {
           showToast('error', `Order #${orderId} not found.`);
           $('#acceptModal').modal('hide');
@@ -712,7 +712,7 @@
           $('#rejectModal').modal('hide');
           return;
         }
-        const order = orders.find(o => o.id === orderId);
+        const order = orders.find(o => o.id == orderId);
         if (!order) {
           showToast('error', `Order #${orderId} not found.`);
           $('#rejectModal').modal('hide');
@@ -742,7 +742,7 @@
           $('#paymentConfirmModal').modal('hide');
           return;
         }
-        const order = orders.find(o => o.id === orderId);
+        const order = orders.find(o => o.id == orderId);
         if (!order) {
           showToast('error', `Order #${orderId} not found.`);
           $('#paymentConfirmModal').modal('hide');
@@ -766,7 +766,7 @@
           showToast('error', 'Please select a delivery boy.');
           return;
         }
-        const order = orders.find(o => o.id === orderId);
+        const order = orders.find(o => o.id == orderId);
         if (!order) {
           showToast('error', `Order #${orderId} not found.`);
           $('#assignModal').modal('hide');
@@ -820,7 +820,7 @@
         });
         $('.assign-btn').off('click').on('click', function () {
           const orderId = $(this).data('id');
-          const order = orders.find(o => o.id === orderId);
+          const order = orders.find(o => o.id == orderId);
           if (!order) {
             showToast('error', `Order #${orderId} not found.`);
             return;

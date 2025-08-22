@@ -164,7 +164,7 @@ class OrderTable(models.Model):
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     totalamount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
@@ -250,6 +250,7 @@ class ItemTable(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     fast_delivery = models.BooleanField(default=False)
     newest = models.BooleanField(default=True)
+    available = models.BooleanField(default=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -624,3 +625,58 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f'{self.sender_type} -> {self.message_type}'
+
+
+class OfflineOrders(models.Model):
+    ORDER_TYPES = [
+        ('DINE_IN', 'Dine In'),
+        ('TAKEAWAY', 'Takeaway'),
+        ('ONLINEDELIVERY', 'Online Delivery'),
+    ]
+
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='DINE_IN')
+
+    # Dining-related fields
+    table = models.ForeignKey("DiningTable", on_delete=models.CASCADE, null=True, blank=True)
+    waiter = models.ForeignKey("WaiterTable", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Delivery-related fields
+    deliveryboy = models.ForeignKey("DeliveryBoyTable", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Customer details (for takeaway & online)
+    customer_name = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+
+    # Payment & totals
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment = models.ForeignKey("PaymentTable", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Meta info
+    created_at = models.DateTimeField(auto_now_add=True)  # ✅ auto timestamp
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.order_type}"
+
+
+class OfflineOrderItems(models.Model):
+    order = models.ForeignKey(OfflineOrders, on_delete=models.CASCADE, related_name="order_items")
+    item = models.ForeignKey("ItemTable", on_delete=models.CASCADE)
+    variant = models.ForeignKey("ItemVariantTable", on_delete=models.SET_NULL, null=True, blank=True)
+
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2)  
+    note = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        variant_display = self.variant.variant_name if self.variant else "No Variant"
+        return f"Order {self.order.id} - {self.item.name} ({variant_display}) x {self.quantity}"
+
+
+
+
+class CreditUser(models.Model):
+    Name = models.CharField(max_length=100, null=True, blank=True)
+    Email = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.IntegerField(null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    credit_limit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

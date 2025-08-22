@@ -32,57 +32,47 @@
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+                            <tbody>
+                {% for staff in staff_data %}
                 <tr>
-                  <td>#S001</td>
-                  <td>Sam Wilson</td>
-                  <td>Waiter</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                  <td>2025-06-01</td>
-                  <td><button class="btn btn-sm btn-primary view-btn" data-id="S001">View</button></td>
+                  <td>#{{ staff.id }}</td>
+                  <td>{{ staff.name }}</td>
+                  <td>{{ staff.role }}</td>
+                  <td><span class="badge badge-{{ staff.status_class }}">{{ staff.status }}</span></td>
+                  <td>{{ staff.join_date }}</td>
+                  <td><button class="btn btn-sm btn-primary view-btn" data-id="{{ staff.id }}">View</button></td>
                 </tr>
-                <tr>
-                  <td>#S002</td>
-                  <td>Sara Johnson</td>
-                  <td>Chef</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                  <td>2025-05-15</td>
-                  <td><button class="btn btn-sm btn-primary view-btn" data-id="S002">View</button></td>
-                </tr>
-                <tr>
-                  <td>#S003</td>
-                  <td>Steve Brown</td>
-                  <td>Manager</td>
-                  <td><span class="badge badge-secondary">Inactive</span></td>
-                  <td>2025-04-20</td>
-                  <td><button class="btn btn-sm btn-primary view-btn" data-id="S003">View</button></td>
-                </tr>
-                <!-- More rows as needed -->
+                {% endfor %}
               </tbody>
+
             </table>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Staff Details Modal -->
-    <div class="modal fade" id="staffModal" tabindex="-1" role="dialog" aria-labelledby="staffModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Staff Details</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">×</button>
-          </div>
-          <div class="modal-body">
-            <p><strong>Staff ID:</strong> <span id="staffIdDetail"></span></p>
-            <p><strong>Name:</strong> <span id="nameDetail">Sam Wilson</span></p>
-            <p><strong>Role:</strong> <span id="roleDetail">Waiter</span></p>
-            <p><strong>Status:</strong> <span class="badge badge-success">Active</span></p>
-            <p><strong>Join Date:</strong> <span id="joinDateDetail">2025-06-01</span></p>
-          </div>
-        </div>
+  <div class="modal fade" id="staffModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Staff Details</h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Staff ID:</strong> <span id="staffIdDetail"></span></p>
+        <p><strong>Name:</strong> <span id="nameDetail"></span></p>
+        <p><strong>Role:</strong> <span id="roleDetail"></span></p>
+        <p><strong>Status:</strong> <span id="statusDetail" class="badge"></span></p>
+        <p><strong>Join Date:</strong> <span id="joinDateDetail"></span></p>
+        <p><strong>Phone:</strong> <span id="phoneDetail"></span></p>
+        <p><strong>Email:</strong> <span id="emailDetail"></span></p>
+        <p><strong>Address:</strong> <span id="addressDetail"></span></p>
+        <p><strong>Qualification:</strong> <span id="qualificationDetail"></span></p>
       </div>
     </div>
+  </div>
+</div>
+
 
     <!-- JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -102,13 +92,31 @@
         });
       });
 
-      // View staff (example data only)
       $('.view-btn').on('click', function () {
-        const staffId = $(this).data('id');
-        $('#staffIdDetail').text('#' + staffId);
-        // You can use AJAX to fetch real data here
-        $('#staffModal').modal('show');
-      });
+  const staffId = $(this).data('id');
+
+  $.ajax({
+    url: `/Managerapp/staff/${staffId}/`,
+    type: 'GET',
+    success: function (data) {
+      $('#staffIdDetail').text(data.id);
+      $('#nameDetail').text(data.name);
+      $('#roleDetail').text(data.role);
+      $('#statusDetail').text(data.status).removeClass().addClass('badge badge-success');
+      $('#joinDateDetail').text(data.join_date);
+      $('#phoneDetail').text(data.phone || '-');
+      $('#emailDetail').text(data.email || '-');
+      $('#addressDetail').text(data.address || '-');
+      $('#qualificationDetail').text(data.qualification || '-');
+
+      $('#staffModal').modal('show');
+    },
+    error: function () {
+      alert('Could not fetch staff details.');
+    }
+  });
+});
+
     </script>
 
 {% endblock %}
