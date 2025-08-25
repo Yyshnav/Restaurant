@@ -463,3 +463,60 @@ class UserOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Failed to create order item: {str(e)}")
 
         return order
+    
+    
+class OrderItemRetrieveSerializer(serializers.ModelSerializer):
+    itemname = serializers.StringRelatedField()
+    variant = serializers.StringRelatedField()
+    addon = serializers.StringRelatedField()
+
+    class Meta:
+        model = OrderItemTable
+        fields = ['id', 'itemname', 'quantity', 'price', 'instruction', 'variant', 'addon']
+
+class OrderRetrieveSerializer(serializers.ModelSerializer):
+    userid = serializers.StringRelatedField(source='userid.name')
+    branch = serializers.StringRelatedField()
+    coupon = serializers.StringRelatedField()
+    address = serializers.StringRelatedField()
+    deliveryid = serializers.StringRelatedField() 
+    order_item = OrderItemRetrieveSerializer(many=True, read_only=True) 
+ 
+    class Meta:
+        model = OrderTable
+        fields = [
+            'id', 'userid', 'branch', 'coupon', 'address', 'deliveryid', 'subtotal',
+            'tax', 'discount', 'totalamount', 'latitude', 'longitude', 'paymentstatus',
+            'orderstatus', 'cooking_instructions', 'delivery_instructions',
+            'payment_method', 'phone_number', 'created_at', 'updated_at', 'order_item'
+        ] 
+
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RatingTable
+        fields = ['userid', 'rating_type', 'rating', 'comment']  # include userid
+        read_only_fields = ['userid']  # prevent user from overriding
+        extra_kwargs = {
+            'rating_type': {'required': True},
+            'rating': {'required': True},
+            'comment': {'required': False, 'allow_blank': True}
+        }
+
+    def validate(self, data):
+        if data['rating_type'] not in ['SERVICE', 'DISH']:
+            raise serializers.ValidationError({
+                'rating_type': 'Invalid rating type. Must be SERVICE or DISH.'
+            })
+
+        if data['rating_type'] == 'SERVICE':
+            valid_ratings = ['1', '2', '3', '4', '5', 'Good', 'Not Good']
+            if data['rating'] not in valid_ratings:
+                raise serializers.ValidationError({
+                    'rating': 'Invalid rating for SERVICE. Must be 1-5 or Good/Not Good.'
+                })
+        return data
+
+    def create(self, validated_data):
+        return RatingTable.objects.create(**validated_data)

@@ -11,7 +11,7 @@ from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
 # from Deliveryboyapp.serializer import OrderSerializer
 from Deliveryboyapp.serializer import TrackOrderSerializer
-from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
+from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, OrderRetrieveSerializer, PlaceOrderSerializer, ProfileTableSerializer, RatingSerializer, UserOrderSerializer
 # from twilio.rest import Client
 from Accountapp.models import ProfileTable
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -1033,7 +1033,60 @@ class TrackAPIView(APIView):
             order = OrderTable.objects.get(id=orderid, userid_id=profile)
             # print("User orders:", order)
             serializer = TrackOrderSerializer(order)
-            # print(f"Order details for tracking: {serializer.data}")
+            print(f"Order details for tracking: {serializer.data}")
             return Response({'success': True, 'data': serializer.data})
         except OrderTable.DoesNotExist:
             return Response({'success': False, 'message': 'Order not found'}, status=404)
+        
+
+class UserOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        print("Fetching user orders...")
+        try:
+            # Fetch the profile of the authenticated user
+            profile = get_object_or_404(ProfileTable, loginid=request.user)
+            # Fetch orders associated with the user's profile
+            orders = OrderTable.objects.filter(userid=profile).order_by('-created_at')
+            # Serialize the orders
+            serializer = OrderRetrieveSerializer(orders, many=True)
+            print(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            print(serializer.data)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
+
+class FeedbackView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        ratings = request.data.get('ratings', [])
+        if not isinstance(ratings, list):
+            return Response(
+                {'status': 'error', 'message': 'Ratings must be a list'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response_data = []
+        for rating_data in ratings:
+            serializer = RatingSerializer(data=rating_data)
+            if serializer.is_valid():
+                serializer.save(userid=request.user)  # set authenticated user
+                response_data.append(serializer.data)
+            else:
+                return Response(
+                    {'status': 'error', 'message': serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        return Response(
+            {'status': 'success', 'data': response_data},
+            status=status.HTTP_201_CREATED
+        )

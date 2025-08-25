@@ -3,7 +3,7 @@ from django.urls import path
 from Userapp.views import *
 
 from rest_framework_simplejwt.views import (
-    TokenRefreshView,
+TokenRefreshView,
 )
 
 urlpatterns = [
@@ -42,5 +42,9 @@ urlpatterns = [
     path('placeorder/', PlaceOrderAPIView.as_view(), name='placeorder'),
     path('useraddress/', UserAddressView.as_view(), name='get-address'),
     path("trackorders/<int:orderid>/", TrackAPIView.as_view(), name='trackorder'),
-]
+    path('myorder/', UserOrdersView.as_view(), name='my-orders'),
+    path('feedback/', FeedbackView.as_view(), name='feedback'),
+
+    ]
+
 

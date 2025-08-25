@@ -76,7 +76,7 @@ CHANNEL_LAYERS = {
         # 'BACKEND': 'channels.layers.InMemoryChannelLayer',
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         'CONFIG': {
-            "hosts": [("172.27.212.99", 6379)],
+                "hosts": [("172.27.212.99", 6379)],
         },
     },
 }
