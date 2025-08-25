@@ -1,5 +1,6 @@
 {% extends "sidebarman.html" %}
 {% block body %}
+
   <!-- Main Content -->
   <div class="app-content content">
     <div class="content-wrapper">
@@ -23,15 +24,21 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Main Hall</td>
-                <td class="table-count">10</td>
-                <td class="chair-count">40</td>
-                <td>
-                  <button class="btn btn-sm btn-info edit-btn" data-area="Main Hall" data-tables="10" data-chairs="40">Edit</button>
-                </td>
-              </tr>
-              <!-- More rows can be added here -->
+              {% for table in tables %}
+                <tr>
+                  <td>Floor {{ table.floor }}</td>
+                  <td class="table-count">{{ table.table_number }}</td>
+                  <td class="chair-count">{{ table.seating_capacity }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-danger delete-btn"
+                      data-id="{{ table.id }}">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center">No tables found</td></tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
@@ -39,27 +46,28 @@
     </div>
   </div>
 
-  <!-- Edit/Add Modal -->
+  <!-- Add Modal -->
   <div class="modal fade" id="editModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
       <form id="editForm" class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Edit Tables & Chairs</h5>
+          <h5 class="modal-title">Add Tables & Chairs</h5>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
         <div class="modal-body">
-          <input type="hidden" id="editIndex">
+          <input type="hidden" id="editId" name="id">
+
           <div class="form-group">
-            <label>Area/Label</label>
-            <input type="text" id="editArea" class="form-control" required>
+            <label>Floor</label>
+            <input type="text" id="editFloor" class="form-control" name="floor" required>
           </div>
           <div class="form-group">
-            <label>Number of Tables</label>
-            <input type="number" id="editTables" class="form-control" min="0" required>
+            <label>Table Number</label>
+            <input type="number" id="editTables" class="form-control" name="table_number" min="0" required>
           </div>
           <div class="form-group">
-            <label>Number of Chairs</label>
-            <input type="number" id="editChairs" class="form-control" min="0" required>
+            <label>Capacity</label>
+            <input type="number" id="editCapacity" class="form-control" name="seating_capacity" min="0" required>
           </div>
         </div>
         <div class="modal-footer">
@@ -70,66 +78,78 @@
   </div>
 
   <!-- JS -->
-
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Open Edit Modal
-    $(document).on('click', '.edit-btn', function () {
-      const row = $(this).closest('tr');
-      const index = row.index();
-      const area = $(this).data('area');
-      const tables = $(this).data('tables');
-      const chairs = $(this).data('chairs');
-
-      $('#editIndex').val(index);
-      $('#editArea').val(area);
-      $('#editTables').val(tables);
-      $('#editChairs').val(chairs);
-      $('#editModal').modal('show');
-    });
-
-    // Handle form submission (Add or Update)
-    $('#editForm').on('submit', function (e) {
-      e.preventDefault();
-      const index = $('#editIndex').val();
-      const area = $('#editArea').val();
-      const tables = $('#editTables').val();
-      const chairs = $('#editChairs').val();
-
-      if (index === '') {
-        // Add new row
-        const newRow = `
-          <tr>
-            <td>${area}</td>
-            <td class="table-count">${tables}</td>
-            <td class="chair-count">${chairs}</td>
-            <td>
-              <button class="btn btn-sm btn-info edit-btn" data-area="${area}" data-tables="${tables}" data-chairs="${chairs}">Edit</button>
-            </td>
-          </tr>
-        `;
-        $('#tableChairTable tbody').append(newRow);
-      } else {
-        // Update existing row
-        const row = $('#tableChairTable tbody tr').eq(index);
-        row.find('td').eq(0).text(area);
-        row.find('.table-count').text(tables);
-        row.find('.chair-count').text(chairs);
-        row.find('.edit-btn').data('area', area).data('tables', tables).data('chairs', chairs);
-      }
-
-      $('#editModal').modal('hide');
-    });
-
     // Open Add Modal
     $('#addBtn').on('click', function () {
-      $('#editIndex').val('');
-      $('#editArea').val('');
+      $('#editId').val('');
+      $('#editFloor').val('');
       $('#editTables').val('');
-      $('#editChairs').val('');
+      $('#editCapacity').val('');
       $('#editModal').modal('show');
     });
-  </script>
 
+    // Handle Add form submission
+    $('#editForm').on('submit', function (e) {
+      e.preventDefault();
+
+      $.ajax({
+        url: '/Managerapp/save-table/',   // backend URL for saving
+        method: 'POST',
+        data: {
+          floor: $('#editFloor').val(),
+          table_number: $('#editTables').val(),
+          seating_capacity: $('#editCapacity').val(),
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function (response) {
+          if (response.success) {
+            const newRow = `
+              <tr>
+                <td>Floor ${response.floor}</td>
+                <td class="table-count">${response.table_number}</td>
+                <td class="chair-count">${response.seating_capacity}</td>
+                <td>
+                  <button class="btn btn-sm btn-danger delete-btn"
+                    data-id="${response.id}">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            `;
+            $('#tableChairTable tbody').append(newRow);
+            $('#editModal').modal('hide');
+            $('#editForm')[0].reset();
+          }
+        },
+        error: function (xhr) {
+          alert("Error: " + xhr.responseJSON.error);
+        }
+      });
+    });
+
+    // Handle Delete
+    $(document).on('click', '.delete-btn', function () {
+      const recordId = $(this).data('id');
+
+      $.ajax({
+        url: '/Managerapp/delete-table/' + recordId + '/',  
+        method: 'POST',
+        data: {
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function (response) {
+          if (response.success) {
+            $(`#tableChairTable button[data-id="${recordId}"]`).closest('tr').remove();
+          }
+        },
+        error: function (xhr) {
+          alert("Error: " + xhr.responseJSON.error);
+        }
+      });
+    });
+  </script>
 
 {% endblock %}

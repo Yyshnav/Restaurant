@@ -1,8 +1,6 @@
 {% extends "sidebarman.html" %}
 {% block body %}
 
-  
-
     <!-- Main Content -->
     <div class="app-content content">
       <div class="content-wrapper">
@@ -32,27 +30,37 @@
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>Margherita Pizza</td>
-                  <td>$<span class="dish-price">9.99</span></td>
-                  <td><span class="badge badge-success">Available</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-info update-price-btn" data-name="Margherita Pizza" data-price="9.99">Update Price</button>
-                    <button class="btn btn-sm btn-danger toggle-btn">Disable</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Chicken Biryani</td>
-                  <td>$<span class="dish-price">11.50</span></td>
-                  <td><span class="badge badge-danger">Unavailable</span></td>
-                  <td>
-                    <button class="btn btn-sm btn-info update-price-btn" data-name="Chicken Biryani" data-price="11.50">Update Price</button>
-                    <button class="btn btn-sm btn-success toggle-btn">Enable</button>
-                  </td>
-                </tr>
-                <!-- Add more dishes here -->
-              </tbody>
+                  <tbody>
+      {% for dish in dishes %}
+        {% for variant in dish.variants.all %}
+          <tr>
+            <td>{{ dish.name }} - {{ variant.variant_name }}</td>
+            <td>₹<span class="dish-price">{{ variant.price }}</span></td>
+            <td>
+              {% if dish.available %}
+                <span class="badge badge-success">Available</span>
+              {% else %}
+                <span class="badge badge-danger">Unavailable</span>
+              {% endif %}
+            </td>
+            <td>
+             <button class="btn btn-sm btn-info update-price-btn" 
+                data-name="{{ dish.name }} - {{ variant.variant_name }}" 
+                data-price="{{ variant.price }}"
+                data-variant-id="{{ variant.id }}">
+            Update Price
+        </button>
+              {% if dish.available %}
+                <button class="btn btn-sm btn-danger toggle-btn" data-id="{{ dish.id }}">Disable</button>
+              {% else %}
+                <button class="btn btn-sm btn-success toggle-btn" data-id="{{ dish.id }}">Enable</button>
+              {% endif %}
+
+          </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+
             </table>
           </div>
         </div>
@@ -86,46 +94,83 @@
     </div>
 
     <!-- JS -->
-    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      // Open modal with current price
-      $('.update-price-btn').on('click', function () {
-        const row = $(this).closest('tr');
-        const name = $(this).data('name');
-        const price = $(this).data('price');
+// Open modal with current price
+$('.update-price-btn').on('click', function () {
+  const row = $(this).closest('tr');
+  const name = $(this).data('name');
+  const price = $(this).data('price');
+  const variantId = $(this).data('variant-id');  // ✅ now available
 
-        $('#modalDishRow').val(row.index());
-        $('#modalDishName').val(name);
-        $('#modalDishPrice').val(price);
+  $('#modalDishRow').val(row.index());
+  $('#modalDishName').val(name);
+  $('#modalDishPrice').val(price);
+  $('#priceModal').data('variant-id', variantId); // ✅ store in modal
+  $('#priceModal').modal('show');
+});
 
-        $('#priceModal').modal('show');
-      });
+// Submit modal form
+$('#priceForm').on('submit', function (e) {
+  e.preventDefault();
+  const index = $('#modalDishRow').val();
+  const newPrice = $('#modalDishPrice').val();
+  const row = $('#dishesTable tbody tr').eq(index);
+  const variantId = $('#priceModal').data('variant-id');  // ✅ get from modal
 
-      // Submit modal form
-      $('#priceForm').on('submit', function (e) {
-        e.preventDefault();
-        const index = $('#modalDishRow').val();
-        const newPrice = $('#modalDishPrice').val();
-        const row = $('#dishesTable tbody tr').eq(index);
-
-        row.find('.dish-price').text(parseFloat(newPrice).toFixed(2));
+  $.ajax({
+    url: `/Managerapp/variant/${variantId}/edit/`,
+    method: 'POST',
+    data: {
+      price: newPrice,
+      csrfmiddlewaretoken: '{{ csrf_token }}'
+    },
+    success: function (response) {
+      if (response.success) {
+        row.find('.dish-price').text(parseFloat(response.new_price).toFixed(2));
         $('#priceModal').modal('hide');
-      });
+      } else {
+        alert(response.message);
+      }
+    }
+  });
+});
 
-      // Toggle Enable/Disable
-      $('.toggle-btn').on('click', function () {
-        const row = $(this).closest('tr');
-        const badge = row.find('td:nth-child(3) span');
 
-        if (badge.hasClass('badge-success')) {
-          badge.removeClass('badge-success').addClass('badge-danger').text('Unavailable');
-          $(this).removeClass('btn-danger').addClass('btn-success').text('Enable');
-        } else {
-          badge.removeClass('badge-danger').addClass('badge-success').text('Available');
-          $(this).removeClass('btn-success').addClass('btn-danger').text('Disable');
+        $('.toggle-btn').on('click', function () {
+    const button = $(this);
+    const dishId = button.data('id');
+
+    $.ajax({
+        url: `/Managerapp/dish/${dishId}/toggle/`,
+        type: "POST",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+        success: function (data) {
+            if (data.success) {
+                location.reload();  // refresh whole page so item + variants show updated status
+            }
         }
-      });
+    });
+});
+
+// Helper to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 
       // Filter dishes by availability
       $('#filterAvailability').on('change', function () {
@@ -145,4 +190,4 @@
       });
     </script>
 
-{% endblock %}
+  {% endblock %}

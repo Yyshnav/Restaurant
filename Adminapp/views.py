@@ -33,7 +33,7 @@ class LoginView(View):
         if user is not None:
             # Log in the user
             login(request, user)
-
+            request.session["user_id"] = user.id  
             # If user is superuser, ensure they have ADMIN role
             if user.is_superuser:
                 admin_role, _ = UserRole.objects.get_or_create(role='ADMIN')
