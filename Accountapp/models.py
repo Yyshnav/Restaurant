@@ -107,6 +107,13 @@ class DeliveryBoyTable(models.Model):
     license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
     userid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
 
+    def save(self, *args, **kwargs):
+        """Whenever we create a DeliveryBoy, make sure user has DELIVERY role."""
+        super().save(*args, **kwargs)
+        delivery_role, _ = UserRole.objects.get_or_create(role="DELIVERY")
+        self.userid.user_roles.add(delivery_role)
+        self.userid.save()
+
     def __str__(self):
         return f"{self.name} ({self.phone})"
     
@@ -179,6 +186,7 @@ class OrderTable(models.Model):
 
     cooking_instructions = models.TextField(blank=True, null=True)
     delivery_instructions = models.TextField(blank=True, null=True)
+    voice_instruction = models.FileField(upload_to='order_voice_instructions/', null=True, blank=True)
     payment_method = models.CharField(max_length=50, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
@@ -402,8 +410,9 @@ class DeliveryTable(models.Model):
     address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliveries', null=True, blank=True)
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
+    # voice_instruction = models.FileField(upload_to='delivery_instructions/', null=True, blank=True)
     phone = models.CharField(max_length=15)
-    instruction = models.CharField(max_length=450, null=True, blank=True)  # Can store text or a reference to a voice file
+    instruction = models.CharField(max_length=450, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -635,3 +644,15 @@ class UserFeedbackTable(models.Model):
 
     def __str__(self):
         return f"Feedback for Order #{self.order.id} by Delivery Boy {self.delivery_boy.id}"
+
+class OfflineOrders(models.Model):
+    order_type = models.CharField(max_length=20, choices=[('DINE_IN', 'Dine In'), ('TAKEAWAY', 'Takeaway'), ('ONLINEDELIVERY', 'OnlineDelivery')], default='DINE_IN')
+    table_id = models.ForeignKey(DiningTable, on_delete=models.CASCADE, null=True, blank=True)
+    waiter_id = models.ForeignKey(WaiterTable, on_delete=models.CASCADE, null=True, blank=True)
+    Item_id = models.ForeignKey(ItemTable, on_delete=models.CASCADE, null=True, blank=True)
+    deliveryboy_id = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE, null=True, blank=True)
+    quantity = models.IntegerField(default=1, null=True, blank=True)
+    CustomerName = models.CharField(max_length=100, null=True, blank=True)
+    PhoneNumber = models.IntegerField(null=True, blank=True)
+    TotalAmount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment = models.ForeignKey(PaymentTable, on_delete=models.CASCADE, null=True, blank=True)

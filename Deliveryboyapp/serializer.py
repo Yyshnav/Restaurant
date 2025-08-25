@@ -82,7 +82,7 @@ class OrderSerializer(serializers.ModelSerializer):
     userid = serializers.SerializerMethodField()
     branch = BranchTableSerializer(read_only=True)
     address = AddressTableSerializer(read_only=True)
-    order_item = DeliveryOrderItemTableSerializer(many=True, read_only=True)  # Use DeliveryOrderItemTableSerializer
+    order_item = DeliveryOrderItemTableSerializer(many=True, read_only=True)
     delivery_details = serializers.SerializerMethodField()
 
     class Meta:
@@ -123,7 +123,8 @@ class OrderSerializer(serializers.ModelSerializer):
                     'latitude': obj.latitude or 0.0,
                     'longitude': obj.longitude or 0.0
                 },
-                'instruction': obj.delivery_instructions or ''
+                'instruction': obj.delivery_instructions or '',
+                'voice_instruction': obj.voice_instruction.url if obj.voice_instruction else None
             }
         except Exception as e:
             print(f"Error getting delivery: {e}")
@@ -135,7 +136,9 @@ class OrderSerializer(serializers.ModelSerializer):
                     'latitude': obj.latitude or 0.0,
                     'longitude': obj.longitude or 0.0
                 },
-                'instruction': obj.delivery_instructions or ''
+                'instruction': obj.delivery_instructions or '',
+                'voice_instruction': obj.voice_instruction.url if obj.voice_instruction else None
+                
             }
 
     def get_address(self, obj):

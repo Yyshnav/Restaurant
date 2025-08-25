@@ -1,3 +1,5 @@
+
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,9 +9,10 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="webpagecss.css">
+  <link rel="stylesheet" href="{% static 'assets/css/webpagecss.css' %}">
 </head>
 <body>
+{% csrf_token %}
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
@@ -40,14 +43,31 @@
     <div class="total fw-bold fs-5 d-flex justify-content-end mb-3" id="mobile-cart-total">
       Total: $ <span>0.00</span>
     </div>
-    <div class="table-btn-grid">
-      <button class="table-btn">1</button>
-      <button class="table-btn">2</button>
-      <button class="table-btn">3</button>
-      <button class="table-btn">4</button>
-      <button class="table-btn">5</button>
-      <button class="table-btn">6</button>
+    <!-- ---table select mobile-- -->
+    <div class="table-select-container mb-3">
+      <label for="mobile-table-select" class="form-label fw-bold">Select Tables:</label>
+      <select id="mobile-table-select" class="form-select">
+        <option value="" disabled selected style="display:none">Select table : </option>
+        {% for table in tables %}
+        <option value="{{ table.table_number }}">Table {{ table.table_number }}</option>
+        {% endfor %}
+      </select>
+      <div id="mobile-selected-tables" class="selected-tables">
+        <span class="no-tables-selected">No tables selected</span>
+      </div>
     </div>
+
+    <!-- waiter selection -->
+    <div class="waiter-select-container mb-3" style="position:relative;">
+      <select id="mobile-waiter-select" class="form-select ">
+        <option value="" disabled selected>Select waiter</option>
+        {% for waiter in waiters %}
+        <option value="{{ waiter.id }}">{{ waiter.name }}</option>
+        {% endfor %}
+      </select>
+      <span id="mobile-waiter-confirmed" style="display:none; position:absolute; left:2px; top:50%; transform:translateY(-50%); color:green; font-size:1.2rem;">✔</span>
+    </div>
+
     <button class="place-order-btn">Place Order</button>
   </div>
 </div>
@@ -67,13 +87,28 @@
             Total: $ <span>0.00</span>
           </div>
           
-          <div class="table-btn-grid">
-            <button class="table-btn">1</button>
-            <button class="table-btn">2</button>
-            <button class="table-btn">3</button>
-            <button class="table-btn">4</button>
-            <button class="table-btn">5</button>
-            <button class="table-btn">6</button>
+          <!-- --select box table-- -->
+           
+          <div class="table-select-container mb-3">
+            <select id="desktop-table-select" class="form-select" >
+              <option value="" disabled selected style="display:none">Select table  </option>
+              {% for table in tables %}
+              <option value="{{ table.table_number }}">Table {{ table.table_number }}</option>
+              {% endfor %}
+            </select>
+            <div id="desktop-selected-tables" class="selected-tables">
+              <span class="no-tables-selected">No tables selected</span>
+            </div>
+          </div>
+          <!-- --waiter selection-- -->
+          <div class="waiter-select-container position-relative mb-3">
+            <select id="waiter-select" class="form-select">
+              <option value="" disabled selected style="display:none">Select waiter</option>
+              {% for waiter in waiters %}
+              <option value="{{ waiter.id }}">{{ waiter.name }}</option>
+              {% endfor %}
+            </select>
+            <span id="waiter-confirmed" style="display:none; position:absolute; left:2px; top:50%; transform:translateY(-50%); color:green; font-size:1.2rem;">✔</span>
           </div>
           
           <button class="place-order-btn">Place Order</button>
@@ -108,150 +143,41 @@
           <input type="text" class="form-control mobile-search-input" id="mobile-search-input" placeholder="Search product">
         </div>
 
-
-      <div class="row g-3 products-grid pt-1 pb-5" id="product-container">
-  <!-- Example Products -->
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80" alt="Bacon Burger">
-      </div>
-      <div class="product-name">Bacon Burger</div>
-      <div class="price">$ 8.63</div>
+        <div class="row g-3 products-grid pt-1 pb-5" id="product-container">
+          <!-- Dynamic Products -->
+          <!-- {% for item in items %}
+          <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="{{ item.category.name|lower|default:'uncategorized' }}">
+            <div class="product-card">
+              <div class="product-image-container">
+                <img src="{{ item.images.0.url|default:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80' }}" alt="{{ item.name }}">
+              </div>
+              <div class="product-name">{{ item.name }}</div>
+              <div class="price">$ {{ item.price }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <p>No items available.</p>
+          {% endfor %} -->
+          <!-- templates/ordering.html (corrected part for item images) -->
+{% for item in items %}
+<div class="col-6 col-sm-4 col-lg-3 product-item" data-category="{{ item.category.name|lower|default:'uncategorized' }}" >
+  <div class="product-card">
+    <div class="product-image-container">
+      {% if item.images.first %}
+        <img src="{{ item.images.first.image.url }}" alt="{{ item.name }}">
+      {% else %}
+        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80" alt="{{ item.name }}">
+      {% endif %}
     </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=500&q=80" alt="Mango Juice">
-      </div>
-      <div class="product-name">Mango Juice</div>
-      <div class="price">$ 2.50</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="starters">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=500&q=80" alt="Chicken Tikka">
-      </div>
-      <div class="product-name">Chicken Tikka</div>
-      <div class="price">$ 4.25</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="French Fries">
-      </div>
-      <div class="product-name">French Fries</div>
-      <div class="price">$ 2.00</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="Onion Rings">
-      </div>
-      <div class="product-name">Onion Rings</div>
-      <div class="price">$ 3.50</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&w=500&q=80" alt="Margherita Pizza">
-      </div>
-      <div class="product-name">Margherita Pizza</div>
-      <div class="price">$ 10.99</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=500&q=80" alt="Iced Coffee">
-      </div>
-      <div class="product-name">Iced Coffee</div>
-      <div class="price">$ 3.75</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80" alt="Bacon Burger">
-      </div>
-      <div class="product-name">Bacon Burger</div>
-      <div class="price">$ 8.63</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=500&q=80" alt="Mango Juice">
-      </div>
-      <div class="product-name">Mango Juice</div>
-      <div class="price">$ 2.50</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="starters">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=500&q=80" alt="Chicken Tikka">
-      </div>
-      <div class="product-name">Chicken Tikka</div>
-      <div class="price">$ 4.25</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="French Fries">
-      </div>
-      <div class="product-name">French Fries</div>
-      <div class="price">$ 2.00</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="others">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1634034379073-f689b460a3fc?auto=format&fit=crop&w=500&q=80" alt="Onion Rings">
-      </div>
-      <div class="product-name">Onion Rings</div>
-      <div class="price">$ 3.50</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="food">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&w=500&q=80" alt="Margherita Pizza">
-      </div>
-      <div class="product-name">Margherita Pizza</div>
-      <div class="price">$ 10.99</div>
-    </div>
-  </div>
-
-  <div class="col-6 col-sm-4 col-lg-3 product-item" data-category="beverages">
-    <div class="product-card">
-      <div class="product-image-container">
-        <img src="https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=500&q=80" alt="Iced Coffee">
-      </div>
-      <div class="product-name">Iced Coffee</div>
-      <div class="price">$ 3.75</div>
-    </div>
+    <div class="product-name">{{ item.name }}</div>
+    <div class="price">$ {{ item.price }}</div>
   </div>
 </div>
+{% empty %}
+<p>No items available.</p>
+{% endfor %}
 
+        </div>
       </div>
     </div>
   </div>
@@ -315,6 +241,26 @@
   </div>
 </div>
 
+<!-- waiter password popup -->
+<div id="password-popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;z-index:10000">
+  <div class="popup-msg-box bg-white p-3 rounded shadow" style="width:300px;">
+    <label for="note-input" class="form-label fw-bold">Enter your Passcode</label>
+    
+    <div class="input-group mb-3">
+      <input type="password" id="password-input" class="form-control" placeholder="enter password">
+      <button class="btn btn-outline-secondary" type="button" id="toggle-password">
+        <!-- <i class="fas fa-eye"></i> -->
+      </button>
+    </div>
+    
+    <div id="password-error" class="text-danger mb-2" style="display:none;">Incorrect password!</div>
+    <div class="d-flex justify-content-end">
+      <button id="password-close" class="btn btn-sm btn-secondary me-2">Cancel</button>
+      <button type="button" id="password-btn" class="btn btn-sm btn-primary">Submit</button>
+    </div>
+  </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -327,6 +273,10 @@ let selectedPortion = "Full";
 let currentQuantity = 1;
 let isFoodProduct = false;
 let productsInCart = new Set();
+let selectedWaiter = null;
+let mobileSelectedWaiter = null;
+let isWaiterAuthenticated = false;
+let isMobileWaiterAuthenticated = false;
 
 const portionPrices = {
   "Quarter": 0.25,
@@ -370,11 +320,13 @@ function initApp() {
     button.addEventListener("click", handleCategoryFilter);
   });
   
-  // Table selection
-  document.querySelectorAll(".table-btn").forEach(btn => {
-    btn.addEventListener("click", handleTableSelection);
-  });
-  
+  document.getElementById('desktop-table-select').addEventListener('change', handleTableSelect);
+  document.getElementById('mobile-table-select').addEventListener('change', handleTableSelect);
+
+  // waiter selection
+  document.getElementById('mobile-waiter-select').addEventListener('change', handleMobileWaiterSelect);
+  document.getElementById('waiter-select').addEventListener('change', handleWaiterSelect);
+
   // Place Order button
   document.querySelectorAll('.place-order-btn').forEach(btn => {
     btn.addEventListener('click', handlePlaceOrder);
@@ -392,6 +344,15 @@ function initApp() {
   // Initialize values
   updateTotal();
   updateCartBadge();
+
+  // Password submit
+  document.getElementById('password-btn').addEventListener('click', authenticateWaiter);
+  document.getElementById('password-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') authenticateWaiter();
+  });
+  document.getElementById('toggle-password').innerHTML = '<i class="fas fa-eye"></i>';
+  document.getElementById('toggle-password').addEventListener('click', togglePasswordVisibility);
+  document.getElementById('password-close').addEventListener('click', closePasswordPopup);
 }
 
 // Function to attach event listeners to cart items
@@ -445,7 +406,7 @@ function handlePlusClick(item) {
   updateCartItemQuantity(item, quantity);
 }
 
-// Update cart item quantity (Corrected Function)
+// Update cart item quantity
 function updateCartItemQuantity(item, quantity) {
   const key = item.dataset.key;
   
@@ -472,7 +433,7 @@ function updateCartItemQuantity(item, quantity) {
   updateTotal();
 }
 
-// Product click handler
+
 function handleProductClick() {
   const name = this.querySelector('.product-name').textContent;
   const price = parseFloat(this.querySelector('.price').textContent.replace('$', ''));
@@ -482,47 +443,47 @@ function handleProductClick() {
   selectedProduct = { name, price, category };
   document.getElementById('popup-product-name').textContent = name;
   
-  const portionGrid = document.getElementById('portion-grid');
-  portionGrid.innerHTML = '';
+  const variantGrid = document.getElementById('portion-grid');
+  variantGrid.innerHTML = '';
   
-  // Create portion options for food products
-  if (isFoodProduct) {
-    for (const [portion, multiplier] of Object.entries(portionPrices)) {
-      const portionPrice = (price * multiplier).toFixed(2);
+  // Fetch variants directly from ItemVariantTable data passed via data-variants
+  const variants = this.closest('.product-item').dataset.variants ? JSON.parse(this.closest('.product-item').dataset.variants) : [];
+  
+  if (isFoodProduct && variants.length > 0) {
+    variants.forEach(variant => {
       const option = document.createElement('div');
       option.classList.add('portion-option');
-      if (portion === "Full") option.classList.add('selected');
-      option.setAttribute('data-portion', portion);
-      option.setAttribute('data-price', portionPrice);
+      if (variant.variant_name === variants[0].variant_name) option.classList.add('selected');
+      option.setAttribute('data-variant', variant.variant_name);
+      option.setAttribute('data-price', variant.price);
       
       option.innerHTML = `
-        <div class="portion-title">${portion}</div>
-        <div class="price">$ ${portionPrice}</div>
+        <div class="portion-title">${variant.variant_name}</div>
+        <div class="price">$ ${variant.price}</div>
       `;
-      portionGrid.appendChild(option);
-    }
+      variantGrid.appendChild(option);
+    });
     
-    // Add portion selection event listeners
+    // Add variant selection event listeners
     document.querySelectorAll('.portion-option').forEach(option => {
       option.addEventListener('click', function() {
         document.querySelector('.portion-option.selected').classList.remove('selected');
         this.classList.add('selected');
-        selectedPortion = this.getAttribute('data-portion');
+        selectedPortion = this.getAttribute('data-variant');
       });
     });
   } else {
-    // For non-food products, show a single portion option
     const option = document.createElement('div');
     option.classList.add('portion-option', 'selected');
-    option.setAttribute('data-portion', 'Full');
+    option.setAttribute('data-variant', 'Standard');
     option.setAttribute('data-price', price.toFixed(2));
     
     option.innerHTML = `
       <div class="portion-title">Standard</div>
       <div class="price">$ ${price.toFixed(2)}</div>
     `;
-    portionGrid.appendChild(option);
-    selectedPortion = "Full";
+    variantGrid.appendChild(option);
+    selectedPortion = "Standard";
   }
 
   // Reset quantity to 1
@@ -532,6 +493,66 @@ function handleProductClick() {
   editingCartItem = null;
   document.getElementById('quantity-popup').style.display = 'flex';
 }
+// Product click handler
+// function handleProductClick() {
+//   const name = this.querySelector('.product-name').textContent;
+//   const price = parseFloat(this.querySelector('.price').textContent.replace('$', ''));
+//   const category = this.closest('.product-item').getAttribute('data-category');
+//   isFoodProduct = (category === "food");
+
+//   selectedProduct = { name, price, category };
+//   document.getElementById('popup-product-name').textContent = name;
+  
+//   const portionGrid = document.getElementById('portion-grid');
+//   portionGrid.innerHTML = '';
+  
+//   // Create portion options for food products
+//   if (isFoodProduct) {
+//     for (const [portion, multiplier] of Object.entries(portionPrices)) {
+//       const portionPrice = (price * multiplier).toFixed(2);
+//       const option = document.createElement('div');
+//       option.classList.add('portion-option');
+//       if (portion === "Full") option.classList.add('selected');
+//       option.setAttribute('data-portion', portion);
+//       option.setAttribute('data-price', portionPrice);
+      
+//       option.innerHTML = `
+//         <div class="portion-title">${portion}</div>
+//         <div class="price">$ ${portionPrice}</div>
+//       `;
+//       portionGrid.appendChild(option);
+//     }
+    
+//     // Add portion selection event listeners
+//     document.querySelectorAll('.portion-option').forEach(option => {
+//       option.addEventListener('click', function() {
+//         document.querySelector('.portion-option.selected').classList.remove('selected');
+//         this.classList.add('selected');
+//         selectedPortion = this.getAttribute('data-portion');
+//       });
+//     });
+//   } else {
+//     // For non-food products, show a single portion option
+//     const option = document.createElement('div');
+//     option.classList.add('portion-option', 'selected');
+//     option.setAttribute('data-portion', 'Full');
+//     option.setAttribute('data-price', price.toFixed(2));
+    
+//     option.innerHTML = `
+//       <div class="portion-title">Standard</div>
+//       <div class="price">$ ${price.toFixed(2)}</div>
+//     `;
+//     portionGrid.appendChild(option);
+//     selectedPortion = "Full";
+//   }
+
+//   // Reset quantity to 1
+//   currentQuantity = 1;
+//   document.getElementById('quantity-input').value = "1";
+
+//   editingCartItem = null;
+//   document.getElementById('quantity-popup').style.display = 'flex';
+// }
 
 // Quantity controls in popup
 function incrementQuantity() {
@@ -776,30 +797,210 @@ function handleCategoryFilter() {
   });
 }
 
-// Table selection
-function handleTableSelection() {
-  document.querySelectorAll(".table-btn").forEach(b => {
-    b.classList.remove("selected");
-  });
-  this.classList.add("selected");
+let selectedTables = []; // Array to store selected tables
+
+function handleTableSelect(e) {
+  const selectElement = e.target;
+  const selectedValue = selectElement.value;
+  const isMobile = selectElement.id === 'mobile-table-select';
+  
+  // Ignore placeholder
+  if (!selectedValue) return;
+
+  // Prevent duplicates
+  if (selectedTables.includes(selectedValue)) {
+    selectElement.value = ""; // reset to placeholder
+    return;
+  }
+
+  // Add new table
+  selectedTables.push(selectedValue);
+
+  // Update the other select to match
+  const otherSelect = isMobile ? 
+    document.getElementById('desktop-table-select') : 
+    document.getElementById('mobile-table-select');
+  
+  // Sync the selections
+  updateSelectedTablesDisplay();
+
+  // Reset dropdown back to placeholder
+  selectElement.value = "";
+  otherSelect.value = "";
 }
 
-// Place order
-function handlePlaceOrder() {
-  if (document.querySelectorAll('#cart-items .item').length === 0) {
-    showMessage('Your cart is empty!');
-  } else {
-    showMessage('Order placed successfully!');
-    
-    // Clear cart after order placement
-    document.getElementById('cart-items').innerHTML = '';
-    document.getElementById('mobile-cart-content').innerHTML = '';
-    cartMap.clear();
-    productsInCart.clear();
-    updateTotal();
-    updateCartBadge();
-    updateProductHighlighting();
+function updateSelectedTablesDisplay() {
+  const desktopDisplay = document.getElementById("desktop-selected-tables");
+  const mobileDisplay = document.getElementById("mobile-selected-tables");
+
+  desktopDisplay.innerHTML = "";
+  mobileDisplay.innerHTML = "";
+
+  if (selectedTables.length === 0) {
+    desktopDisplay.innerHTML =
+      '<span class="no-tables-selected">No tables selected</span>';
+    mobileDisplay.innerHTML =
+      '<span class="no-tables-selected">No tables selected</span>';
+    return;
   }
+
+  selectedTables.forEach((table) => {
+    const tagHTML = `Table ${table} <span class="remove" data-table="${table}">×</span>`;
+
+    // Desktop tag
+    const desktopTag = document.createElement("span");
+    desktopTag.className = "table-tag";
+    desktopTag.innerHTML = tagHTML;
+    desktopTag.querySelector(".remove").addEventListener("click", removeTable);
+
+    // Mobile tag
+    const mobileTag = document.createElement('span');
+    mobileTag.className = "table-tag";
+    mobileTag.innerHTML = tagHTML;
+    mobileTag.querySelector(".remove").addEventListener("click", removeTable);
+
+    desktopDisplay.appendChild(desktopTag);
+    mobileDisplay.appendChild(mobileTag);
+  });
+}
+
+function removeTable(e) {
+  const tableToRemove = e.target.getAttribute("data-table");
+  selectedTables = selectedTables.filter((t) => t !== tableToRemove);
+  updateSelectedTablesDisplay();
+}
+
+// waiter selection
+const waiterSelect = document.getElementById("waiter-select");
+const confirmedTick = document.getElementById("waiter-confirmed");
+const mobileWaiterSelect = document.getElementById("mobile-waiter-select");
+const mobileConfirmedTick = document.getElementById("mobile-waiter-confirmed");
+const popup = document.getElementById("password-popup");
+const passwordInput = document.getElementById("password-input");
+const passwordError = document.getElementById("password-error");
+const togglePasswordBtn = document.getElementById("toggle-password");
+
+function handleWaiterSelect(e) {
+  // Reset authentication if changing waiter
+  if (selectedWaiter && e.target.value !== selectedWaiter) {
+    confirmedTick.style.display = "none";
+    isWaiterAuthenticated = false;
+  }
+  
+  selectedWaiter = e.target.value;
+  
+  // Reset popup state
+  passwordInput.value = "";
+  passwordError.style.display = "none";
+  passwordInput.type = "password";
+  
+  // Show the popup
+  popup.style.display = "flex";
+  popup.dataset.source = 'desktop'; 
+}
+
+function handleMobileWaiterSelect(e) {
+  if (e.target.value === "") {
+    mobileConfirmedTick.style.display = "none";
+    mobileSelectedWaiter = null;
+    isMobileWaiterAuthenticated = false;
+    return;
+  }
+  
+  mobileSelectedWaiter = e.target.value;
+  
+  // Reset popup state
+  passwordInput.value = "";
+  passwordError.style.display = "none";
+  passwordInput.type = "password";
+  
+  // Show the popup for mobile authentication
+  popup.style.display = "flex";
+  popup.dataset.source = 'mobile';
+}
+
+// Authenticate waiter using AJAX
+function authenticateWaiter() {
+  const isMobile = popup.dataset.source === 'mobile';
+  const currentWaiter = isMobile ? mobileSelectedWaiter : selectedWaiter;
+  const currentTick = isMobile ? mobileConfirmedTick : confirmedTick;
+  
+  if (!currentWaiter) {
+    passwordError.textContent = "Please select a waiter first";
+    passwordError.style.display = "block";
+    return;
+  }
+  
+  const enteredPassword = passwordInput.value.trim();
+  
+  if (!enteredPassword) {
+    passwordError.textContent = "Please enter a password";
+    passwordError.style.display = "block";
+    return;
+  }
+
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch('/authenticate_waiter/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({ waiter_id: currentWaiter, password: enteredPassword })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      currentTick.style.display = "inline";
+      popup.style.display = "none";
+      passwordError.style.display = "none";
+      if (isMobile) {
+        isMobileWaiterAuthenticated = true;
+      } else {
+        isWaiterAuthenticated = true;
+      }
+    } else {
+      passwordError.textContent = data.message || "Incorrect password!";
+      passwordError.style.display = "block";
+      passwordInput.value = "";
+      passwordInput.focus();
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    passwordError.textContent = "An error occurred. Please try again.";
+    passwordError.style.display = "block";
+  });
+}
+
+// Toggle password visibility
+let isPasswordVisible = false;
+function togglePasswordVisibility() {
+  isPasswordVisible = !isPasswordVisible;
+  passwordInput.type = isPasswordVisible ? "text" : "password";
+  togglePasswordBtn.innerHTML = isPasswordVisible ? 
+    '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+}
+
+// Close password popup
+function closePasswordPopup() {
+  const isMobile = popup.dataset.source === 'mobile';
+  
+  if (isMobile) {
+    mobileWaiterSelect.value = "";
+    mobileSelectedWaiter = null;
+    mobileConfirmedTick.style.display = "none";
+    isMobileWaiterAuthenticated = false;
+  } else {
+    waiterSelect.value = "";
+    selectedWaiter = null;
+    confirmedTick.style.display = "none";
+    isWaiterAuthenticated = false;
+  }
+  
+  popup.style.display = "none";
+  delete popup.dataset.source;
 }
 
 // Search functionality
@@ -833,6 +1034,94 @@ function openMobileCart() {
 function closeMobileCart() {
   document.getElementById('mobile-cart').style.left = '-100%';
   document.getElementById('cart-overlay').style.display = 'none';
+}
+
+// Place order using AJAX
+function handlePlaceOrder() {
+  if (document.querySelectorAll("#cart-items .item").length === 0) {
+    showMessage("Your cart is empty!");
+    return;
+  }
+  
+  const isMobileView = document.getElementById('mobile-cart').style.left === '0px';
+  const isAuthenticated = isMobileView ? isMobileWaiterAuthenticated : isWaiterAuthenticated;
+  
+  if (!isAuthenticated) {
+    showMessage("Please select and authenticate a waiter first!");
+    return;
+  }
+  
+  if (selectedTables.length === 0) {
+    showMessage("Please select at least one table for your order.");
+    return;
+  }
+
+  // Collect cart items
+  const items = [];
+  document.querySelectorAll('#cart-items .item').forEach(item => {
+    const name = item.querySelector('.item-name').textContent;
+    const quantity = parseInt(item.querySelector('.quantity-value').textContent);
+    const price = parseFloat(item.querySelector('.item-price').textContent.replace('$ ', ''));
+    const note = item.querySelector('.item-note').textContent;
+    const detail = item.querySelector('.item-detail').textContent;
+    let portion = null;
+    if (detail.includes('Portion:')) {
+      portion = detail.split('Portion: ')[1].trim();
+    }
+    items.push({ name, quantity, price: price.toFixed(2), note, portion });
+  });
+
+  const total = parseFloat(document.querySelector('#cart-total span').textContent);
+  const waiterId = isMobileView ? mobileSelectedWaiter : selectedWaiter;
+
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch('/place_order/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({ items, total: total.toFixed(2), selected_tables: selectedTables, waiter_id: waiterId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showMessage(data.message);
+
+      // Reset cart and selections
+      document.getElementById("cart-items").innerHTML = "";
+      document.getElementById("mobile-cart-content").innerHTML = "";
+      cartMap.clear();
+      productsInCart.clear();
+      
+      selectedTables = [];
+      document.getElementById("desktop-table-select").value = "";
+      document.getElementById("mobile-table-select").value = "";
+      updateSelectedTablesDisplay();
+
+      // Reset waiter
+      document.getElementById('waiter-select').value = "";
+      selectedWaiter = null;
+      document.getElementById('waiter-confirmed').style.display = "none";
+      isWaiterAuthenticated = false;
+      
+      document.getElementById('mobile-waiter-select').value = "";
+      mobileSelectedWaiter = null;
+      document.getElementById('mobile-waiter-confirmed').style.display = "none";
+      isMobileWaiterAuthenticated = false;
+
+      updateTotal();
+      updateCartBadge();
+      updateProductHighlighting();
+    } else {
+      showMessage(data.message || "Failed to place order. Please try again.");
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage("An error occurred. Please try again.");
+  });
 }
 
 // Initialize the application when DOM is loaded

@@ -52,7 +52,7 @@ class LoginView(View):
                 elif role == 'MANAGER':
                     return redirect('manager_dashboard')
                 elif role == 'WAITER':
-                    return redirect('waiter_dashboard')
+                    return redirect('waiterdashboard')
                 elif role == 'KITCHEN':
                     return redirect('kitchen_dashboard')
 
@@ -395,7 +395,7 @@ class RegisterStaffView(View):
         # Check if email already exists
         if LoginTable.objects.filter(username=email).exists():
             messages.error(request, "A user with this email already exists.")
-            return redirect('')
+            return redirect('registerstaff')
 
         try:
             branch = BranchTable.objects.get(id=branch_id)

@@ -298,33 +298,78 @@
       position: sticky;
       bottom: 0;
     }
+
     
-    .table-btn-grid {
+    /* .table-btn-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
       margin-bottom: 15px;
+    } */
+
+    /* select dining table */
+    .table-select-container {
+      margin-bottom:5px;
     }
     
-    .table-btn {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px 0;
-      border-radius: 6px;
-      font-size: 14px;
-      transition: all 0.2s;
+    .selected-tables {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      min-height: 10px;
     }
     
-    .table-btn:hover {
-      background-color: #6c6b9d;
-      transform: translateY(-2px);
+   
+    .form-select option[disabled][selected] {
+      color: #6c757d;
+      font-style: italic;
+      /* padding-left: 10px; */
     }
     
-    .table-btn.selected {
-      background-color: var(--secondary-color);
+    
+    .table-tag {
+      display: inline-block;
+      background-color: #e9ecef;
+      padding: 5px 10px;
+      border-radius: 15px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+      font-size: 2.rem;
     }
     
+    .table-tag .remove {
+      margin-left: 5px;
+      cursor: pointer;
+      color: #dc3545;
+      font-weight: bold;
+    }
+    
+    .no-tables-selected {
+      color: #6c757d;
+      font-style: italic;
+    }
+    
+    /* waiter selection */
+    .waiter-select-container {
+      margin-bottom: 20px;
+    }
+    
+    .waiter-select-container .form-select {
+      font-size: 0.95rem;
+      padding: 10px;
+      padding-left:20px;
+    }
+    #mobile-waiter-select option{
+      margin-left:10px;
+    }
+    
+    .waiter-select-container label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    
+    
+
     .place-order-btn {
       background-color: var(--secondary-color);
       color: white;

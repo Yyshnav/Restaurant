@@ -8,6 +8,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
+from sympy import Q
 
 from Deliveryboyapp.serializer import *
 from Accountapp.models import *
@@ -114,7 +115,38 @@ def send_notification_view(request):
 #     response = requests.post(url, headers=headers, data=json.dumps(message))
 #     return response.json()
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class DeliveryBoyLoginAPIView(APIView):
+#     permission_classes = [AllowAny]
+#     def post(self, request):
+#         print(request.data)
+#         username = request.data.get('username')
+#         password = request.data.get('password')
+#         user = authenticate(username=username, password=password)
+
+#         if user is not None:
+#             # Check if user has 'DELIVERY' role
+#             if user.user_roles.filter(role='DELIVERY').exists():
+               
+#                 if hasattr(user, 'deliveryboy_profile'):  # Assuming profile is set up
+#                     # token, created = Token.objects.get_or_create(user=user)
+#                     refresh = RefreshToken.for_user(user)
+#                     return Response({
+#                         'token': str(refresh.access_token),
+#                         'refresh': str(refresh),
+#                         # 'token': token.key
+#                     }, status=status.HTTP_200_OK) 
+#                 else:
+#                     return Response({'error': 'Not a delivery boy'}, status=status.HTTP_403_FORBIDDEN)
+#             else:
+#                 return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
+        
+#         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+@method_decorator(csrf_exempt, name='dispatch')
 class DeliveryBoyLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -122,28 +154,30 @@ class DeliveryBoyLoginAPIView(APIView):
         print(request.data)
         username = request.data.get('username')
         password = request.data.get('password')
+
         user = authenticate(username=username, password=password)
+        if user is None:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        if user is not None:
-            # Check if user has 'DELIVERY' role
-            if user.user_roles.filter(role='DELIVERY').exists():
-               
-                if hasattr(user, 'deliveryboy_profile'):  # Assuming profile is set up
-                    # token, created = Token.objects.get_or_create(user=user)
-                    refresh = RefreshToken.for_user(user)
-                    return Response({
-                        'token': str(refresh.access_token),
-                        'refresh': str(refresh),
-                        # 'token': token.key
-                    }, status=status.HTTP_200_OK) 
-                else:
-                    return Response({'error': 'Not a delivery boy'}, status=status.HTTP_403_FORBIDDEN)
-            else:
-                return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
-        
-        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        # Check role and profile
+        if not user.user_roles.filter(role='DELIVERY').exists():
+            return Response({'error': 'User does not have DELIVERY role'}, status=status.HTTP_403_FORBIDDEN)
 
+        if not hasattr(user, 'deliveryboy_profile'):
+            return Response({'error': 'Not a delivery boy'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Generate JWT
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'token': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'roles': [r.role for r in user.user_roles.all()]
+            }
+        }, status=status.HTTP_200_OK)
 # Assuming you have an Order model with a foreign key to the delivery boy user
 
 class LatestPendingOrdersAPIView(APIView):
@@ -164,7 +198,7 @@ class LatestPendingOrdersAPIView(APIView):
             return Response({'error': 'DeliveryBoyTable not found for user'}, status=status.HTTP_404_NOT_FOUND)
         
         # Get latest orders assigned to this delivery boy with status 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus='PENDING').order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED']).order_by('-id')
         serializer = OrderSerializer(orders, many=True)
         # print("Orders:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -451,7 +485,6 @@ class ChatHistoryAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class SubmitFeedbackAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -495,7 +528,7 @@ class UpdateDeliveryBoyLocationView(APIView):
     def post(self, request):
         try:
             # Get the authenticated delivery boy
-            delivery_boy = DeliveryBoyTable.objects.get(user=request.user)
+            delivery_boy = DeliveryBoyTable.objects.get(userid=request.user)
             
             # Validate request data using serializer
             serializer = DeliveryBoyLocationSerializer(data=request.data)

@@ -135,12 +135,12 @@ class AddressTableSerializer(serializers.ModelSerializer):
         model = AddressTable
         fields = '__all__'
 
-class DeliveryTableSerializer(serializers.ModelSerializer):
-    order = OrderTableSerializer(read_only=True) 
-    address= AddressTableSerializer(read_only=True)
-    class Meta:
-        model = DeliveryTable
-        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
+# class DeliveryTableSerializer(serializers.ModelSerializer):
+#     order = OrderTableSerializer(read_only=True) 
+#     address= AddressTableSerializer(read_only=True)
+#     class Meta:
+#         model = DeliveryTable
+#         fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
 
 
 
@@ -149,7 +149,7 @@ class DeliveryTableSerializer(serializers.ModelSerializer):
     address= AddressTableSerializer(read_only=True)
     class Meta:
         model = DeliveryTable
-        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
+        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'voice_instruction', 'created_at', 'updated_at']
 
 
 
