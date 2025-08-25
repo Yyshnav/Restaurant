@@ -18,10 +18,40 @@ class ManagerDash(LoginRequiredMixin, View):
         return redirect('/')
 
 
+
+
 class CrediUser(LoginRequiredMixin, View):
     login_url = '/'
+
     def get(self, request):
-        return render(request, 'crediusers.html')
+        if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
+            credit_users = list(CreditUser.objects.values())
+            return JsonResponse({"credit_users": credit_users}, safe=False)
+
+        return render(request, 'crediusers.html', {"credit_users": CreditUser.objects.all()})
+
+    def post(self, request):
+        Name = request.POST.get("Name")   
+        Email = request.POST.get("Email") 
+        phone = request.POST.get("phone")
+        address = request.POST.get("address")
+        credit_limit = request.POST.get("credit_limit")
+
+        CreditUser.objects.create(
+            Name=Name,
+            Email=Email,
+            phone=phone,
+            address=address,
+            credit_limit=credit_limit
+        )
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"message": "Credit User added successfully!"})
+
+        messages.success(request, "Credit User added successfully!")
+        return redirect("crediusers")
+
+
 
 class DishesView(LoginRequiredMixin, View):
     login_url = '/'
@@ -405,12 +435,89 @@ def save_order(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+from django.utils.dateformat import DateFormat
+from django.utils.formats import get_format
     
-    
-class ViewOrderView(View):
+class OrdersListView(View):
     def get(self, request):
-        return render(request, 'view-orders.html')
+        delivery_boys = DeliveryBoyTable.objects.all()
+        if request.GET.get("format") == "json":
+            orders = []
+
+            # --- OFFLINE ORDERS ---
+            for o in OfflineOrders.objects.select_related("table", "waiter", "deliveryboy"):
+                orders.append({
+                    "id": o.id,
+                    "customer": o.customer_name or (o.table and f"Table {o.table.table_number}") or "Guest",
+                    "platform": (
+                        "Dining" if o.order_type == "DINE_IN" else
+                        "Takeaway" if o.order_type == "TAKEAWAY" else
+                        "Online"
+                    ),
+                    "total": float(o.total_amount or 0),
+                    "status": "accepted" if o.status else "completed",  # ✅ correct mapping
+                    "paymentStatus": o.payment.paymentstatus if o.payment else "Unpaid",
+                    "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                    "address": "",
+                    "items": [
+                        {
+                            "name": item.item.name,
+                            "quantity": item.quantity,
+                            "price": str(item.price)
+                        }
+                        for item in o.order_items.all()
+                    ],
+                    "rejectReason": "",
+                    "deliveryBoy": o.deliveryboy.name if o.deliveryboy else ""
+                })
+
+
+            # --- APP ORDERS ---
+            for o in OrderTable.objects.select_related("userid", "deliveryid", "coupon"):
+                    orders.append({
+                        "id": o.id,
+                        "customer": str(o.userid) if o.userid else "App User",
+                        "platform": "Appthrough",
+                        "total": float(o.totalamount or 0),
+                        "status": o.orderstatus.lower(),  # pending, accepted, delivered...
+                        "paymentStatus": o.paymentstatus.title(),  # Paid / Pending / Failed
+                        "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                        "address": str(o.address) if o.address else "",
+                        "items": [
+                            {
+                                "name": i.itemname.name,
+                                "quantity": i.quantity,
+                                "price": str(i.price)
+                            }
+                            for i in getattr(o, "order_item", []).all()
+                        ] if hasattr(o, "order_item") else [],
+                        "rejectReason": "",
+                        "deliveryBoy": o.deliveryid.name if o.deliveryid else ""
+                    })
+
+            return JsonResponse({"orders": orders}, safe=False)
+
+        # Normal render (HTML template)
+        return render(request, "view-orders.html", {"delivery_boys": delivery_boys})
     
+class AcceptOrderView(View):
+    def post(self, request, order_id):
+        print("AcceptOrderView called")
+        try:
+            order = OrderTable.objects.get(id=order_id)
+        except OrderTable.DoesNotExist:
+            return JsonResponse({"error": "Order not found"}, status=404)
+
+        if order.orderstatus != 'PENDING':
+            return JsonResponse({"error": "Only pending orders can be accepted"}, status=400)
+
+        # Update status
+        order.orderstatus = 'ACCEPTED'  # ✅ must match choices
+        order.save(update_fields=["orderstatus"])
+        return JsonResponse({"success": True, "message": f"Order #{order_id} accepted"})
+
+
+
 class ViewStaff(View):
     def get(self, request):
         # Fetch all staff
@@ -521,3 +628,43 @@ class DeleteTableView(View):
             return JsonResponse({"success": True})
         except DiningTable.DoesNotExist:
             return JsonResponse({"error": "Table not found"}, status=404)
+        
+
+class AssignDeliveryBoyView(View):
+    def post(self, request, order_id):
+        delivery_boy_id = request.POST.get("delivery_boy_id") or request.POST.get("deliveryBoyId")
+        try:
+            order = OrderTable.objects.get(id=order_id)
+            delivery_boy = DeliveryBoyTable.objects.get(id=delivery_boy_id)
+        except (OrderTable.DoesNotExist, DeliveryBoyTable.DoesNotExist):
+            return JsonResponse({"error": "Order or Delivery Boy not found"}, status=404)
+
+        # Assign the delivery boy to the order
+        order.deliveryid = delivery_boy   # ✅ correct field name in model
+        order.orderstatus = "ASSIGNED"    # ✅ update status too
+        order.save(update_fields=["deliveryid", "orderstatus"])
+
+        return JsonResponse({
+            "success": True,
+            "message": f"Order #{order_id} assigned to Delivery Boy {delivery_boy.name}"
+        })
+
+
+class RejectOrderView(View):
+    def post(self, request, order_id):
+        try:
+            order = OrderTable.objects.get(id=order_id)
+        except OrderTable.DoesNotExist:
+            return JsonResponse({"error": "Order not found"}, status=404)
+
+        if order.orderstatus != 'PENDING':
+            return JsonResponse({"error": "Only pending orders can be rejected"}, status=400)
+
+        reason = request.POST.get("reason", "")
+
+        # Update status
+        order.orderstatus = 'REJECTED'
+        order.delivery_instructions = f"Rejected: {reason}"  # or create a dedicated field
+        order.save(update_fields=["orderstatus", "delivery_instructions"])
+
+        return JsonResponse({"success": True, "message": f"Order #{order_id} rejected"})

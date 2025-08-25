@@ -13,7 +13,7 @@ urlpatterns = [
     path('printer/', PrinterView.as_view(), name='printer'),
     path('addtable/', AddTableView.as_view(), name='add_table'),
     path('takeorders/', TakeOrdersView.as_view(), name='take_orders'),
-    path('vieworders/', ViewOrderView.as_view(), name='view_orders'),
+    path("orders/", OrdersListView.as_view(), name="orders"),
     path('viewstaffman/', ViewStaff.as_view(), name='view_staff'),
     path('printers/add/', AddPrinterView.as_view(), name='add_printer'),
     path('printer/delete/<int:pk>/', views.delete_printer, name='delete_printer'),
@@ -24,5 +24,10 @@ urlpatterns = [
     path("save-table/", SaveTableView.as_view(), name="save_table"),
     path('delete-table/<int:table_id>/', DeleteTableView.as_view(), name='delete_table'),
     path("save-order/", save_order, name="save_order"),
+    path('orders/accept/<int:order_id>/', AcceptOrderView.as_view(), name='accept_order'),
+    path('assigndeliveryboy/<int:order_id>/', AssignDeliveryBoyView.as_view(), name='assign_delivery_boy'),
+    path('orders/reject/<int:order_id>/', RejectOrderView.as_view(), name='reject_order'),
+
+
 
 ]
