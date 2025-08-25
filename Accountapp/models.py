@@ -661,7 +661,7 @@ class OfflineOrders(models.Model):
     payment = models.ForeignKey("PaymentTable", on_delete=models.CASCADE, null=True, blank=True)
 
     # Meta info
-    created_at = models.DateTimeField(auto_now_add=True)  # ✅ auto timestamp
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Order #{self.id} - {self.order_type}"
