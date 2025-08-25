@@ -271,6 +271,10 @@
             <p><strong>Delivery Boy:</strong> <span id="deliveryBoyDetail"></span></p>
             <p><strong>Date:</strong> <span id="dateDetail"></span></p>
           </div>
+                <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="printOrder()">Print</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
         </div>
       </div>
     </div>
@@ -573,6 +577,15 @@ $(document).ready(function() {
         $('#orderModal').removeAttr('inert').modal('show');
         showToast('success', `Viewing details for Order #${orderId}`);
       }
+function printOrder() {
+  var printContents = document.getElementById("printableOrder").innerHTML;
+  var originalContents = document.body.innerHTML;
+
+  document.body.innerHTML = printContents;
+  window.print();
+  document.body.innerHTML = originalContents;
+  location.reload(); // reload page to restore JS events
+}
 
       // Show accept confirmation modal
       function showAcceptConfirmation(orderId) {
@@ -860,6 +873,7 @@ function confirmAssign() {
           $('#assignModal').removeAttr('inert').modal('show');
         });
       }
+
 
       // Initialize modals
       $('#orderModal').on('show.bs.modal', function () {

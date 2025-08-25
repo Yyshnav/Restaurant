@@ -1,14 +1,15 @@
 import datetime
 from multiprocessing.connection import Client
+from time import timezone
 from django.shortcuts import get_object_or_404, render
 import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OrderItemTable, OrderTable, PaymentTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OfferTable, OrderItemTable, OrderTable, PaymentTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
-from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer, SpotlightSerializer
+from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CarouselWithOffersSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OfferTableSerializer, OrderTableSerializer, SpotlightSerializer
 # from Deliveryboyapp.serializer import OrderSerializer
 from Deliveryboyapp.serializer import TrackOrderSerializer
 from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, OrderHistorySerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
@@ -1110,3 +1111,19 @@ class FeedbackView(APIView):
             {'status': 'success', 'data': response_data},
             status=status.HTTP_201_CREATED
         )
+
+class CarouselOffersAPIView(APIView):
+    """
+    Fetch the carousel with the linked offer and item
+    """
+
+    def get(self, request, carousel_id):
+        now = timezone.now()
+        carousel = get_object_or_404(CarouselTable, id=carousel_id, is_active=True)
+
+        # Ensure the offer is active
+        if not carousel.offer or not carousel.offer.is_active:
+            return Response({'error': 'No active offer linked to this carousel'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CarouselWithOffersSerializer(carousel)
+        return Response(serializer.data, status=status.HTTP_200_OK)

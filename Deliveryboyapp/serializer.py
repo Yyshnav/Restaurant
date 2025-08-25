@@ -87,7 +87,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderTable
-        fields = '__all__'
+        fields = '_all_'
 
     def get_userid(self, obj):
         try:
@@ -282,3 +282,64 @@ class DeliveryBoyLocationSerializer(serializers.ModelSerializer):
         if not -180 <= value <= 180:
             raise serializers.ValidationError("Longitude must be between -180 and 180 degrees.")
         return value
+    
+
+
+from rest_framework import serializers
+
+class ItemImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemImageTable
+        fields = ['id', 'image', 'uploaded_at']
+
+class ItemVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemVariantTable
+        fields = ['id', 'variant_name', 'price']
+
+class VoiceDescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VoiceDescriptionTable
+        fields = ['id', 'language', 'audio_file']
+
+class AddonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddonTable
+        fields = ['id', 'name', 'quantity', 'description', 'image', 'price']
+
+class ItemSerializer(serializers.ModelSerializer):
+    images = ItemImageSerializer(many=True, read_only=True)
+    variants = ItemVariantSerializer(many=True, read_only=True)
+    voice_descriptions = VoiceDescriptionSerializer(many=True, read_only=True)
+    addons = AddonSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ItemTable
+        fields = [
+            'id', 'name', 'category', 'subcategory', 'subsubcategory', 'is_veg',
+            'description', 'price', 'preparation_time', 'inventory', 'calories',
+            'fast_delivery', 'newest', 'available', 'created_at', 'updated_at',
+            'images', 'variants', 'voice_descriptions', 'addons'
+        ]
+
+class OfferSerializer(serializers.ModelSerializer):
+    itemid = ItemSerializer(read_only=True)
+
+    class Meta:
+        model = OfferTable
+        fields = [
+            'id', 'name', 'startdate', 'enddate', 'branch',
+            'offer_percentage', 'itemid', 'offerdescription',
+            'createdat', 'updatedat', 'is_active'
+        ]
+
+class CarouselSerializer(serializers.ModelSerializer):
+    offer = OfferSerializer(read_only=True)
+
+    class Meta:
+        model = CarouselTable
+        fields = [
+            'id', 'image', 'offer', 'branch',
+            'offer_percentage', 'startdate', 'enddate',
+            'created_at', 'is_active'
+        ]
