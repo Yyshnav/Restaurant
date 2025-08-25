@@ -24,26 +24,32 @@
 <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 
   <!-- Navbar -->
-  <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light">
-    <div class="navbar-wrapper">
-      <div class="navbar-container content">
-        <div class="collapse navbar-collapse show" id="navbar-mobile">
-          <ul class="nav navbar-nav mr-auto">
-            <li class="nav-item d-md-none"><a class="nav-link menu-toggle"><i class="ft-menu"></i></a></li>
-            <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand"><i class="ficon ft-maximize"></i></a></li>
-          </ul>
-          <ul class="nav navbar-nav float-right">
-            <li class="dropdown dropdown-user nav-item">
-              <div class="dropdown-menu dropdown-menu-right">
-                <a class="dropdown-item" href="#"><i class="ft-user"></i> Profile</a>
-                <a class="dropdown-item" href="#"><i class="ft-power"></i> Logout</a>
-              </div>
-            </li>
-          </ul>
+ <nav class="header-navbar navbar-expand-md navbar navbar-with-menu fixed-top navbar-semi-light bg-light shadow-sm">
+  <div class="navbar-wrapper">
+    <div class="navbar-container content">
+      <div class="d-flex justify-content-between align-items-center w-100">
+        
+        <!-- Menu Icon -->
+        <a class="nav-link menu-toggle d-md-none">
+          <i class="ft-menu"></i>
+        </a>
+
+        <!-- Buttons -->
+        <div class="d-flex flex-row">
+          <a class="nav-link role-btn waiter bg-primary text-white px-3 mx-md-1
+" href="#waiter">
+            <i class="ft-users"></i> Waiter
+          </a>
+          <a class="nav-link role-btn cashier bg-success text-white px-3 mx-md-1
+" href="#cashier">
+            <i class="ft-credit-card"></i> Cashier
+          </a>
         </div>
+
       </div>
     </div>
-  </nav>
+  </div>
+</nav>
 
   <!-- Sidebar -->
   <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true" data-img="{% static 'theme-assets/images/backgrounds/02.jpg' %}">
@@ -58,7 +64,7 @@
          <li class="nav-item active"><a href="/Managerapp/managerdash/"><i class="ft-home"></i><span class="menu-title">Dashboard</span></a></li>
           <li class="nav-item "><a href="/Managerapp/printer/"><i class="ft-printer"></i><span class="menu-title">Assign Printers</span></a></li>
           <li class="nav-item"><a href="/Managerapp/dishes/"><i class="ft-box"></i><span class="menu-title">Dishes</span></a></li>
-          <li class="nav-item"><a href="/Managerapp/vieworders/"><i class="ft-shopping-cart"></i><span class="menu-title">Orders</span></a></li>
+          <li class="nav-item"><a href="/Managerapp/orders/"><i class="ft-shopping-cart"></i><span class="menu-title">Orders</span></a></li>
            <li class="nav-item"><a href="/Managerapp/takeorders/"><i class="ft-globe"></i><span class="menu-title">Take Orders</span></a></li>
           <!-- <li class="nav-item"><a href="onlineOrders.html"><i class="ft-globe"></i><span class="menu-title">Online Orders</span></a></li> -->
           <li class="nav-item"><a href="/Managerapp/viewstaffman/"><i class="ft-users"></i><span class="menu-title">View Staff</span></a></li>

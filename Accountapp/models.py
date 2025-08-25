@@ -398,7 +398,6 @@ class OrderItemTable(models.Model):
     instruction = models.TextField(null=True, blank=True)
     variant = models.ForeignKey(ItemVariantTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='variant_items')
     addon = models.ForeignKey(ItemTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='addon_order_items')
-
     def __str__(self):
         return f"{self.order} - {self.itemname} x {self.quantity}"
     
@@ -672,6 +671,7 @@ class OfflineOrders(models.Model):
 
     # Meta info
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Order #{self.id} - {self.order_type}"
@@ -696,6 +696,6 @@ class OfflineOrderItems(models.Model):
 class CreditUser(models.Model):
     Name = models.CharField(max_length=100, null=True, blank=True)
     Email = models.CharField(max_length=100, null=True, blank=True)
-    phone = models.IntegerField(null=True, blank=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     credit_limit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

@@ -355,10 +355,10 @@
             <div class="mb-3">
               <label for="deliveryBoySelect" class="form-label">Select Delivery Boy:</label>
               <select class="form-select" id="deliveryBoySelect" aria-label="Select Delivery Boy">
-                <option value="">Select a Delivery Boy</option>
-                <option value="DB001">David Lee</option>
-                <option value="DB002">Emma White</option>
-                <option value="DB003">Frank Green</option>
+                  <option value="">Select a Delivery Boy</option>
+                  {% for db in delivery_boys %}
+                      <option value="{{ db.id }}">{{ db.name }}</option>
+                  {% endfor %}
               </select>
             </div>
           </div>
@@ -393,163 +393,101 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       // Sample order data (replace with API call in production)
-      const orders = [
-        {
-          id: "1001",
-          customer: "John Doe",
-          platform: "Appthrough",
-          total: 29.99,
-          status: "pending",
-          paymentStatus: "Paid",
-          date: "2025-07-08",
-          address: "123 Main St, City",
-          items: [
-            { name: "Margherita Pizza", quantity: 1, price: "$15.00" },
-            { name: "Pepsi", quantity: 2, price: "$7.50" }
-          ],
-          rejectReason: "",
-          deliveryBoy: ""
-        },
-        {
-          id: "1002",
-          customer: "Jane Smith",
-          platform: "Takeaway",
-          total: 45.50,
-          status: "accepted",
-          paymentStatus: "Unpaid",
-          date: "2025-07-07",
-          address: "",
-          items: [
-            { name: "Burger", quantity: 2, price: "$20.00" },
-            { name: "Fries", quantity: 1, price: "$5.50" }
-          ],
-          rejectReason: "",
-          deliveryBoy: "David Lee"
-        },
-        {
-          id: "1003",
-          customer: "Michael Lee",
-          platform: "Dining",
-          total: 15.00,
-          status: "completed",
-          paymentStatus: "Refunded",
-          date: "2025-07-06",
-          address: "",
-          items: [
-            { name: "Salad", quantity: 1, price: "$10.00" },
-            { name: "Water", quantity: 1, price: "$5.00" }
-          ],
-          rejectReason: "",
-          deliveryBoy: ""
-        },
-        {
-          id: "0001",
-          customer: "Alice Brown",
-          platform: "Appthrough",
-          total: 35.75,
-          status: "rejected",
-          paymentStatus: "Unpaid",
-          date: "2025-07-12",
-          address: "123 Main St, City",
-          items: [
-            { name: "Pizza Margherita", quantity: 2, price: "$15.00" },
-            { name: "Coke", quantity: 1, price: "$5.75" }
-          ],
-          rejectReason: "Out of stock",
-          deliveryBoy: ""
-        },
-        {
-          id: "0002",
-          customer: "Bob Carter",
-          platform: "Online",
-          total: 22.50,
-          status: "cancelled",
-          paymentStatus: "Paid",
-          date: "2025-07-11",
-          address: "456 Oak Ave, City",
-          items: [
-            { name: "Burger", quantity: 1, price: "$10.00" },
-            { name: "Fries", quantity: 2, price: "$6.25" }
-          ],
-          rejectReason: "",
-          deliveryBoy: ""
-        },
-        {
-          id: "0003",
-          customer: "Clara Davis",
-          platform: "Appthrough",
-          total: 18.00,
-          status: "assigned",
-          paymentStatus: "Refunded",
-          date: "2025-07-10",
-          address: "789 Pine Rd, City",
-          items: [
-            { name: "Salad", quantity: 1, price: "$8.00" },
-            { name: "Juice", quantity: 1, price: "$10.00" }
-          ],
-          rejectReason: "",
-          deliveryBoy: "Emma White"
-        }
-      ];
+      let orders = [];
 
-      // Populate table
-      function populateTable() {
-        const tbody = $('#orderTableBody');
-        tbody.empty();
-        orders.forEach(order => {
-          const statusClass = {
-            pending: 'bg-warning text-dark',
-            accepted: 'bg-success text-white',
-            completed: 'bg-success text-white',
-            cancelled: 'bg-danger text-white',
-            rejected: 'bg-danger text-white',
-            assigned: 'bg-primary text-white'
-          }[order.status] || '';
-          const paymentStatusClass = {
-            Paid: 'bg-success text-white',
-            Unpaid: 'bg-warning text-dark',
-            Refunded: 'bg-danger text-white'
-          }[order.paymentStatus] || '';
-          let actions = `
-            <button class="btn btn-sm btn-primary view-btn" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#orderModal">View</button>
-          `;
-          if (order.platform.toLowerCase() !== 'online' && order.platform.toLowerCase() !== 'appthrough') {
-            actions += `
-              <select class="form-select payment-status-select ms-2" data-id="${order.id}" aria-label="Change Payment Status">
-                <option value="" disabled selected>Change Payment</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="refunded">Refunded</option>
-              </select>
-            `;
-          }
-          if (order.platform.toLowerCase() === 'appthrough') {
-            if (order.status === 'pending') {
-              actions += `
-                <button class="btn btn-sm btn-success accept-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#acceptModal">Accept</button>
-                <button class="btn btn-sm btn-danger reject-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#rejectModal">Reject</button>
+function fetchOrders() {
+  fetch("/Managerapp/orders/?format=json")
+    .then(res => res.json())
+    .then(data => {
+      orders = data.orders;
+      populateTable();
+    })
+    .catch(err => {
+      console.error("Failed to fetch orders", err);
+      showToast("error", "Failed to load orders from server.");
+    });
+}
+
+// Call on page load
+$(document).ready(function() {
+  fetchOrders();
+});
+
+              // Populate table
+          function populateTable() {
+            const tbody = $('#orderTableBody');
+            tbody.empty();
+
+            orders.forEach(order => {
+              const statusClass = {
+                pending: 'bg-warning text-dark',
+                accepted: 'bg-success text-white',
+                completed: 'bg-success text-white',
+                cancelled: 'bg-danger text-white',
+                rejected: 'bg-danger text-white',
+                assigned: 'bg-primary text-white'
+              }[order.status] || '';
+
+              const paymentStatusClass = {
+                Paid: 'bg-success text-white',
+                Unpaid: 'bg-warning text-dark',
+                Refunded: 'bg-danger text-white'
+              }[order.paymentStatus] || '';
+
+              // Default actions (view button)
+              let actions = `
+                <button class="btn btn-sm btn-primary view-btn" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#orderModal">
+                  View
+                </button>
               `;
-            } else if (order.status === 'accepted' || order.status === 'assigned') {
-              actions += `
-                <button class="btn btn-sm btn-primary assign-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#assignModal">${order.status === 'assigned' ? 'Update Delivery' : 'Assign Delivery'}</button>
+
+              // Offline orders (Dining / Takeaway / Online delivery)
+              if (order.platform.toLowerCase() !== 'online' && order.platform.toLowerCase() !== 'appthrough') {
+                actions += `
+                  <select class="form-select payment-status-select ms-2" data-id="${order.id}" aria-label="Change Payment Status">
+                    <option value="" disabled selected>Change Payment</option>
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                `;
+              }
+
+              // App orders (Appthrough)
+              if (order.platform.toLowerCase() === 'appthrough') {
+                if (order.status === 'pending') {
+                  actions += `
+                    <button class="btn btn-sm btn-success accept-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                      Accept
+                    </button>
+                    <button class="btn btn-sm btn-danger reject-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                      Reject
+                    </button>
+                  `;
+                }
+                // ❌ No delivery assign/update buttons since you said not needed now
+              }
+
+              // Build table row
+              const row = `
+                <tr>
+                  <td data-label="Order ID">#${order.id}</td>
+                  <td data-label="Customer">${order.customer}</td>
+                  <td data-label="Platform">${order.platform}</td>
+                  <td data-label="Total">$${order.total.toFixed(2)}</td>
+                  <td data-label="Status"><span class="badge ${statusClass}">${order.status}</span></td>
+                  <td data-label="Payment Status"><span class="badge ${paymentStatusClass}">${order.paymentStatus}</span></td>
+                  <td data-label="Date">${order.date}</td>
+                  <td data-label="Actions">${actions}</td>
+                </tr>
               `;
-            }
+
+              tbody.append(row);
+            });
+
+            updateActions(); // rebind events
           }
-          const row = `
-            <tr>
-              <td data-label="Order ID">#${order.id}</td>
-              <td data-label="Customer">${order.customer}</td>
-              <td data-label="Platform">${order.platform}</td>
-              <td data-label="Total">$${order.total.toFixed(2)}</td>
-              <td data-label="Status"><span class="badge ${statusClass}">${order.status}</span></td>
-              <td data-label="Payment Status"><span class="badge ${paymentStatusClass}">${order.paymentStatus}</span></td>
-              <td data-label="Date">${order.date}</td>
-              <td data-label="Actions">${actions}</td>
-            </tr>`;
-          tbody.append(row);
-        });
-        updateActions();
-      }
+
 
       // Filter orders by status, platform, and payment status
       function filterTable(statusValue, platformValue, paymentStatusValue) {
@@ -667,71 +605,129 @@
         $('#rejectModal').removeAttr('inert').modal('show');
       }
 
-      // Confirm accept action
-      function confirmAccept() {
-        const orderId = $('#confirmAcceptBtn').data('id');
-        if (!orderId) {
-          showToast('error', 'Invalid order ID.');
-          $('#acceptModal').modal('hide');
-          return;
-        }
-        const order = orders.find(o => o.id == orderId);
-        if (!order) {
-          showToast('error', `Order #${orderId} not found.`);
-          $('#acceptModal').modal('hide');
-          return;
-        }
-        if (order.platform.toLowerCase() !== 'appthrough') {
-          showToast('error', `Order #${orderId} cannot be accepted as it is not an Appthrough order.`);
-          $('#acceptModal').modal('hide');
-          return;
-        }
-        order.status = 'accepted';
-        order.rejectReason = '';
-        showToast('success', `Order #${orderId} accepted.`);
-        $('#acceptModal').modal('hide');
-        if (order.platform.toLowerCase() === 'appthrough') {
-          $('#assignOrderId').text(`#${orderId}`);
-          $('#deliveryBoySelect').val('');
-          setTimeout(() => {
-            $('#assignModal').removeAttr('inert').modal('show');
-          }, 300);
-        }
-        populateTable();
-        const statusValue = $('#filterOrders').val();
-        const platformValue = $('#filterPlatform').val();
-        const paymentStatusValue = $('#filterPaymentStatus').val();
-        filterTable(statusValue, platformValue, paymentStatusValue);
-      }
+        // Confirm accept action
+function confirmAccept() {
+  console.log("Confirm Accept button clicked");
+  const orderId = $('#confirmAcceptBtn').data('id');
+  if (!orderId) {
+    showToast('error', 'Invalid order ID.');
+    $('#acceptModal').modal('hide');
+    return;
+  }
 
-      // Confirm reject action
-      function confirmReject() {
-        const orderId = $('#confirmRejectBtn').data('id');
-        if (!orderId) {
-          showToast('error', 'Invalid order ID.');
-          $('#rejectModal').modal('hide');
-          return;
-        }
-        const order = orders.find(o => o.id == orderId);
-        if (!order) {
-          showToast('error', `Order #${orderId} not found.`);
-          $('#rejectModal').modal('hide');
-          return;
-        }
-        if (!$('#rejectReason').val().trim()) {
-          showToast('error', 'Please provide a reason for rejection.');
-          return;
-        }
-        order.status = 'rejected';
-        order.rejectReason = $('#rejectReason').val().trim();
-        showToast('success', `Order #${orderId} rejected.`);
-        $('#rejectModal').modal('hide');
-        populateTable();
-        const statusValue = $('#filterOrders').val();
-        const platformValue = $('#filterPlatform').val();
-        const paymentStatusValue = $('#filterPaymentStatus').val();
-        filterTable(statusValue, platformValue, paymentStatusValue);
+  fetch(`/Managerapp/orders/accept/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/json'
+    },
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+
+      // Update local state
+      const order = orders.find(o => o.id == orderId);
+      if (order) order.status = 'ACCEPTED'; 
+
+
+      // Close modal
+      $('#acceptModal').modal('hide');
+
+      // 🔥 After accepting, open Assign modal
+      $('#assignOrderId').text(`#${orderId}`);
+      $('#deliveryBoySelect').val(order.deliveryBoy ? order.deliveryBoy.split(' ').join('_') : '');
+      $('#assignModal').removeAttr('inert').modal('show');
+
+      populateTable();
+    } else {
+      showToast('error', data.error || 'Failed to accept order');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'An error occurred while accepting order');
+  });
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // Does this cookie string begin with the name we want?
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
       }
+    }
+  }
+  return cookieValue;
+}
+
+
+
+// Confirm reject action
+function confirmReject() {
+  const orderId = $('#confirmRejectBtn').data('id');
+  const rejectReason = $('#rejectReason').val().trim();
+
+  if (!orderId) {
+    showToast('error', 'Invalid order ID.');
+    $('#rejectModal').modal('hide');
+    return;
+  }
+
+  if (!rejectReason) {
+    showToast('error', 'Please provide a reason for rejection.');
+    return;
+  }
+
+  const order = orders.find(o => o.id == orderId);
+  if (!order) {
+    showToast('error', `Order #${orderId} not found.`);
+    $('#rejectModal').modal('hide');
+    return;
+  }
+
+  // ✅ Call backend API
+  fetch(`/Managerapp/orders/reject/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      reason: rejectReason
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Update frontend state (temporary until reload)
+      order.status = 'REJECTED';
+      order.rejectReason = rejectReason;
+
+      showToast('success', data.message);
+      $('#rejectModal').modal('hide');
+
+      // ✅ Reload page after short delay so backend/frontend are in sync
+      setTimeout(() => {
+        location.reload();
+      }, 1000); // 1 second so user sees toast
+    } else {
+      showToast('error', data.error || 'Failed to reject order');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'An error occurred while rejecting order.');
+  });
+}
+
+
 
       // Confirm payment status change
       function confirmPayment() {
@@ -758,40 +754,66 @@
         filterTable(statusValue, platformValue, paymentStatusValue);
       }
 
-      // Assign/Update delivery boy
-      function confirmAssign() {
-        const orderId = $('#assignOrderId').text().replace('#', '');
-        const deliveryBoy = $('#deliveryBoySelect').val();
-        if (!deliveryBoy) {
-          showToast('error', 'Please select a delivery boy.');
-          return;
-        }
-        const order = orders.find(o => o.id == orderId);
-        if (!order) {
-          showToast('error', `Order #${orderId} not found.`);
-          $('#assignModal').modal('hide');
-          return;
-        }
-        if (order.platform.toLowerCase() !== 'appthrough') {
-          showToast('error', `Order #${orderId} cannot have a delivery boy assigned as it is not an Appthrough order.`);
-          $('#assignModal').modal('hide');
-          return;
-        }
-        if (order.status !== 'accepted' && order.status !== 'assigned') {
-          showToast('error', `Order #${orderId} must be accepted before assigning a delivery boy.`);
-          $('#assignModal').modal('hide');
-          return;
-        }
-        order.status = 'assigned';
-        order.deliveryBoy = $('#deliveryBoySelect option:selected').text();
-        showToast('success', `Delivery Boy ${order.deliveryBoy} ${order.status === 'assigned' ? 'updated' : 'assigned'} to Order #${orderId}`);
-        $('#assignModal').modal('hide');
-        populateTable();
-        const statusValue = $('#filterOrders').val();
-        const platformValue = $('#filterPlatform').val();
-        const paymentStatusValue = $('#filterPaymentStatus').val();
-        filterTable(statusValue, platformValue, paymentStatusValue);
-      }
+// Assign/Update delivery boy
+function confirmAssign() {
+  const orderId = $('#assignOrderId').text().replace('#', '');
+  const deliveryBoy = $('#deliveryBoySelect').val();
+
+  if (!deliveryBoy) {
+    showToast('error', 'Please select a delivery boy.');
+    return;
+  }
+
+  const order = orders.find(o => o.id == orderId);
+  if (!order) {
+    showToast('error', `Order #${orderId} not found.`);
+    $('#assignModal').modal('hide');
+    return;
+  }
+
+  if (order.platform.toLowerCase() !== 'appthrough') {
+    showToast('error', `Order #${orderId} cannot have a delivery boy assigned as it is not an Appthrough order.`);
+    $('#assignModal').modal('hide');
+    return;
+  }
+
+  if (order.status !== 'ACCEPTED' && order.status !== 'ASSIGNED') {
+    showToast('error', `Order #${orderId} must be accepted before assigning a delivery boy.`);
+    $('#assignModal').modal('hide');
+    return;
+  }
+
+  // ✅ Call backend API
+  fetch(`/Managerapp/assigndeliveryboy/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      delivery_boy_id: deliveryBoy
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+
+      // ✅ Reload page after short delay (so user sees toast)
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } else {
+      showToast('error', data.error || 'Failed to assign delivery boy');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'An error occurred while assigning delivery boy.');
+  });
+}
+
+
 
       // Update event listeners
       function updateActions() {
