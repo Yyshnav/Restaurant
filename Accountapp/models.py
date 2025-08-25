@@ -634,6 +634,16 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f'{self.sender_type} -> {self.message_type}'
+    
+class UserFeedbackTable(models.Model):
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE)
+    delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE)
+    rating = models.FloatField()
+    feedback = models.TextField(max_length=500, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback for Order #{self.order.id} by Delivery Boy {self.delivery_boy.id}"
 
 
 class OfflineOrders(models.Model):
