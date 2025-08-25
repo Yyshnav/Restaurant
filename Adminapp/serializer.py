@@ -139,7 +139,7 @@ class SubSubCategorySerializer(serializers.ModelSerializer):
 
 
 class OfferTableSerializer(serializers.ModelSerializer):
-    itemid = ItemSerializer(read_only=True)
+    itemid = ItemSerializer(read_only=True, many=True)
 
     class Meta:
         model = OfferTable
@@ -154,6 +154,8 @@ class OfferTableSerializer(serializers.ModelSerializer):
             'createdat',
             'updatedat',
         ]
+
+
 
 class OrderTableSerializer(serializers.ModelSerializer):
     userid = serializers.PrimaryKeyRelatedField(queryset=LoginTable.objects.all())
@@ -259,3 +261,23 @@ class SpotlightSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpotlightTable
         fields = '__all__'
+
+class OfferWithItemSerializer(serializers.ModelSerializer):
+    item = ItemSerializer(source='itemid', read_only=True)  # 'itemid' points to ItemTable
+
+    class Meta:
+        model = OfferTable
+        fields = [
+            'id', 'name', 'startdate', 'enddate', 'offer_percentage',
+            'offerdescription', 'item'
+        ]
+
+
+class CarouselWithOffersSerializer(serializers.ModelSerializer):
+    offer = OfferWithItemSerializer(read_only=True)
+
+    class Meta:
+        model = CarouselTable
+        fields = [
+            'id', 'image', 'offer', 'branch', 'offer_percentage', 'startdate', 'enddate'
+        ]

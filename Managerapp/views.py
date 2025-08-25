@@ -668,3 +668,4 @@ class RejectOrderView(View):
         order.save(update_fields=["orderstatus", "delivery_instructions"])
 
         return JsonResponse({"success": True, "message": f"Order #{order_id} rejected"})
+

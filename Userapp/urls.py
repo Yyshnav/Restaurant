@@ -44,10 +44,12 @@ urlpatterns = [
     path('useraddress/', UserAddressView.as_view(), name='get-address'),
     path("trackorders/<int:orderid>/", TrackAPIView.as_view(), name='trackorder'),
     path('userorderhistory/', OrderHistoryAPIView.as_view(), name='order-history'),
-]
+
     path('myorder/', UserOrdersView.as_view(), name='my-orders'),
     path('feedback/', FeedbackView.as_view(), name='feedback'),
+    path('carouseloffers/<int:carousel_id>/', CarouselOffersAPIView.as_view(), name='carousel-offer'),
+]
 
-    ]
+    
 
 

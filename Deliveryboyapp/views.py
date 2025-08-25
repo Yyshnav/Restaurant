@@ -200,7 +200,7 @@ class LatestPendingOrdersAPIView(APIView):
         # Get latest orders assigned to this delivery boy with status 'PENDING'
         orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED']).order_by('-id')
         serializer = OrderSerializer(orders, many=True)
-        # print("Orders:", serializer.data)
+        print("Orders:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
