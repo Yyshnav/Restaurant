@@ -1,5 +1,6 @@
 from django.urls import path
 
+from Deliveryboyapp.views import OrderHistoryAPIView
 from Userapp.views import *
 
 from rest_framework_simplejwt.views import (
@@ -42,5 +43,6 @@ urlpatterns = [
     path('placeorder/', PlaceOrderAPIView.as_view(), name='placeorder'),
     path('useraddress/', UserAddressView.as_view(), name='get-address'),
     path("trackorders/<int:orderid>/", TrackAPIView.as_view(), name='trackorder'),
+    path('userorderhistory/', OrderHistoryAPIView.as_view(), name='order-history'),
 ]
 

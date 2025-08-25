@@ -23,45 +23,137 @@ class OrderTableSerializer(serializers.ModelSerializer):
         model = OrderTable
         fields = '__all__'
 
+class DeliveryOrderItemTableSerializer(serializers.ModelSerializer):
+    itemname = serializers.SerializerMethodField()
+    variant = serializers.SerializerMethodField()
+    addon = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItemTable
+        fields = ['id', 'itemname', 'quantity', 'price', 'instruction', 'variant', 'addon']
+
+    def get_itemname(self, obj):
+        return {'name': obj.itemname.name} if obj.itemname else {'name': 'Unknown Item'}
+
+    def get_variant(self, obj):
+        return {'name': obj.variant.variant_name} if obj.variant else None
+
+    def get_addon(self, obj):
+        return {'name': obj.addon.name} if obj.addon else None
+
+
+# class OrderSerializer(serializers.ModelSerializer):
+#     userid = serializers.SerializerMethodField()
+#     branch = BranchTableSerializer(read_only=True)
+#     address=AddressTableSerializer(read_only=True)
+#     order_item = OrderTableSerializer(read_only=True, many=True)
+#     delivery_details = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = OrderTable
+#         fields = '__all__' 
+
+#     def get_userid(self, obj):
+#         try:
+#             profile = obj.userid.profile.first()
+#             return ProfileTableSerializer(profile).data if profile else None
+#         except:
+#             return None
+
+#     def get_delivery_details(self, obj):
+#         try:
+#             print("Getting delivery for order:", obj.id)
+#             delivery = DeliveryTable.objects.filter(order=obj).first()
+#             print("Found delivery:", delivery)
+#             return DeliveryTableSerializer(delivery).data if delivery else None
+#         except Exception as e:
+#             print("Error getting delivery:", e)
+#             return None
+
+        
+#     def get_address(self, obj):
+#         try:
+#             address = obj.address
+#             return AddressTableSerializer(address).data if address else None
+#         except:
+#             return None
+
 class OrderSerializer(serializers.ModelSerializer):
     userid = serializers.SerializerMethodField()
     branch = BranchTableSerializer(read_only=True)
-    address=AddressTableSerializer(read_only=True)
-    order_item = OrderTableSerializer(read_only=True, many=True)
+    address = AddressTableSerializer(read_only=True)
+    order_item = DeliveryOrderItemTableSerializer(many=True, read_only=True)
     delivery_details = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderTable
-        fields = '__all__'  # includes branch, userid, order_items, delivery_details
+        fields = '__all__'
 
     def get_userid(self, obj):
         try:
-            profile = obj.userid.profile.first()
-            return ProfileTableSerializer(profile).data if profile else None
-        except:
-            return None
+            if obj.userid:
+                profile = obj.userid.loginid.first()
+                return ProfileTableSerializer(profile).data if profile else {
+                    'id': obj.userid.id,
+                    'phone': obj.userid.phone or obj.phone_number or 'Unknown',
+                    'user_roles': [{'id': role.id, 'role': role.role} for role in obj.userid.user_roles.all()]
+                }
+            return {
+                'phone': obj.phone_number or 'Unknown',
+                'user_roles': []
+            }
+        except Exception as e:
+            # print(f"Error getting userid: {e}")
+            return {
+                'phone': obj.phone_number or 'Unknown',
+                'user_roles': []
+            }
 
     def get_delivery_details(self, obj):
         try:
-            print("Getting delivery for order:", obj.id)
+            # print(f"Getting delivery for order: {obj.id}")
             delivery = DeliveryTable.objects.filter(order=obj).first()
-            print("Found delivery:", delivery)
-            return DeliveryTableSerializer(delivery).data if delivery else None
+            if delivery:
+                return DeliveryTableSerializer(delivery).data
+            return {
+                'name': obj.phone_number or 'Unknown',
+                'phone': obj.phone_number or '',
+                'address': {
+                    'address': obj.address.address if obj.address else 'Unknown Address',
+                    'latitude': obj.latitude or 0.0,
+                    'longitude': obj.longitude or 0.0
+                },
+                'instruction': obj.delivery_instructions or '',
+                'voice_instruction': obj.voice_instruction.url if obj.voice_instruction else None
+            }
         except Exception as e:
-            print("Error getting delivery:", e)
-            return None
+            print(f"Error getting delivery: {e}")
+            return {
+                'name': obj.phone_number or 'Unknown',
+                'phone': obj.phone_number or '',
+                'address': {
+                    'address': obj.address.address if obj.address else 'Unknown Address',
+                    'latitude': obj.latitude or 0.0,
+                    'longitude': obj.longitude or 0.0
+                },
+                'instruction': obj.delivery_instructions or '',
+                'voice_instruction': obj.voice_instruction.url if obj.voice_instruction else None
+                
+            }
 
-        
     def get_address(self, obj):
         try:
             address = obj.address
             return AddressTableSerializer(address).data if address else None
-        except:
+        except Exception as e:
+            print(f"Error getting address: {e}")
             return None
 
 class InputSerializer(serializers.Serializer):
         order_id = serializers.IntegerField()
-        status = serializers.ChoiceField(choices=['OUT_FOR_DELIVERY', 'DELIVERED'])
+        status = serializers.ChoiceField(choices=['ACCEPTED', 'DELIVERED'])
+        paymentDone = serializers.BooleanField(default=False, required=False)
+        paymentType = serializers.ChoiceField(choices=['CASH', 'ONLINE'], required=False, allow_null=True)
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -98,40 +190,6 @@ class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     # otp = serializers.CharField(max_length=6)
     new_password = serializers.CharField(min_length=6)
-
-
-# class OrderItemDetailSerializer(serializers.ModelSerializer):
-#     itemname = ItemSerializer()
-#     variant = serializers.SerializerMethodField()
-#     addon = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = OrderItemTable
-#         fields = ['id', 'itemname', 'price', 'quantity', 'variant', 'instruction', 'addon']
-
-#     def get_variant(self, obj):
-#         variant_id = obj.variant_id
-#         if variant_id:
-#             try:
-#                 variant = ItemVariantTable.objects.get(id=variant_id)
-#                 return {
-#                     "id": variant.id,
-#                     "variant_name": variant.variant_name,
-#                     "price": variant.price
-#                 }
-#             except ItemVariantTable.DoesNotExist:
-#                 return None
-#         return None
-
-#     def get_addon(self, obj):
-#         addon_id = obj.addon_id
-#         if addon_id:
-#             try:
-#                 addon = ItemTable.objects.get(id=addon_id)
-#                 return AddonSerializer(addon).data
-#             except ItemTable.DoesNotExist:
-#                 return None
-#         return None
 
 class OrderItemDetailSerializer(serializers.ModelSerializer):
     itemname = ItemSerializer()
@@ -200,3 +258,27 @@ class TrackOrderSerializer(serializers.ModelSerializer):
             'restaurant_details',
             'branch_id'
         ]
+
+class UserFeedbackSerializer(serializers.Serializer):
+    order_id = serializers.CharField()
+    rating = serializers.FloatField(min_value=1.0, max_value=5.0)
+    feedback = serializers.CharField(max_length=500, allow_null=True, required=False)
+
+class DeliveryBoyLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryBoyLocation
+        fields = ['latitude', 'longitude']
+        extra_kwargs = {
+            'latitude': {'required': True},
+            'longitude': {'required': True},
+        }
+
+    def validate_latitude(self, value):
+        if not -90 <= value <= 90:
+            raise serializers.ValidationError("Latitude must be between -90 and 90 degrees.")
+        return value
+
+    def validate_longitude(self, value):
+        if not -180 <= value <= 180:
+            raise serializers.ValidationError("Longitude must be between -180 and 180 degrees.")
+        return value

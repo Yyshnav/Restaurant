@@ -17,6 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from . import views
+from Waiterapp.views import *
+
 urlpatterns = [
     # path('admin/', admin.site.urls),
+    path('waiterdashboard/', ordering, name='waiterdashboard'),
+    path('authenticate_waiter/', authenticate_waiter, name='authenticate_waiter'),
+    path('place_order/', place_order, name='place_order'),
 ]
