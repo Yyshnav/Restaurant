@@ -1,0 +1,83 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+  <!-- Main Content -->
+  <div class="app-content content">
+    <div class="content-wrapper">
+      <div class="content-header row">
+        <div class="content-header-left col-12 mb-2">
+          <h3 class="content-header-title text-dark">Dashboard Overview</h3>
+        </div>
+      </div>
+
+      <div class="content-body">
+        <div class="row">
+          <div class="col-xl-3 col-md-6 col-12">
+            <div class="card bg-gradient-x-purple text-white">
+              <div class="card-body">
+                <h4 class="card-title">Total Orders</h4>
+                <h2 class="text-white">125</h2>
+                <p>Completed & Pending</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6 col-12">
+            <div class="card bg-gradient-x-danger text-white">
+              <div class="card-body">
+                <h4 class="card-title">Pending Orders</h4>
+                <h2 class="text-white">18</h2>
+                <p>Awaiting Fulfillment</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6 col-12">
+            <div class="card bg-gradient-x-info text-white">
+              <div class="card-body">
+                <h4 class="card-title">Total Dishes</h4>
+                <h2 class="text-white">32</h2>
+                <p>Menu Items</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6 col-12">
+            <div class="card bg-gradient-x-success text-white">
+              <div class="card-body">
+                <h4 class="card-title">Available Tables</h4>
+                <h2 class="text-white">15</h2>
+                <p>Ready for Reservation</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-xl-6 col-md-12 col-12">
+            <div class="card bg-gradient-x-orange text-white">
+              <div class="card-body">
+                <h4 class="card-title">Total Revenue</h4>
+                <h2 class="text-white">$4,200</h2>
+                <p>This Month</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-6 col-md-12 col-12">
+            <div class="card bg-gradient-x-teal text-white">
+              <div class="card-body">
+                <h4 class="card-title">New Customers</h4>
+                <h2 class="text-white">28</h2>
+                <p>This Week</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- More dashboard widgets/charts can go here -->
+      </div>
+    </div>
+  </div>
+
+ {% endblock %}

@@ -1,4 +1,5 @@
 from datetime import timedelta
+import mimetypes
 import os
 from pathlib import Path
 from decouple import config
@@ -36,7 +37,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # 'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -69,13 +70,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Restaurant.wsgi.application'
 ASGI_APPLICATION = "Restaurant.asgi.application"
-CELERY_BROKER_URL = 'redis://172.27.212.99:6379/0'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 
 CHANNEL_LAYERS = {
     'default': {
         # 'BACKEND': 'channels.layers.InMemoryChannelLayer',
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         'CONFIG': {
+            "hosts": [("127.0.0.1", 6379)],
                 "hosts": [("172.27.212.99", 6379)],
         },
     },
@@ -87,7 +89,7 @@ EMAIL_HOST = 'smtp.gmail.com'  # Or your email provider's SMTP
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'sayanthskumar7@gmail.com'   
-EMAIL_HOST_PASSWORD = 'iolf befu kevk xfcr'   
+EMAIL_HOST_PASSWORD = 'iolf befu kevk xfcr'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
@@ -123,12 +125,21 @@ DATABASES = {
 AUTH_USER_MODEL = 'Accountapp.LoginTable'
 
 # REST Framework & JWT
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': (
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',
+#     ),
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#     ),
+# }
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ),
 }
 
@@ -171,6 +182,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+mimetypes.add_type("text/css", ".css", True)
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]

@@ -1,0 +1,323 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+<style>
+  .app-content { position: relative; transition: margin-left 0.3s; }
+  .sidebar { position: fixed; top: 0; bottom: 0; width: 250px; background-color: #f8f9fa; padding-top: 56px; }
+  .content-area { margin-left: 250px; padding: 15px; }
+  .dish-card { border: 1px solid #ddd; border-radius: 10px; padding: 10px; transition: 0.3s; height: 32%; }
+  .dish-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; }
+  .dish-card .btn { font-size: 0.9rem;margin-bottom: 500px; }
+
+
+  .note-input { width: 100%; font-size: 0.9rem; }z
+  .order-item-note { font-style: italic; color: #666; }
+  #selectedList { max-height: 300px; overflow-y: auto; }
+  #menuList { height: 500px; overflow: auto; }
+  #menuList::-webkit-scrollbar, #selectedList::-webkit-scrollbar { display: none; }
+
+  @media (max-width: 767px) { .sidebar { position: relative; width: 100%; } .content-area { margin-left: 0; } }
+  @media (min-width: 768px) and (max-width: 1199px) { .sidebar { width: 250px; } .content-area { margin-left: 250px; } }
+  @media (min-width: 1200px) { .sidebar { width: 300px; } .content-area { margin-left: 300px; } }
+</style>
+
+<div class="app-content">
+  <div class="content-area">
+    <div class="container-fluid py-1">
+      <div class="row">
+
+        <!-- Order Form -->
+        <div class="col-12 col-md-4 mt-5">
+          <h4>Create Order</h4>
+          <select class="form-control mb-1" id="orderType" onchange="toggleFields()">
+            <option value="dining">Dining</option>
+            <option value="takeaway">Takeaway</option>
+            <option value="online">Online Delivery</option>
+          </select>
+
+          <!-- <div id="diningFields">
+            <input type="text" class="form-control mb-1" placeholder="Table Number" id="tableNo" />
+            <select id="waiterSelect" class="form-control" style="width: 100%"></select>
+          </div> -->
+            <div id="diningFields">
+              <!-- Table Number Dropdown -->
+            <select id="tableNo" class="form-control mb-1" style="width: 100%">
+              <option value="">Select Table</option>
+              {% for table in tables %}
+                <option value="{{ table.id }}">
+                  Table {{ table.table_number }} (Floor {{ table.floor }}, Seats: {{ table.seating_capacity }})
+                </option>
+              {% endfor %}
+            </select>
+
+            <!-- Waiter Dropdown -->
+            <select id="waiterSelect" class="form-control mb-1" style="width: 100%">
+              <option value="">Select Waiter</option>
+              {% for waiter in waiters %}
+                <option value="{{ waiter.id }}">{{ waiter.name }}</option>
+              {% endfor %}
+            </select>
+
+            </div>
+
+          <div id="customerFields" style="display: none;">
+            <input type="text" class="form-control mb-1" placeholder="Customer Name" id="custName" />
+            <input type="text" class="form-control mb-1" placeholder="Phone Number" id="custPhone" />
+            <select class="form-control mb-1" id="deliveryType" onchange="toggleDeliveryBoy()" style="display: none;">
+              <option value="direct">Direct</option>
+              <option value="thirdparty">Third Party</option>
+            </select>
+            <!-- Delivery Boy Dropdown -->
+          <select class="form-control mb-1" id="deliveryBoy" style="display: none;">
+            <option value="">Select Delivery Boy</option>
+            {% for boy in delivery_boys %}
+              <option value="{{ boy.id }}">{{ boy.name }}</option>
+            {% empty %}
+              <option disabled>No delivery boys found</option>
+            {% endfor %}
+          </select>
+
+
+          </div>
+
+          <h5 class="mt-1">Selected Dishes</h5>
+          <ul class="list-group mb-1" id="selectedList"></ul>
+
+          <div class="mb-1">
+            <strong>Total: $<span id="totalAmount" class="text-danger">0.00</span></strong>
+          </div>
+          <div class="d-flex align-items-center gap-3 mb-1">
+            <input type="number" class="form-control w-50" placeholder="Amount received" id="receivedAmount" oninput="calculateBalance()" />
+            <div><strong>Balance: $<span id="balanceAmount">0.00</span></strong></div>
+          </div>
+
+          <button class="btn btn-success w-100" onclick="submitOrder()">Submit Order</button>
+        </div>
+
+        <!-- Menu List -->
+        <div class="col-12 col-md-8">
+          <div class="d-flex gap-2 mb-3">
+            <input type="text" id="searchBar" class="form-control" placeholder="Search dishes..." oninput="renderMenu()" />
+            <select class="form-select" id="categoryFilter" onchange="renderMenu()">
+              <option value="">All</option>
+              <option value="starter">Starter</option>
+              <option value="main">Main</option>
+              <option value="drink">Drink</option>
+            </select>
+          </div>
+          <div class="row" id="menuList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let dishes = [];
+  let selected = {};
+
+  // Fetch dishes from Django backend
+  fetch("{% url 'take_orders' %}?format=json") 
+  .then(response => response.json())
+  .then(data => {
+      dishes = data.dishes || [];
+      renderMenu();
+  })
+  .catch(err => console.error("Error fetching dishes:", err));
+
+
+  function renderMenu() {
+    const search = document.getElementById('searchBar').value.toLowerCase();
+    const category = document.getElementById('categoryFilter').value;
+    const menuList = document.getElementById('menuList');
+    menuList.innerHTML = "";
+
+    dishes
+      .filter(d => d.name.toLowerCase().includes(search) && (category === "" || d.category === category))
+      .forEach(dish => {
+        const col = document.createElement('div');
+        col.className = 'col-sm-6 col-lg-4 col-xl-3 mb-3';
+
+        let variantSelectHTML = "";
+        if (dish.variants && dish.variants.length) {
+          // ✅ Use variant.id in option value
+          variantSelectHTML = `
+            <select class="form-select form-select-sm mb-2" id="variant-${dish.id}">
+              <option value="">Select Variant</option>
+              ${dish.variants.map(v => 
+                `<option value="${v.id}" data-price="${v.price}">
+                  ${v.name} - $${v.price}
+                </option>`
+              ).join('')}
+            </select>
+          `;
+        }
+
+        col.innerHTML = `
+          <div class="dish-card d-flex flex-column">
+            <img src="${dish.image}" alt="${dish.name}">
+            <h6 class="mt-2">${dish.name}</h6>
+            ${variantSelectHTML}
+            <p class="mb-1">${!dish.variants.length ? "$" + dish.price.toFixed(2) : ""}</p>
+            <button class="btn btn-sm btn-primary " onclick="addToOrder(${dish.id})">Add</button>
+          </div>
+        `;
+        menuList.appendChild(col);
+      });
+  }
+
+  function addToOrder(id) {
+    const dish = dishes.find(d => d.id === id);
+
+    if (dish.variants && dish.variants.length) {
+      const select = document.getElementById(`variant-${dish.id}`);
+      if (!select.value) { alert("Please select a variant."); return; }
+      
+      const variantId = parseInt(select.value);
+      const variant = dish.variants.find(v => v.id === variantId);
+      const key = `${dish.name} (${variant.name})`;
+
+      if (!selected[key]) {
+        selected[key] = { qty: 1, price: variant.price, note: "", variantId: variant.id };
+      } else {
+        selected[key].qty++;
+      }
+    } else {
+      if (!selected[dish.name]) {
+        selected[dish.name] = { qty: 1, price: dish.price, note: "", variantId: null };
+      } else {
+        selected[dish.name].qty++;
+      }
+    }
+
+    updateSelected();
+  }
+
+  function updateSelected() {
+    const list = document.getElementById('selectedList');
+    list.innerHTML = "";
+    let total = 0;
+
+    Object.entries(selected).forEach(([name, item]) => {
+      if (item.qty === 0) return;
+      const itemTotal = item.price * item.qty;
+      total += itemTotal;
+
+      const li = document.createElement('li');
+      li.className = "list-group-item d-flex flex-column";
+      li.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+          <strong>${name}</strong>
+          <span>$${itemTotal.toFixed(2)}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 my-1">
+          <button class="btn btn-sm btn-outline-secondary" onclick="changeQty('${name}', -1)">−</button>
+          <span>${item.qty}</span>
+          <button class="btn btn-sm btn-outline-secondary" onclick="changeQty('${name}', 1)">+</button>
+          <button class="btn btn-sm btn-danger ms-auto" onclick="removeItem('${name}')">Delete</button>
+        </div>
+        <input class="form-control note-input mt-1" placeholder="Add note..." value="${item.note}" onchange="updateNote('${name}', this.value)">
+      `;
+      list.appendChild(li);
+    });
+
+    document.getElementById('totalAmount').textContent = total.toFixed(2);
+    calculateBalance();
+  }
+
+  function changeQty(name, delta) {
+    selected[name].qty = Math.max(0, selected[name].qty + delta);
+    if (selected[name].qty === 0) delete selected[name];
+    updateSelected();
+  }
+
+  function removeItem(name) { delete selected[name]; updateSelected(); }
+  function updateNote(name, value) { selected[name].note = value; }
+  function calculateBalance() {
+    const total = parseFloat(document.getElementById('totalAmount').textContent);
+    const received = parseFloat(document.getElementById('receivedAmount').value) || 0;
+    document.getElementById('balanceAmount').textContent = (received - total).toFixed(2);
+  }
+
+  function toggleFields() {
+    const type = document.getElementById("orderType").value;
+    const customerFields = document.getElementById("customerFields");
+    const deliveryType = document.getElementById("deliveryType");
+    const deliveryBoy = document.getElementById("deliveryBoy");
+
+    document.getElementById("diningFields").style.display = (type === "dining") ? "block" : "none";
+    customerFields.style.display = (type !== "dining") ? "block" : "none";
+
+    if (type === "online") { deliveryType.style.display = "block"; toggleDeliveryBoy(); }
+    else { deliveryType.style.display = "none"; deliveryBoy.style.display = "none"; }
+  }
+
+  function toggleDeliveryBoy() {
+    const deliveryType = document.getElementById("deliveryType").value;
+    const deliveryBoy = document.getElementById("deliveryBoy");
+    deliveryBoy.style.display = (deliveryType === "direct") ? "block" : "none";
+  }
+
+  function submitOrder() {
+    let type = document.getElementById("orderType").value; // "dining", "takeaway", "online"
+
+    const order = {
+      orderType: type,
+      items: Object.entries(selected).map(([name, { qty, price, note, variantId }]) => {
+        const dish = dishes.find(d => d.name === name.split(" (")[0]);
+        return {
+          itemId: dish?.id,
+          qty,
+          price,
+          note,
+          variantId  // ✅ Correct variantId now
+        };
+      }),
+      total: parseFloat(document.getElementById("totalAmount").textContent),
+      received: parseFloat(document.getElementById("receivedAmount").value) || 0,
+    };
+
+    if (type === "dining") {
+      order.tableId = document.getElementById("tableNo").value;
+      order.waiterId = document.getElementById("waiterSelect").value;
+    } 
+    else if (type === "takeaway") {
+      order.customerName = document.getElementById("custName").value;
+      order.customerPhone = document.getElementById("custPhone").value;
+    } 
+    else if (type === "online") {
+      const deliveryType = document.getElementById("deliveryType").value;
+      if (deliveryType === "direct") {
+        order.deliveryboyId = document.getElementById("deliveryBoy").value;
+      }
+      order.customerName = document.getElementById("custName").value;
+      order.customerPhone = document.getElementById("custPhone").value;
+      order.deliveryType = deliveryType;
+    }
+
+    fetch("{% url 'save_order' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}",
+      },
+      body: JSON.stringify(order),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert("Error: " + data.error);
+        } else {
+          alert("✅ Order saved successfully!");
+          location.reload();
+        }
+      })
+      .catch(err => console.error("Error saving order:", err));
+  }
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

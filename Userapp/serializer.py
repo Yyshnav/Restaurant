@@ -135,12 +135,12 @@ class AddressTableSerializer(serializers.ModelSerializer):
         model = AddressTable
         fields = '__all__'
 
-class DeliveryTableSerializer(serializers.ModelSerializer):
-    order = OrderTableSerializer(read_only=True) 
-    address= AddressTableSerializer(read_only=True)
-    class Meta:
-        model = DeliveryTable
-        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
+# class DeliveryTableSerializer(serializers.ModelSerializer):
+#     order = OrderTableSerializer(read_only=True) 
+#     address= AddressTableSerializer(read_only=True)
+#     class Meta:
+#         model = DeliveryTable
+#         fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
 
 
 
@@ -149,7 +149,7 @@ class DeliveryTableSerializer(serializers.ModelSerializer):
     address= AddressTableSerializer(read_only=True)
     class Meta:
         model = DeliveryTable
-        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'created_at', 'updated_at']
+        fields = ['id', 'userid', 'name','address', 'order', 'phone', 'instruction', 'voice_instruction', 'created_at', 'updated_at']
 
 
 
@@ -348,7 +348,6 @@ class UserOrderItemSerializer(serializers.Serializer):
 #         except Exception as e:
 #             print(f"Order item creation failed: {str(e)}")
 #             raise serializers.ValidationError(f"Failed to create order item: {str(e)}")
-
 #         return order
     
 class UserOrderSerializer(serializers.ModelSerializer):
@@ -463,6 +462,28 @@ class UserOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Failed to create order item: {str(e)}")
 
         return order
+    
+class OrderHistorySerializer(serializers.ModelSerializer):
+    items = OrderItemTableSerializer(many=True, source='orderitemtable_set', read_only=True)
+    address = AddressTableSerializer(read_only=True)
+    delivery = DeliveryTableSerializer(read_only=True)
+
+    class Meta:
+        model = OrderTable
+        fields = [
+            'id',
+            'userid',
+            'address',
+            'delivery',
+            'total_amount',
+            'status',
+            'payment_method',
+            'created_at',
+            'updated_at',
+            'items',
+        ]
+
+
     
     
 class OrderItemRetrieveSerializer(serializers.ModelSerializer):

@@ -107,8 +107,32 @@ class DeliveryBoyTable(models.Model):
     license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
     userid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
 
+    def save(self, *args, **kwargs):
+        """Whenever we create a DeliveryBoy, make sure user has DELIVERY role."""
+        super().save(*args, **kwargs)
+        delivery_role, _ = UserRole.objects.get_or_create(role="DELIVERY")
+        self.userid.user_roles.add(delivery_role)
+        self.userid.save()
+
     def __str__(self):
         return f"{self.name} ({self.phone})"
+    
+class ProfileTable(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+    dob = models.CharField(max_length=20, null=True, blank=True)
+    # latitude = models.FloatField(null=True, blank=True)
+    # longitude = models.FloatField(null=True, blank=True)
+    # place = models.CharField(max_length=255, null=True, blank=True)
+    address = models.ForeignKey(AddressTable, on_delete=models.SET_NULL, related_name='deliverie', null=True, blank=True)
+    loginid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='profile')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 class DeliveryBoyLocation(models.Model):
     delivery_boy = models.OneToOneField(DeliveryBoyTable, on_delete=models.CASCADE, related_name='location')
@@ -147,7 +171,7 @@ class OrderTable(models.Model):
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     totalamount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
@@ -162,6 +186,7 @@ class OrderTable(models.Model):
 
     cooking_instructions = models.TextField(blank=True, null=True)
     delivery_instructions = models.TextField(blank=True, null=True)
+    voice_instruction = models.FileField(upload_to='order_voice_instructions/', null=True, blank=True)
     payment_method = models.CharField(max_length=50, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
@@ -233,6 +258,7 @@ class ItemTable(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     fast_delivery = models.BooleanField(default=False)
     newest = models.BooleanField(default=True)
+    available = models.BooleanField(default=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -384,8 +410,9 @@ class DeliveryTable(models.Model):
     address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliveries', null=True, blank=True)
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
+    # voice_instruction = models.FileField(upload_to='delivery_instructions/', null=True, blank=True)
     phone = models.CharField(max_length=15)
-    instruction = models.CharField(max_length=450, null=True, blank=True)  # Can store text or a reference to a voice file
+    instruction = models.CharField(max_length=450, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -453,7 +480,7 @@ class VoucherTable(models.Model):
 class PrinterTable(models.Model):
     name = models.CharField(max_length=100, unique=True)
     branch = models.ForeignKey(BranchTable, on_delete=models.CASCADE, related_name='printers')
-    subsubcategories = models.ManyToManyField(SubSubCategoryTable, blank=True, related_name='category')
+    subcategories = models.ForeignKey(SubCategoryTable, on_delete=models.CASCADE, related_name='printers')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     def __str__(self):
@@ -607,3 +634,68 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f'{self.sender_type} -> {self.message_type}'
+    
+class UserFeedbackTable(models.Model):
+    order = models.ForeignKey(OrderTable, on_delete=models.CASCADE)
+    delivery_boy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE)
+    rating = models.FloatField()
+    feedback = models.TextField(max_length=500, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback for Order #{self.order.id} by Delivery Boy {self.delivery_boy.id}"
+
+
+class OfflineOrders(models.Model):
+    ORDER_TYPES = [
+        ('DINE_IN', 'Dine In'),
+        ('TAKEAWAY', 'Takeaway'),
+        ('ONLINEDELIVERY', 'Online Delivery'),
+    ]
+
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='DINE_IN')
+
+    # Dining-related fields
+    table = models.ForeignKey("DiningTable", on_delete=models.CASCADE, null=True, blank=True)
+    waiter = models.ForeignKey("WaiterTable", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Delivery-related fields
+    deliveryboy = models.ForeignKey("DeliveryBoyTable", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Customer details (for takeaway & online)
+    customer_name = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+
+    # Payment & totals
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment = models.ForeignKey("PaymentTable", on_delete=models.CASCADE, null=True, blank=True)
+
+    # Meta info
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.order_type}"
+
+
+class OfflineOrderItems(models.Model):
+    order = models.ForeignKey(OfflineOrders, on_delete=models.CASCADE, related_name="order_items")
+    item = models.ForeignKey("ItemTable", on_delete=models.CASCADE)
+    variant = models.ForeignKey("ItemVariantTable", on_delete=models.SET_NULL, null=True, blank=True)
+
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2)  
+    note = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        variant_display = self.variant.variant_name if self.variant else "No Variant"
+        return f"Order {self.order.id} - {self.item.name} ({variant_display}) x {self.quantity}"
+
+
+
+
+class CreditUser(models.Model):
+    Name = models.CharField(max_length=100, null=True, blank=True)
+    Email = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.IntegerField(null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    credit_limit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

@@ -18,7 +18,7 @@ urlpatterns = [
     path('registerstaff', RegisterStaffView.as_view(), name='registerstaff'),
     path('branch-report', ViewBranchReportView.as_view(), name='branch-report'),
     path('view-branch', ViewBranchView.as_view(), name='view-branch'),
-    path('delete-branch/<int:branch_id>', DeleteBranchView.as_view(), name='delete-branc    h'),
+    path('delete-branch/<int:branch_id>', DeleteBranchView.as_view(), name='delete-branch'),
     path('branch-edit/<int:branch_id>/', EditBranchView.as_view(), name='branch-edit'),
     path('view-carousel', ViewcarouselView.as_view(), name='view-carousel'),
     path('view-categories', CategoryManagerView.as_view(), name='view_categories'),
@@ -43,5 +43,11 @@ urlpatterns = [
     path('delete-offer/<int:id>/', DeleteOfferView.as_view(), name='delete-offer'),
     path('edit-offer/<int:offer_id>/', EditOfferView.as_view(), name='edit-offer'),
     path('delete-carousel/<int:id>/', DeleteCarousel.as_view(), name='delete-carousel'),
+    # path('editcarousel/<int:carousel_id>/', EditCarousel.as_view(), name='editcarousel'),
+    path('view-coupon', ViewCouponView.as_view(), name='view-coupon'),
+    path('add-coupon', AddCouponView.as_view(), name='add-coupon'),
+    path('edit-coupon/<int:coupon_id>/', EditCouponView.as_view(), name='edit_coupon'),
+    path('delete-coupon/<int:id>', DeleteCouponView.as_view(), name='delete-coupon'),
+
 
 ]

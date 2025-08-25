@@ -1,0 +1,338 @@
+{% extends 'sidebarman.html' %}
+  {% block body %}
+
+
+    <style>
+      .table-responsive { overflow-x: auto; }
+      .btn-sm { padding: 0.25rem 0.5rem; transition: transform 0.2s; }
+      .btn-sm:hover { transform: scale(1.05); }
+      .table-hover tbody tr:hover { background-color: #f1f5f9; transition: background-color 0.3s ease; }
+      .filter-btn { margin-right: 0.5rem; }
+      .filter-btn.active { background-color: #007bff; color: white; }
+      #creditUserForm { display: none; }
+      #creditUserForm.show { display: block; }
+      @media (max-width: 768px) {
+        .table thead { display: none; }
+        .table tr { display: block; margin-bottom: 1rem; border: 1px solid #dee2e6; padding: 1rem; }
+        .table td { display: block; text-align: left; }
+        .table td::before { content: attr(data-label); font-weight: bold; display: block; }
+        .table td:last-child { text-align: center; }
+        .filter-btn { display: inline-block; margin-bottom: 0.5rem; }
+      }
+    </style>
+  </head>
+
+
+
+    <!-- Main Content -->
+    <div class="app-content content">
+      <div class="content-wrapper">
+        <div class="content-header row">
+          <div class="content-header-left col-md-6 col-12 mb-2">
+            <h3 class="content-header-title text-dark">Register Credit Users</h3>
+          </div>
+          <div class="content-header-right col-md-6 col-12">
+            <div class="input-group float-end mb-2" style="max-width: 300px;">
+              <input type="text" class="form-control" id="searchUsers" placeholder="Search by name, email, or phone" aria-label="Search users">
+              <button class="btn btn-outline-primary" type="button" id="addUserBtn"><i class="fas fa-plus"></i> Add User</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-body">
+          <!-- Registration Form -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title">Add New Credit User</h5>
+              <form id="creditUserForm" class="row g-3">
+                <div class="col-md-6">
+                  <label for="userName" class="form-label">Name</label>
+                  <input type="text" class="form-control" id="userName" placeholder="Enter name" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="userEmail" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="userEmail" placeholder="Enter email" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="userPhone" class="form-label">Phone</label>
+                  <input type="tel" class="form-control" id="userPhone" placeholder="Enter phone number" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="userAddress" class="form-label">Address</label>
+                  <input type="text" class="form-control" id="userAddress" placeholder="Enter address" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="credit limit" class="form-label">CreditLimit</label>
+                  <input type="text" class="form-control" id="credit limit" placeholder="Enter limit" required>
+                </div>
+                <div class="col-12">
+                  <button type="submit" class="btn btn-primary">Add User</button>
+                  <button type="button" class="btn btn-secondary" id="cancelAddBtn">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <div class="table-responsive">
+            <table class="table table-striped table-hover" id="creditUsersTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Address</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Users populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editUserModalLabel">Edit Credit User</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editUserForm">
+              <input type="hidden" id="editUserId">
+              <div class="mb-3">
+                <label for="editUserName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="editUserName" required>
+              </div>
+              <div class="mb-3">
+                <label for="editUserEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="editUserEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="editUserPhone" class="form-label">Phone</label>
+                <input type="tel" class="form-control" id="editUserPhone" required>
+              </div>
+              <div class="mb-3">
+                <label for="editUserAddress" class="form-label">Address</label>
+                <input type="text" class="form-control" id="editUserAddress" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmEditBtn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete user <strong><span id="deleteUserName"></span></strong>?</p>
+            <p>This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <strong class="me-auto">Success</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+      <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <strong class="me-auto">Error</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Sample user data (replace with API call in production)
+      const users = [
+        { id: "U001", name: "John Doe", email: "john.doe@example.com", phone: "123-456-7890", address: "123 Main St, City" },
+        { id: "U002", name: "Jane Smith", email: "jane.smith@example.com", phone: "987-654-3210", address: "456 Oak Ave, City" },
+      ];
+
+      // Populate table
+      function populateTable(searchTerm = '') {
+        const tbody = $('#usersTableBody');
+        tbody.empty();
+        const filteredUsers = users.filter(user =>
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.phone.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        filteredUsers.forEach(user => {
+          const row = `
+            <tr>
+              <td data-label="ID">${user.id}</td>
+              <td data-label="Name">${user.name}</td>
+              <td data-label="Email">${user.email}</td>
+              <td data-label="Phone">${user.phone}</td>
+              <td data-label="Address">${user.address}</td>
+              <td data-label="Actions">
+                <button class="btn btn-sm btn-primary edit-btn" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit</button>
+                <button class="btn btn-sm btn-danger delete-btn" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">Delete</button>
+              </td>
+            </tr>`;
+          tbody.append(row);
+        });
+        updateActions();
+      }
+
+      // Toggle form visibility
+      $('#addUserBtn').on('click', function () {
+        $('#creditUserForm').addClass('show');
+      });
+
+      $('#cancelAddBtn').on('click', function () {
+        $('#creditUserForm').removeClass('show');
+        $('#creditUserForm')[0].reset();
+      });
+
+      // Add new user
+      $('#creditUserForm').on('submit', function (e) {
+        e.preventDefault();
+        const name = $('#userName').val().trim();
+        const email = $('#userEmail').val().trim();
+        const phone = $('#userPhone').val().trim();
+        const address = $('#userAddress').val().trim();
+        if (!name || !email || !phone || !address) {
+          showToast('error', 'Please fill in all fields correctly.');
+          return;
+        }
+        const newUser = {
+          id: `U${(users.length + 1).toString().padStart(3, '0')}`,
+          name,
+          email,
+          phone,
+          address
+        };
+        users.push(newUser);
+        this.reset();
+        $('#creditUserForm').removeClass('show');
+        populateTable();
+        showToast('success', `User ${name} added successfully.`);
+      });
+
+      // Search users
+      $('#searchUsers').on('input', function () {
+        const searchTerm = $(this).val().trim();
+        populateTable(searchTerm);
+      });
+
+      // Edit user
+      function showEditUser(userId) {
+        const user = users.find(u => u.id === userId);
+        if (user) {
+          $('#editUserId').val(user.id);
+          $('#editUserName').val(user.name);
+          $('#editUserEmail').val(user.email);
+          $('#editUserPhone').val(user.phone);
+          $('#editUserAddress').val(user.address);
+        }
+      }
+
+      $('#confirmEditBtn').on('click', function () {
+        const userId = $('#editUserId').val();
+        const name = $('#editUserName').val().trim();
+        const email = $('#editUserEmail').val().trim();
+        const phone = $('#editUserPhone').val().trim();
+        const address = $('#editUserAddress').val().trim();
+        if (!name || !email || !phone || !address) {
+          showToast('error', 'Please fill in all fields correctly.');
+          return;
+        }
+        const userIndex = users.findIndex(u => u.id === userId);
+        if (userIndex !== -1) {
+          users[userIndex] = { id: userId, name, email, phone, address };
+          populateTable();
+          showToast('success', `User ${name} updated successfully.`);
+          $('#editUserModal').modal('hide');
+        }
+      });
+
+      // Delete user
+      $('.delete-btn').on('click', function () {
+        const userId = $(this).data('id');
+        const user = users.find(u => u.id === userId);
+        $('#deleteUserName').text(user ? user.name : '');
+        $('#confirmDeleteBtn').data('id', userId);
+      });
+
+      $('#confirmDeleteBtn').on('click', function () {
+        const userId = $(this).data('id');
+        const userIndex = users.findIndex(u => u.id === userId);
+        if (userIndex !== -1) {
+          const userName = users[userIndex].name;
+          users.splice(userIndex, 1);
+          populateTable();
+          showToast('success', `User ${userName} deleted successfully.`);
+          $('#deleteConfirmModal').modal('hide');
+        }
+      });
+
+      // Show toast notification
+      function showToast(type, message) {
+        const toast = $(`#${type}Toast`);
+        toast.find('.toast-body').text(message);
+        toast.toast({ delay: 3000 });
+        toast.toast('show');
+      }
+
+      // Update event listeners
+      function updateActions() {
+        $('.edit-btn').off('click').on('click', function () {
+          showEditUser($(this).data('id'));
+        });
+        $('.delete-btn').off('click').on('click', function () {
+          const userId = $(this).data('id');
+          const user = users.find(u => u.id === userId);
+          $('#deleteUserName').text(user ? user.name : '');
+          $('#confirmDeleteBtn').data('id', userId);
+        });
+      }
+
+      // Initialize modals and toasts
+      $('#editUserModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        showEditUser(button.data('id'));
+      });
+
+      // Initial setup
+      $(document).ready(function () {
+        populateTable();
+        $('.toast').toast({ animation: true, autohide: true, delay: 3000 });
+      });
+    </script>
+  </body>
+
+
+  {% endblock %}

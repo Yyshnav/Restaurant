@@ -1,0 +1,269 @@
+{% extends "sidebarman.html" %}
+{% block body %}
+
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="content-header row">
+      <div class="content-header-left col-md-6 col-12 mb-2">
+        <h3 class="content-header-title text-dark">Assign Printers to Categories</h3>
+      </div>
+      <div class="content-header-right col-md-6 col-12">
+        <div class="form-group float-right">
+          <button class="btn btn-primary" data-toggle="modal" data-target="#addPrinterModal">Add Printer</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-body">
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Subcategory Name</th>
+              <th>Assigned Printer</th>
+              <th>Branch</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subcategoriesBody">
+  {% for sub in subcategories %}
+    <tr data-sub-id="{{ sub.id }}">
+      <!-- Subcategory Name -->
+      <td>{{ sub.name }}</td>
+
+      <!-- Assigned Printer -->
+      <td>
+        {% if sub.printers.first %}
+          {{ sub.printers.first.name }}
+        {% else %}
+          Not Assigned
+        {% endif %}
+      </td>
+
+
+
+      <!-- Branch -->
+      <td>
+        {% if sub.printers.first %}
+          {{ sub.printers.first.branch.name }}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+
+      <!-- Actions -->
+      <td>
+        {% if sub.printers.first %}
+       <!-- Edit Button -->
+<button class="btn btn-sm btn-warning edit-printer-btn"
+        data-toggle="modal"
+        data-target="#editPrinterModal"
+        data-id="{{ sub.printers.first.id }}"
+        data-name="{{ sub.printers.first.name }}"
+        data-ip="{{ sub.printers.first.ip_address }}"
+        data-branch="{{ sub.printers.first.branch.id }}"
+        data-sub="{{ sub.id }}">
+  <i class="fas fa-edit"></i>
+</button>
+
+          <!-- Delete Button -->
+          <button class="btn btn-sm btn-danger delete-printer-btn" 
+                  onclick="window.location.href='/Managerapp/printer/delete/{{ sub.printers.first.id }}/'">
+            <i class="fas fa-trash"></i>
+          </button>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
+
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Printer Modal -->
+<div class="modal fade" id="addPrinterModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add New Printer</h5>
+        <button type="button" class="close" data-dismiss="modal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="printerName">Printer Name</label>
+          <input type="text" class="form-control" id="printerName" required>
+        </div>
+        <div class="form-group">
+          <label for="branchSelect">Branch</label>
+          <select class="form-control" id="branchSelect" required>
+            <option value="">Select a Branch</option>
+            {% for b in branches %}
+              <option value="{{ b.id }}">{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="subSelect">Subcategory</label>
+          <select class="form-control" id="subSelect" required>
+            <option value="">Select a Subcategory</option>
+            {% for s in subcategories %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="printerIp">IP Address (optional)</label>
+          <input type="text" class="form-control" id="printerIp">
+        </div>
+        <button class="btn btn-primary" onclick="addPrinter()">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Printer Modal -->
+<div class="modal fade" id="editPrinterModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="editPrinterForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Printer</h5>
+          <button type="button" class="close" data-dismiss="modal">×</button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="editPrinterId" name="id">
+
+          <div class="form-group">
+            <label for="editPrinterName">Printer Name</label>
+            <input type="text" class="form-control" id="editPrinterName" name="name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editBranchSelect">Branch</label>
+            <select class="form-control" id="editBranchSelect" name="branch_id" required>
+              {% for b in branches %}
+                <option value="{{ b.id }}">{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="editSubSelect">Subcategory</label>
+            <select class="form-control" id="editSubSelect" name="sub_id" required>
+              {% for s in subcategories %}
+                <option value="{{ s.id }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="editPrinterIp">IP Address (optional)</label>
+            <input type="text" class="form-control" id="editPrinterIp" name="ip_address">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.split('=')[1]);
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function addPrinter() {
+  const name = $('#printerName').val().trim();
+  const branch_id = $('#branchSelect').val();
+  const sub_id = $('#subSelect').val();
+  const ip_address = $('#printerIp').val().trim();
+
+  if (!name || !branch_id || !sub_id) {
+    alert('Please fill Printer Name, Branch and Subcategory.');
+    return;
+  }
+
+  $.ajax({
+    url: '/Managerapp/printers/add/',
+    method: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({ name, branch_id, sub_id, ip_address }),
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    success: function (resp) {
+      // ✅ Reload page on success (like delete does)
+      location.reload();
+    },
+    error: function (xhr) {
+      const msg = xhr.responseJSON?.error || 'Failed to add printer';
+      alert(msg);
+    }
+  });
+}
+
+// Prefill Edit Modal
+$(document).on("click", ".edit-printer-btn", function () {
+  const printerId = $(this).data("id");
+
+  $("#editPrinterId").val(printerId);
+  $("#editPrinterName").val($(this).data("name"));
+  $("#editPrinterIp").val($(this).data("ip"));
+  $("#editBranchSelect").val($(this).data("branch"));
+  $("#editSubSelect").val($(this).data("sub"));
+
+  // Update form action dynamically
+  $("#editPrinterForm").attr("action", `/Managerapp/printers/edit/${printerId}/`);
+
+  $("#editPrinterModal").modal("show");
+});
+
+// AJAX Submit
+$("#editPrinterForm").on("submit", function (e) {
+  e.preventDefault();
+  const form = $(this);
+
+  $.ajax({
+    url: form.attr("action"),
+    method: "POST",
+    data: form.serialize(),  // Django-friendly (form encoded)
+    success: function (resp) {
+      if (resp.status === "success") {
+        $("#editPrinterModal").modal("hide");
+        location.reload(); // refresh page OR update row instantly
+      } else {
+        alert("Update failed!");
+      }
+    },
+    error: function (xhr) {
+      alert("Failed to update printer: " + xhr.responseText);
+    }
+  });
+});
+
+</script>
+
+{% endblock %}

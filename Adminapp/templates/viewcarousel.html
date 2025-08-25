@@ -60,7 +60,7 @@
                   <th>Offer %</th>
                   <th>Start Date</th>
                   <th>End Date</th>
-                  <th>Status</th>
+                  <!-- <th>Status</th> -->
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -82,14 +82,9 @@
                     <td>{{ carousel.offer_percentage }}%</td>
                     <td>{{ carousel.start_ist }}</td>
                     <td>{{ carousel.end_ist }}</td>
+                  
                     <td>
-                      <label class="switch">
-                        <input type="checkbox" {% if carousel.is_active %}checked{% endif %} disabled>
-                        <span class="slider"></span>
-                      </label>
-                    </td>
-                    <td>
-                      <button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
+                      <!-- <button onclick="window.location='/editcarousel/{{ carousel.id }}/'" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button> -->
                       <button onclick="window.location='/delete-carousel/{{ carousel.id }}/'" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
                     </td>
                   </tr>
@@ -105,4 +100,4 @@
   </div>
 </div>
 
-{% endblock %}
+{% endblock %}  
