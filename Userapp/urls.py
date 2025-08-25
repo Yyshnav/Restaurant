@@ -4,7 +4,7 @@ from Deliveryboyapp.views import OrderHistoryAPIView
 from Userapp.views import *
 
 from rest_framework_simplejwt.views import (
-    TokenRefreshView,
+TokenRefreshView,
 )
 
 urlpatterns = [
@@ -45,4 +45,9 @@ urlpatterns = [
     path("trackorders/<int:orderid>/", TrackAPIView.as_view(), name='trackorder'),
     path('userorderhistory/', OrderHistoryAPIView.as_view(), name='order-history'),
 ]
+    path('myorder/', UserOrdersView.as_view(), name='my-orders'),
+    path('feedback/', FeedbackView.as_view(), name='feedback'),
+
+    ]
+
 
