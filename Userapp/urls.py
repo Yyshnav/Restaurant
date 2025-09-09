@@ -28,9 +28,11 @@ urlpatterns = [
     path('items/', ItemListAPIView.as_view(), name='item-list'),
     path('branchitems/', BranchItemsAPIView.as_view(), name='item-list'),
     path('wishlist/', WishlistAPIView.as_view(), name='wishlist'),
-    path('wishlist/<int:pk>/', WishlistDeleteAPIView.as_view(), name='wishlist-delete'),
+    path('wishlistdelete/<int:id>/', WishlistDeleteAPIView.as_view(), name='wishlist-delete'),
     path('cartitems/', CartAPIView.as_view(), name='cart'),
-    path('cart/<int:pk>/', CartDeleteAPIView.as_view(), name='cart-detail'),
+    # path('cart/<int:pk>/', CartDeleteAPIView.as_view(), name='cart-detail'),
+    path("cart/<int:pk>/", CartDeleteAPIView.as_view(), name="cart-delete"),
+    path('cartaddon/<int:cart_id>/addon/<int:addon_id>/', CartAddonDeleteAPIView.as_view(), name='cart-addon-delete'),
     path('changeaddress/<int:address_id>/', ChangeAddressAPIView.as_view(), name='change-address'),
     path('trackorder/<int:order_id>/', TrackDeliveryLocationAPI.as_view(), name='track-order'),
     path('profile/', ProfileAPIView.as_view(), name='user-profile'),
@@ -49,7 +51,3 @@ urlpatterns = [
     path('feedback/', FeedbackView.as_view(), name='feedback'),
     path('carouseloffers/<int:carousel_id>/', CarouselOffersAPIView.as_view(), name='carousel-offer'),
 ]
-
-    
-
-

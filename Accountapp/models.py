@@ -106,6 +106,7 @@ class DeliveryBoyTable(models.Model):
     idproof = models.FileField(upload_to='deliveryboy_idproofs/', null=True, blank=True)
     license = models.FileField(upload_to='deliveryboy_licenses/', null=True, blank=True)
     userid = models.OneToOneField(LoginTable, on_delete=models.CASCADE, related_name='deliveryboy_profile')
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         """Whenever we create a DeliveryBoy, make sure user has DELIVERY role."""
@@ -157,7 +158,7 @@ class ProfileTable(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self):  
         return self.name
 
     
@@ -371,7 +372,7 @@ class CartTable(models.Model):
     fooditem = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='cart_entries')
     quantity = models.CharField(max_length=100, null=True, blank=True)
     price = models.FloatField(null=True, blank=True)
-    addon = models.ForeignKey(AddonTable, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_addons')
+    addon = models.ManyToManyField(AddonTable, blank=True)   # ✅ addons linked here
     variant = models.ForeignKey(ItemVariantTable, on_delete=models.SET_NULL, null=True, blank=True)
     instruction = models.CharField(max_length=200, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
@@ -379,11 +380,11 @@ class CartTable(models.Model):
     total_price = models.FloatField(null=True, blank=True) 
 
     def __str__(self):
-        return f"{self.userid} - {self.fooditem} x {self.quantity}"
+        return f"{self.userid} - {self.fooditem} x {self.quantity}" 
     
 class WishlistTable(models.Model):
     userid = models.ForeignKey(LoginTable, on_delete=models.CASCADE, related_name='wishlist_items')
-    fooditem = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='wishlist_entries')
+    fooditem = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name= 'wishlist_entries')
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -409,7 +410,7 @@ class DeliveryTable(models.Model):
     address = models.ForeignKey(AddressTable, on_delete=models.CASCADE, related_name='deliveries', null=True, blank=True)
     # latitude = models.FloatField(null=True, blank=True)
     # longitude = models.FloatField(null=True, blank=True)
-    # voice_instruction = models.FileField(upload_to='delivery_instructions/', null=True, blank=True)
+    # voice_instruction = models.FileField(upload_to='delivery_instructions/', null=True, blank=True) 
     phone = models.CharField(max_length=15)
     instruction = models.CharField(max_length=450, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

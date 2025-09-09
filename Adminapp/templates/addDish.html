@@ -108,8 +108,8 @@
                   <label>Variants</label>
                   <div id="variantContainer">
                     <div class="variant-field">
-                      <input type="text" name="variants[0][name]" placeholder="Variant (e.g., Half)" required>
-                      <input type="number" name="variants[0][price]" placeholder="Price" step="0.01" required>
+                      <input type="text" name="variants[0][name]" placeholder="Variant (e.g., Half)" >
+                      <input type="number" name="variants[0][price]" placeholder="Price" step="0.01" >
                       <button type="button" onclick="removeVariant(this)" class="btn btn-danger btn-sm">X</button>
                     </div>
                   </div>
@@ -232,8 +232,8 @@ function addVariant() {
   variantDiv.classList.add('variant-field', 'mb-2');
 
   variantDiv.innerHTML = `
-      <input type="text" name="variants[${variantIndex}][name]" placeholder="Variant (e.g., Half)" required>
-      <input type="number" name="variants[${variantIndex}][price]" placeholder="Price" step="0.01" required oninput="updateMainPrice()">
+      <input type="text" name="variants[${variantIndex}][name]" placeholder="Variant (e.g., Half)" >
+      <input type="number" name="variants[${variantIndex}][price]" placeholder="Price" step="0.01"  oninput="updateMainPrice()">
       <button type="button" onclick="removeVariant(this)" class="btn btn-danger btn-sm">X</button>
     `;
 

@@ -5,14 +5,10 @@ from Accountapp.serializer import LoginTableSerializer
 
 
 class AddonSerializer(serializers.ModelSerializer):
-    item = serializers.PrimaryKeyRelatedField(
-        queryset=ItemTable.objects.all(),
-        source='itemid',
-        write_only=True
-    )
     class Meta:
         model = AddonTable
-        fields = '__all__'
+        fields = ['id', 'name', 'price']   # whatever fields you need
+
 
 class VoiceDescriptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -69,15 +65,17 @@ class ItemImageSerializer(serializers.ModelSerializer):
 #             return round(sum(ratings) / len(ratings), 1)
 #         return None
 class ItemSerializer(serializers.ModelSerializer):
-    variants = ItemVariantSerializer(many=True, read_only=True)
+    variants = ItemVariantSerializer(many=True, read_only=True, required=False)
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     subsubcategory_name = serializers.CharField(source='subsubcategory.name', read_only=True)
     voice_descriptions = VoiceDescriptionSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     images = ItemImageSerializer(many=True, read_only=True)
+    addons = AddonSerializer(many=True, read_only=True)
     # images = serializers.FileField(source='subsubcategory.name', read_only=True)
     is_wishlisted = serializers.SerializerMethodField()
+
     # is_wishlist = serializers.CharField()
     class Meta:
         model = ItemTable
@@ -86,7 +84,7 @@ class ItemSerializer(serializers.ModelSerializer):
             'subsubcategory', 'subsubcategory_name', 'is_veg', 'preparation_time',
             'images', 'description', 'price','preparation_time',
             'variants', 'voice_descriptions', 'created_at', 'updated_at', 'fast_delivery', 'newest',
-            'average_rating', 'is_wishlisted'
+            'average_rating', 'addons', 'is_wishlisted'
         ]
 
     def get_average_rating(self, obj):

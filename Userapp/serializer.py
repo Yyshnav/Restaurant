@@ -1,10 +1,12 @@
 from decimal import Decimal
+from django.http import JsonResponse
 from rest_framework import serializers
+from rest_framework import status
 from django.contrib.auth import get_user_model
 from sympy import Q
 from django.core.exceptions import ObjectDoesNotExist
 
-from Accountapp.models import AddressTable, BranchTable, CartTable, CouponTable, DeliveryTable, FeedbackTable, ItemTable, ItemVariantTable, OrderItemTable, OrderTable, ProfileTable, RatingTable, WishlistTable
+from Accountapp.models import *
 from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer
 # from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSerializer
@@ -21,6 +23,7 @@ class ProfileTableSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'phone',
+            'email',
             'image',
             'address',
             'dob',
@@ -45,25 +48,25 @@ class RatingTableSerializer(serializers.ModelSerializer):
         ]
 
 
-class CartTableSerializer(serializers.ModelSerializer):
-    userid = LoginTableSerializer(read_only=True)
-    fooditem = ItemSerializer(read_only=True)
-    addon = AddonSerializer(read_only=True)
+# class CartTableSerializer(serializers.ModelSerializer):
+#     userid = LoginTableSerializer(read_only=True)
+#     fooditem = ItemSerializer(read_only=True)
+#     addon = AddonSerializer(read_only=True)
 
-    class Meta:
-        model = CartTable
-        fields = [
-            'id',
-            'userid',
-            'fooditem',
-            'quantity',
-            'price',
-            'addon',
-            'instruction',
-            'added_at',
-            'updated_at',
-            'total_price',
-        ]
+#     class Meta:
+#         model = CartTable
+#         fields = [
+#             'id',
+#             'userid',
+#             'fooditem',
+#             'quantity',
+#             'price',
+#             'addon',
+#             'instruction',
+#             'added_at',
+#             'updated_at',
+#             'total_price',
+#         ]
 
 
 
@@ -96,27 +99,35 @@ class OrderItemTableSerializer(serializers.ModelSerializer):
 
 #     class Meta:
 #         model = WishlistTable
-        # fields = ['id', 'userid', 'fooditem', 'added_at']     
+        # fields = ['id', 'userid', 'fooditem', 'added_at']    
+        # 
+class AddonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddonTable
+        fields = '__all__'
+
 
 class CartSerializer(serializers.ModelSerializer):
     fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
     fooditem_price = serializers.FloatField(source='fooditem.price', read_only=True)
-    addon_name = serializers.CharField(source='addon.name', read_only=True)
+    addon = AddonSerializer(many=True, read_only=True)
+    addon_name = serializers.SerializerMethodField()
     is_veg = serializers.BooleanField(source='fooditem.is_veg', read_only=True)
     variant_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CartTable
-        fields = [
-            'id', 'fooditem', 'fooditem_name', 'quantity', 'price', 'addon', 'addon_name','fooditem_price',
-            'instruction', 'added_at', 'updated_at', 'total_price', 'variant_name', 'is_veg', 'variant_id'
-        ]
-        read_only_fields = ['id', 'added_at', 'updated_at', 'fooditem_name', 'addon_name']
+        fields = '__all__'
+
+    def get_addon_name(self, obj):
+        return [a.name for a in obj.addon.all()]
 
     def get_variant_name(self, obj):
-    # If your CartTable doesn't have a direct variant FK, you can skip or modify this.
-        variant_qs = obj.fooditem.variants.all()
-        return variant_qs[0].variant_name if variant_qs.exists() else None
+        return obj.variant.name if obj.variant else None
+
+    def get_available_addons(self, obj):
+        addons = AddonTable.objects.filter(item=obj.fooditem)
+        return AddonSerializer(addons, many=True).data
 
 class ProfileNameUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -198,15 +209,27 @@ class UserOrderItemSerializer(serializers.Serializer):
 
     def validate(self, data):
         item_id = data.get('itemname')
-        variant_id = data.get('variant_id')
+        variant_id = data.get('variant_id') or None
         addon_id = data.get('addon_id')
 
         if not ItemTable.objects.filter(id=item_id.id).exists():
             raise serializers.ValidationError(f"Item with id {item_id} does not exist.")
-        if variant_id and not ItemVariantTable.objects.filter(id=variant_id, item_id=item_id).exists():
-            raise serializers.ValidationError(f"Variant with id {variant_id} does not exist for item {item_id}.")
-        if addon_id and not ItemTable.objects.filter(id=addon_id).exists():
-            raise serializers.ValidationError(f"Addon with id {addon_id} does not exist.")
+        # if variant_id and not ItemVariantTable.objects.filter(id=variant_id, item_id=item_id).exists():
+        #     raise serializers.ValidationError(f"Variant with id {variant_id} does not exist for item {item_id}.")
+        variant = None
+        if variant_id and variant_id != 0:
+            try:
+                variant = ItemVariantTable.objects.get(id=variant_id)
+            except ItemVariantTable.DoesNotExist:
+                return JsonResponse({"error": f"Variant with ID {variant_id} not found."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+        # if addon_id and not ItemTable.objects.filter(id=addon_id).exists():
+            # raise serializers.ValidationError(f"Addon with id {addon_id} does not exist.")
+        if addon_id is not None:
+            if not ItemTable.objects.filter(id=addon_id).exists():
+                raise serializers.ValidationError(
+                    f"Addon with id {addon_id} does not exist."
+                )
         
         return data
 

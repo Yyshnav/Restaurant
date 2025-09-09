@@ -151,11 +151,28 @@ class AddDishView(View):
         subcategory_id = request.POST.get('subcategory')
         subsubcategory_id = request.POST.get('subsubcategory')
         is_veg = request.POST.get('is_veg') == 'True'
-        description = request.POST.get('description')
-        price = request.POST.get('price') or 0
-        inventory = request.POST.get('inventory') or 0
-        calories = request.POST.get('calories') or 0
-        preparation_time = float(request.POST.get('preparation_time') or 0)
+        description = request.POST.get('description', "")
+
+        # Safe conversions for numeric fields
+        try:
+            price = float(request.POST.get('price') or 0)
+        except ValueError:
+            price = 0
+
+        try:
+            inventory = int(request.POST.get('inventory') or 0)
+        except ValueError:
+            inventory = 0
+
+        try:
+            calories = int(request.POST.get('calories') or 0)
+        except ValueError:
+            calories = 0
+
+        try:
+            preparation_time = float(request.POST.get('preparation_time') or 0)
+        except ValueError:
+            preparation_time = 0
 
         # Automatically assign fast_delivery if prep time < 20
         fast_delivery = preparation_time < 20
@@ -194,34 +211,54 @@ class AddDishView(View):
         for lang, audio in zip(voice_languages, voice_files):
             VoiceDescriptionTable.objects.create(item=item, language=lang, audio_file=audio)
 
-        # Variants
+        # Variants (optional)
         index = 0
         while True:
             name_key = f"variants[{index}][name]"
             price_key = f"variants[{index}][price]"
             if name_key not in request.POST or price_key not in request.POST:
                 break
-            variant_name = request.POST[name_key]
-            variant_price = request.POST[price_key]
-            ItemVariantTable.objects.create(item=item, variant_name=variant_name, price=variant_price)
+
+            variant_name = request.POST.get(name_key, "").strip()
+            variant_price = request.POST.get(price_key, "").strip()
+
+            if variant_name:  # only save if name is filled
+                try:
+                    variant_price = float(variant_price) if variant_price else 0
+                except ValueError:
+                    variant_price = 0
+
+                ItemVariantTable.objects.create(
+                    item=item,
+                    variant_name=variant_name,
+                    price=variant_price
+                )
             index += 1
 
-        # Addons
+        # Addons (optional)
         addon_names = request.POST.getlist('addon_name[]')
         addon_prices = request.POST.getlist('addon_price[]')
         addon_images = request.FILES.getlist('addon_image[]')
         addon_descriptions = request.POST.getlist('addon_description[]')
 
-        for name, price, desc, image in zip(addon_names, addon_prices, addon_descriptions, addon_images):
-            AddonTable.objects.create(
-                item=item,
-                name=name,
-                price=price or 0,
-                description=desc,
-                image=image
-            )
+        for addon_name, addon_price, desc, image in zip(addon_names, addon_prices, addon_descriptions, addon_images):
+            addon_name = addon_name.strip()
+            if addon_name:  # only save if name is filled
+                try:
+                    addon_price = float(addon_price) if addon_price else 0
+                except ValueError:
+                    addon_price = 0
+
+                AddonTable.objects.create(
+                    item=item,
+                    name=addon_name,
+                    price=addon_price,
+                    description=desc,
+                    image=image
+                )
 
         return redirect('view-dishes')
+
     
 
 def get_subcategories(request):
