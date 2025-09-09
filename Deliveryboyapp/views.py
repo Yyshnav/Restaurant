@@ -198,9 +198,13 @@ class LatestPendingOrdersAPIView(APIView):
             return Response({'error': 'DeliveryBoyTable not found for user'}, status=status.HTTP_404_NOT_FOUND)
         
         # Get latest orders assigned to this delivery boy with status 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED']).order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED', 'ASSIGNED']).order_by('-id')
         serializer = OrderSerializer(orders, many=True)
-        print("Orders:", serializer.data)
+        print("DeliveryBoy:", delivery_boy.id)
+        print("Orders count:", orders.count())
+        print("All Orders for this delivery boy:", list(
+            OrderTable.objects.filter(deliveryid=delivery_boy).values('id','orderstatus')
+        ))
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

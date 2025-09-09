@@ -689,5 +689,3 @@ class CreditUserListView(View):
     def get(self, request):
         users = list(CreditUser.objects.values("id", "Name"))
         return JsonResponse({"credit_users": users})
-    
-    

@@ -384,7 +384,7 @@
       <div class="modal-body">
         <p>Select a credit user for Order <span id="creditOrderId"></span>:</p>
         <select class="form-select" id="creditUserSelect">
-          <option value="">Loading...</option>
+          <option value="">--- Please Select User ---</option>
         </select>
       </div>
       <div class="modal-footer">
@@ -418,12 +418,21 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-const creditUsers = [
-  { id: "CU001", name: "Chris Evans" },
-  { id: "CU002", name: "Natalie Portman" },
-  { id: "CU003", name: "Robert Downey" }
-];
-      // Sample order data (replace with API call in production)
+    let creditUsers = [];  
+
+    function loadCreditUsers() {
+  return fetch('/credit-users/')
+    .then(res => res.json())
+    .then(data => {
+      creditUsers = data.credit_users || [];
+    })
+    .catch(err => {
+      console.error("Error fetching credit users:", err);
+      showToast('error', 'Failed to load credit users.');
+      creditUsers = [];
+    });
+}
+
       let orders = [];
 
 function fetchOrders() {
@@ -878,12 +887,12 @@ function confirmAssign() {
         location.reload();
       }, 1000);
     } else {
-      showToast('error', data.error || 'Failed to assign delivery boy');
+      showToast('error', data.error || 'Failed to assign delivery boy')
     }
   })
   .catch(err => {
     console.error(err);
-    showToast('error', 'Error occurred while assigning delivery boy.');
+    showToast('error', 'Error occurred while assigning delivery boy.')
   });
 }
 
@@ -895,39 +904,48 @@ $(document).ready(function () {
   $("#confirmAssignBtn").on("click", confirmAssign);
 });   
 
-      // Update event listeners
-      function updateActions() {
-        $('.view-btn').off('click').on('click', function () {
-          const orderId = $(this).data('id');
-          showOrderDetails(orderId);
-        });
-        // $('.payment-status-select').off('change').on('change', function () {
-        //   const orderId = $(this).data('id');
-        //   const newStatus = $(this).val();
-        //   if (newStatus) {
-        //     $('#paymentOrderId').text(`#${orderId}`);
-        //     $('#newPaymentStatus').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-        //     $('#confirmPaymentBtn').data('id', orderId).data('status', newStatus);
-        //     $('#paymentConfirmModal').removeAttr('inert').modal('show');
-        //     $(this).val('');
-        //   }
-        // });
-       
-$('.payment-status-select').off('change').on('change', function () {
+
+
+    function updateActions() {
+  $('.view-btn').off('click').on('click', function () {
+    const orderId = $(this).data('id');
+    showOrderDetails(orderId);
+  });
+
+  $('.payment-status-select').off('change').on('change', function () {
   const orderId = $(this).data('id');
   const newStatus = $(this).val();
+
   if (newStatus) {
     if (newStatus === 'credit') {
       // Show Credit User selection modal
       $('#creditOrderId').text(`#${orderId}`);
-      $('#creditUserSelect').empty();
-      creditUsers.forEach(user => {
-        $('#creditUserSelect').append(`<option value="${user.id}">${user.name}</option>`);
-      });
+      $('#creditUserSelect').empty().append('<option value="">Loading...</option>');
+
+      // Fetch credit users from backend
+        $.get('/Managerapp/credit-users/', function (response) {
+          $('#creditUserSelect').empty();
+
+          if (response.credit_users && response.credit_users.length > 0) {
+            // Always add default first option
+            $('#creditUserSelect').append('<option value="">Please select a credit user</option>');
+
+            response.credit_users.forEach(user => {
+              $('#creditUserSelect').append(`<option value="${user.id}">${user.Name}</option>`);
+            });
+          } else {
+            $('#creditUserSelect').append('<option value="">No credit users available</option>');
+          }
+        }).fail(function () {
+          $('#creditUserSelect').empty().append('<option value="">Error loading users</option>');
+        });
+
+
       $('#confirmCreditUserBtn').data('id', orderId);
       $('#creditUserSelectModal').removeAttr('inert').modal('show');
       $(this).val('');
     } else {
+      // Normal payment status flow
       $('#paymentOrderId').text(`#${orderId}`);
       $('#newPaymentStatus').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
       $('#confirmPaymentBtn').data('id', orderId).data('status', newStatus);
@@ -936,6 +954,7 @@ $('.payment-status-select').off('change').on('change', function () {
     }
   }
 });
+
 
 
 
