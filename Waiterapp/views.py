@@ -31,17 +31,40 @@ from django.utils.decorators import method_decorator
 from Accountapp.models import *
 from django.utils.timezone import now, localtime
 
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
+from django.shortcuts import render
+
+@login_required(login_url='/')
+@never_cache
 def ordering(request):
-    # Ensure sample data if database is empty
+    # Only allow access if session flag is set
+    if not request.session.get('waiter_access', False):
+        return redirect('/')  # redirect to manager login/dashboard
+
+    # Clear session flag to prevent back navigation
+    request.session['waiter_access'] = False
+
+    # --- your existing code for items/tables/waiters ---
     if not ItemTable.objects.exists():
         category = CategoryTable.objects.get_or_create(name="food")[0]
         branch = BranchTable.objects.get_or_create(name="Main Branch")[0]
         DiningTable.objects.get_or_create(table_number="1", branch=branch)
         DiningTable.objects.get_or_create(table_number="2", branch=branch)
-        WaiterTable.objects.get_or_create(name="Waiter1", userid=User.objects.get_or_create(username="waiter1")[0])
-        WaiterTable.objects.get_or_create(name="Waiter2", userid=User.objects.get_or_create(username="waiter2")[0])
-        item1 = ItemTable.objects.get_or_create(name="Burger", price=5.99, category=category, images=[{"url": "default.jpg"}])[0]
-        item2 = ItemTable.objects.get_or_create(name="Pizza", price=8.99, category=category, images=[{"url": "default.jpg"}])[0]
+        WaiterTable.objects.get_or_create(
+            name="Waiter1", userid=User.objects.get_or_create(username="waiter1")[0]
+        )
+        WaiterTable.objects.get_or_create(
+            name="Waiter2", userid=User.objects.get_or_create(username="waiter2")[0]
+        )
+        item1 = ItemTable.objects.get_or_create(
+            name="Burger", price=5.99, category=category,
+            images=[{"url": "default.jpg"}]
+        )[0]
+        item2 = ItemTable.objects.get_or_create(
+            name="Pizza", price=8.99, category=category,
+            images=[{"url": "default.jpg"}]
+        )[0]
         ItemVariantTable.objects.get_or_create(item=item1, variant_name="Small", price=4.99)
         ItemVariantTable.objects.get_or_create(item=item1, variant_name="Large", price=7.99)
         ItemVariantTable.objects.get_or_create(item=item2, variant_name="Medium", price=6.99)
@@ -52,17 +75,15 @@ def ordering(request):
     waiters = WaiterTable.objects.all()
     branch = BranchTable.objects.first()
 
-    # Prepare items with their variants from ItemVariantTable
     items_with_variants = []
     for item in items:
         variants = list(item.variants.values('variant_name', 'price'))
-        print(variants)
         items_with_variants.append({
             'id': item.id,
             'name': item.name,
             'price': float(item.price),
             'category': item.category.name if item.category else 'uncategorized',
-            'images': item.images,  # Preserve your original images field
+            'images': item.images,
             'variants': variants if variants else [{'variant_name': 'Standard', 'price': float(item.price)}]
         })
 
@@ -73,6 +94,8 @@ def ordering(request):
         'branch': branch,
     }
     return render(request, 'waiter.html', context)
+
+
 
 @csrf_exempt
 def authenticate_waiter(request):

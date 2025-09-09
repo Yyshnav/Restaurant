@@ -1,6 +1,7 @@
 import datetime
 from multiprocessing.connection import Client
 from time import timezone
+import traceback
 from django.shortcuts import get_object_or_404, render
 import json
 from rest_framework.views import APIView
@@ -30,85 +31,138 @@ from django.db import transaction
 # Create your views here.
 #auth views
 
-class SendOTPView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        phone = request.data.get('phone')
-        print(phone)
-        if not phone:
-            return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        otp = random.randint(1000, 9999)
-        print(otp)
-        try:
-            user, created = LoginTable.objects.get_or_create(phone=phone)
-            user.otp = otp
-            user.save()
-            #need to change later
-            if created:
-                # 🔒 Assign 'USER' role to new user
-                user_role = UserRole.objects.get(role='USER')
-                user.user_roles.add(user_role)
-                user.save()
-        except Exception as e:
-            return Response({'error': 'Database error.'}, status=status.HTTP_201_CREATED)
-        #need o chage later
-        try:
-            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-            message = client.messages.create(
-                body=f'Your OTP is {otp}',
-                from_=settings.TWILIO_PHONE_NUMBER,
-                to=phone
-            )
-        except Exception as e:
-            return Response({'error': 'Failed to send SMS.'}, status=status.HTTP_201_CREATED)
-        
-        return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
 
 # class SendOTPView(APIView):
+#     permission_classes = [AllowAny]
 #     def post(self, request):
 #         phone = request.data.get('phone')
+#         print(phone)
 #         if not phone:
 #             return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Generate OTP
+        
 #         otp = random.randint(1000, 9999)
-
-#         # Save or create user with OTP
+#         print(otp)
 #         try:
 #             user, created = LoginTable.objects.get_or_create(phone=phone)
 #             user.otp = otp
 #             user.save()
+#             #need to change later
+#             if created:
+#                 # 🔒 Assign 'USER' role to new user
+#                 user_role = UserRole.objects.get(role='USER')
+#                 user.user_roles.add(user_role)
+#                 user.save()
 #         except Exception as e:
-#             return Response({'error': 'Database error.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-#         # Send OTP using Fast2SMS
+#             return Response({'error': 'Database error.'}, status=status.HTTP_201_CREATED)
+#         #need o chage later
 #         try:
-#             url = "https://www.fast2sms.com/dev/bulkV2"
-#             headers = {
-#                 'authorization': settings.FAST2SMS_API_KEY,
-#                 'Content-Type': "application/json"
-#             }
-#             payload = {
-#                 "route": "otp",
-#                 "variables_values": str(otp),
-#                 "numbers": phone.replace('+91', '')  # Fast2SMS expects 10-digit number
-#             }
-
-#             response = requests.post(url, json=payload, headers=headers)
-#             if response.status_code != 200:
-#                 return Response({
-#                     'error': 'Failed to send OTP.',
-#                     'details': response.text
-#                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+#             client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+#             message = client.messages.create(
+#                 body=f'Your OTP is {otp}',
+#                 from_=settings.TWILIO_PHONE_NUMBER,
+#                 to=phone
+#             )
 #         except Exception as e:
-#             return Response({'error': 'SMS sending failed.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#             return Response({'error': 'Failed to send SMS.'}, status=status.HTTP_201_CREATED)
+        
+#         return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
 
-#         return Response({'message': 'OTP sent successfully.', 'otp': otp}, status=status.HTTP_200_OK)  # `otp` can be hidden in production
-    
+class SendOTPView(APIView):
+    def post(self, request):
+        print("SendOTPView POST called")  # DEBUG: View is hit
+        try:
+            phone = request.data.get('phone')
+            print("Phone received:", phone)  # DEBUG
+
+            if not phone:
+                return Response({'error': 'Phone number is required.'}, status=400)
+
+            otp = random.randint(1000, 9999)
+            print("Generated OTP:", otp)  # DEBUG
+
+            # -------------------------
+            # Database: Create or update user
+            try:
+                user, created = LoginTable.objects.get_or_create(
+                    phone=phone,
+                    defaults={
+                        'username': phone,
+                        'otp': str(otp)
+                    }
+                )
+                print(f"User {'created' if created else 'exists'}:", user)  # DEBUG
+
+                # Assign default role if new user
+                if created and not user.user_roles.exists():
+                    default_role = UserRole.objects.filter(role="student").first()
+                    if default_role:
+                        user.user_roles.add(default_role)
+                        print("Default role assigned")  # DEBUG
+
+                # Update OTP for existing user
+                if not created:
+                    user.otp = str(otp)
+                    user.save()
+                    print("OTP updated for existing user")  # DEBUG
+
+            except Exception as e:
+                print("Database Exception:", e)
+                traceback.print_exc()
+                return Response({
+                    'error': 'Database error',
+                    'details': str(e)
+                }, status=500)
+
+            # -------------------------
+            # SMS: Send OTP via Fast2SMS
+            api_key = getattr(settings, "FAST2SMS_API_KEY", None)
+            print("API key:", api_key)  # DEBUG
+            if not api_key:
+                return Response({'error': 'API key missing'}, status=500)
+
+            payload = {
+                "route": "otp",
+                "variables_values": str(otp),
+                "numbers": phone.replace('+91', '')  # 10-digit number
+            }
+            print("Payload for Fast2SMS:", payload)  # DEBUG
+
+            try:
+                response = requests.post(
+                    "https://www.fast2sms.com/dev/bulkV2",
+                    json=payload,
+                    headers={'authorization': api_key, 'Content-Type': "application/json"}
+                )
+                print("Fast2SMS response:", response.text)  # DEBUG
+
+                if response.status_code != 200:
+                    return Response({
+                        'error': 'Failed to send OTP',
+                        'status_code': response.status_code,
+                        'details': response.text
+                    }, status=500)
+
+            except Exception as e:
+                print("SMS Exception:", e)
+                traceback.print_exc()
+                return Response({
+                    'error': 'SMS sending failed',
+                    'details': str(e)
+                }, status=500)
+
+            return Response({'message': 'OTP sent successfully', 'otp': otp}, status=200)
+
+        except Exception as e:
+            print("Unhandled Exception:", e)
+            traceback.print_exc()
+            return Response({
+                'error': 'Something went wrong',
+                'details': str(e)
+            }, status=500)
+        
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request):
         phone = request.data.get('phone')
         otp = request.data.get('otp')
@@ -120,7 +174,6 @@ class VerifyOTPView(APIView):
             user = LoginTable.objects.get(phone=phone)
 
             if str(user.otp) == str(otp):
-                # Optional: Update OTP verification timestamp or status
                 user.otp_verified = True
                 user.save()
 
@@ -129,14 +182,31 @@ class VerifyOTPView(APIView):
                 access_token = str(refresh.access_token)
                 refresh_token = str(refresh)
 
-                print(f"Access Token: {access_token}")
-                print(f"Refresh Token: {refresh_token}")
+                print(f"Fetching profile for user with phone: {phone}")
+
+                
+                try:
+                    profile = ProfileTable.objects.get(loginid=user)
+                    print(f"Profile found for user {phone}: {profile}")
+                    profile_data = {
+                        "name": profile.name,
+                        "phone": profile.phone,
+                        "email": profile.email,
+                        "dob": profile.dob,
+                        "image": profile.image.url if profile.image else None,
+                        "created_at": profile.created_at,
+                        "updated_at": profile.updated_at,
+                    }
+                except ProfileTable.DoesNotExist:
+                    profile_data = None
 
                 return Response({
                     'message': 'OTP verified successfully.',
                     'access_token': access_token,
-                    'refresh_token': refresh_token
+                    'refresh_token': refresh_token,
+                    'profile': profile_data if profile_data else "No profile found for this user."
                 }, status=status.HTTP_200_OK)
+
             else:
                 return Response({'error': 'Invalid OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -144,6 +214,8 @@ class VerifyOTPView(APIView):
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': 'Database error.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
     
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
@@ -308,7 +380,6 @@ class AddToCartView(APIView):
             addon = None
             if addon_id:
                 addon = ItemTable.objects.get(id=addon_id)
-
             price = fooditem.price
             addon_price = addon.price if addon else 0.0
             total_price = (float(price) + float(addon_price)) * int(quantity)
@@ -477,6 +548,8 @@ class BranchItemsAPIView(APIView):
 
         # Get items in selected branch
         items = ItemTable.objects.filter(branches=selected_branch)
+        print(f"Found {items.count()} items in branch {selected_branch.name}", items.values())
+        print('items======>:', ItemSerializer(items, many=True, context={'request': request}).data)
 
         return Response({
             'selected_branch': BranchTableSerializer(selected_branch).data,
@@ -542,13 +615,35 @@ class WishlistAPIView(APIView):
 class WishlistDeleteAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def delete(self, request, pk):
+    def delete(self, request, id):
+        return self._delete_item(request, id)
+
+    def get(self, request, id):   # allow GET as delete (if you want GET also)
+        return self._delete_item(request, id)
+
+    def _delete_item(self, request, id):
         try:
-            wishlist_item = WishlistTable.objects.get(id=pk, userid=request.user)
-            wishlist_item.delete()
-            return Response({"message": "Item removed from wishlist."}, status=status.HTTP_204_NO_CONTENT)
-        except WishlistTable.DoesNotExist:
-            return Response({"error": "Item not found in wishlist."}, status=status.HTTP_404_NOT_FOUND)
+            print(f"Attempting to delete wishlist items with FoodItem ID: {id}")
+
+            # Fetch all matching rows
+            wishlist_items = WishlistTable.objects.filter(userid=request.user, fooditem_id=id)
+
+            if not wishlist_items.exists():
+                print("No wishlist item found")
+                return Response({"error": "Item not found in wishlist."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Delete all matching
+            count, _ = wishlist_items.delete()
+            print(f"Deleted {count} wishlist item(s)")
+
+            return Response({"message": f"{count} item(s) removed from wishlist."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print("Error while deleting wishlist:", str(e))
+            return Response({"error": "Something went wrong."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 
 # class CartAPIView(APIView):
 #     permission_classes = [IsAuthenticated]
@@ -585,54 +680,63 @@ class CartAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cart_items = CartTable.objects.filter(userid=request.user)
+        cart_items = (
+            CartTable.objects
+            .filter(userid=request.user)
+            .select_related("fooditem", "variant")
+            .prefetch_related("addon")   # this ensures addons are fetched efficiently
+        )
         serializer = CartSerializer(cart_items, many=True)
+        print("============================================================================",serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
     def post(self, request):
-        print(request.data)
         user = request.user
 
         variant_id = request.data.get('variant')
         fooditem_id = request.data.get('fooditem')
-        addon_id = request.data.get('addon')
+        addon_ids = request.data.get('addon', [])  # expect list of IDs
         quantity = request.data.get('quantity')
-        # instruction = request.data.get('instruction', '')
 
-        # Validate fields
+        # ✅ Validate quantity
         try:
             quantity = int(quantity)
             if quantity < 1:
-                raise ValueError("Quantity must be at least 1")
+                return Response({'error': 'Quantity must be at least 1'}, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, TypeError):
             return Response({'error': 'Invalid quantity'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            variant = ItemVariantTable.objects.get(id=variant_id)
-        except ItemVariantTable.DoesNotExist:
-            return Response({'error': 'Variant not found'}, status=status.HTTP_400_BAD_REQUEST)
-
+        # ✅ Validate food item
         try:
             fooditem = ItemTable.objects.get(id=fooditem_id)
         except ItemTable.DoesNotExist:
             return Response({'error': 'Food item not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        addon = None
-        if addon_id:
+        # ✅ Variant (optional)
+        variant = None
+        if variant_id:
             try:
-                addon = AddonTable.objects.get(id=addon_id)
-            except AddonTable.DoesNotExist:
-                return Response({'error': 'Addon not found'}, status=status.HTTP_400_BAD_REQUEST)
+                variant = ItemVariantTable.objects.get(id=variant_id)
+            except ItemVariantTable.DoesNotExist:
+                return Response({'error': 'Variant not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check for existing cart item
+        # ✅ Addons (optional)
+        addons = []
+        if addon_ids:
+            addons = list(AddonTable.objects.filter(id__in=addon_ids))
+            if len(addons) != len(addon_ids):  # some invalid IDs
+                return Response({'error': 'Some addons not found'}, status=status.HTTP_400_BAD_REQUEST)
+        print('addons', addons)
+        # ✅ Check for existing cart item (food + variant + exact addons)
         existing_item = CartTable.objects.filter(userid=user, fooditem=fooditem, variant=variant).first()
 
         if existing_item:
-            # existing_item.quantity += quantity
             existing_item.quantity = str(int(existing_item.quantity) + quantity)
-
-            # existing_item.instruction = instruction
             existing_item.save()
+            if addons:
+                existing_item.addon.set(addons)  # replace addons
             serializer = CartSerializer(existing_item)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
@@ -640,12 +744,13 @@ class CartAPIView(APIView):
                 userid=user,
                 fooditem=fooditem,
                 variant=variant,
-                addon=addon,
                 quantity=quantity,
-                # instruction=instruction
             )
+            if addons:
+                cart_item.addon.set(addons)
             serializer = CartSerializer(cart_item)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 
@@ -669,13 +774,73 @@ class CartDeleteAPIView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+   
     def delete(self, request, pk):
         try:
             cart_item = CartTable.objects.get(id=pk, userid=request.user)
+            
+            
             cart_item.delete()
-            return Response({"message": "Cart item removed."}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "Cart item and its addons deleted from DB."}, status=status.HTTP_204_NO_CONTENT)
         except CartTable.DoesNotExist:
             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+# class CartDeleteAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def put(self, request, pk):
+#         try:
+#             cart_item = CartTable.objects.get(id=pk, userid=request.user)
+#         except CartTable.DoesNotExist:
+#             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+#         serializer = CartSerializer(cart_item, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             quantity = int(request.data.get('quantity', cart_item.quantity))
+#             price = float(request.data.get('price', cart_item.price))
+#             total_price = price * quantity
+#             serializer.save(total_price=total_price)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def delete(self, request, pk):
+#         """Delete the entire cart item"""
+#         try:
+#             cart_item = CartTable.objects.get(id=pk, userid=request.user)
+#             cart_item.delete()
+#             return Response({"message": "Cart item removed."}, status=status.HTTP_204_NO_CONTENT)
+#         except CartTable.DoesNotExist:
+#             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CartAddonDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, cart_id, addon_id):
+        """Delete a specific addon from a cart item"""
+        try:
+            # 🔹 Get the cart item belonging to this user
+            cart_item = CartTable.objects.get(id=cart_id, userid=request.user)
+        except CartTable.DoesNotExist:
+            return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            # 🔹 Check if the addon exists in DB
+            addon = AddonTable.objects.get(id=addon_id)
+        except AddonTable.DoesNotExist:
+            return Response({"error": "Addon not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # 🔹 Check if this addon is actually attached to this cart item
+        if addon in cart_item.addon.all():
+            cart_item.addon.remove(addon)   # ✅ remove relation
+            cart_item.save()
+            return Response({"message": f"Addon '{addon.name}' removed from cart."},
+                            status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Addon not attached to this cart item."},
+                            status=status.HTTP_404_NOT_FOUND)
+
 
 class ChangeAddressAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -776,7 +941,7 @@ class ProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        print(request.user.id)
+        print("#####################################################################",request.user.id)
         try:
             profile = ProfileTable.objects.get(loginid=request.user)
             serializer = ProfileTableSerializer(profile)
@@ -813,7 +978,8 @@ class UpdateUserProfileByIdAPIView(APIView):
             return Response(serializer.errors, status=400)
         except ProfileTable.DoesNotExist:
             return Response({"error": "Profile not found"}, status=404)
-        
+
+
 class CouponListAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):

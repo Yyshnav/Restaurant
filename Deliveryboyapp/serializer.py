@@ -78,6 +78,7 @@ class DeliveryOrderItemTableSerializer(serializers.ModelSerializer):
 #         except:
 #             return None
 
+
 class OrderSerializer(serializers.ModelSerializer):
     userid = serializers.SerializerMethodField()
     branch = BranchTableSerializer(read_only=True)
@@ -87,7 +88,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderTable
-        fields = '_all_'
+        fields = '__all__'
 
     def get_userid(self, obj):
         try:
@@ -148,6 +149,7 @@ class OrderSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error getting address: {e}")
             return None
+
 
 class InputSerializer(serializers.Serializer):
         order_id = serializers.IntegerField()

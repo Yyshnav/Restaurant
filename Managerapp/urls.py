@@ -27,6 +27,10 @@ urlpatterns = [
     path('orders/accept/<int:order_id>/', AcceptOrderView.as_view(), name='accept_order'),
     path('assigndeliveryboy/<int:order_id>/', AssignDeliveryBoyView.as_view(), name='assign_delivery_boy'),
     path('orders/reject/<int:order_id>/', RejectOrderView.as_view(), name='reject_order'),
+    path('go-to-waiter/', go_to_waiter, name='go_to_waiter'),
+    path('credit-users/', CreditUserListView.as_view(), name='credit_users'),
+
+
 
 
 
