@@ -32,133 +32,133 @@ from django.db import transaction
 #auth views
 
 
-# class SendOTPView(APIView):
-#     permission_classes = [AllowAny]
-#     def post(self, request):
-#         phone = request.data.get('phone')
-#         print(phone)
-#         if not phone:
-#             return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-#         otp = random.randint(1000, 9999)
-#         print(otp)
-#         try:
-#             user, created = LoginTable.objects.get_or_create(phone=phone)
-#             user.otp = otp
-#             user.save()
-#             #need to change later
-#             if created:
-#                 # 🔒 Assign 'USER' role to new user
-#                 user_role = UserRole.objects.get(role='USER')
-#                 user.user_roles.add(user_role)
-#                 user.save()
-#         except Exception as e:
-#             return Response({'error': 'Database error.'}, status=status.HTTP_201_CREATED)
-#         #need o chage later
-#         try:
-#             client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-#             message = client.messages.create(
-#                 body=f'Your OTP is {otp}',
-#                 from_=settings.TWILIO_PHONE_NUMBER,
-#                 to=phone
-#             )
-#         except Exception as e:
-#             return Response({'error': 'Failed to send SMS.'}, status=status.HTTP_201_CREATED)
-        
-#         return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
-
 class SendOTPView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
-        print("SendOTPView POST called")  # DEBUG: View is hit
+        phone = request.data.get('phone')
+        print(phone)
+        if not phone:
+            return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        otp = random.randint(1000, 9999)
+        print(otp)
         try:
-            phone = request.data.get('phone')
-            print("Phone received:", phone)  # DEBUG
-
-            if not phone:
-                return Response({'error': 'Phone number is required.'}, status=400)
-
-            otp = random.randint(1000, 9999)
-            print("Generated OTP:", otp)  # DEBUG
-
-            # -------------------------
-            # Database: Create or update user
-            try:
-                user, created = LoginTable.objects.get_or_create(
-                    phone=phone,
-                    defaults={
-                        'username': phone,
-                        'otp': str(otp)
-                    }
-                )
-                print(f"User {'created' if created else 'exists'}:", user)  # DEBUG
-
-                # Assign default role if new user
-                if created and not user.user_roles.exists():
-                    default_role = UserRole.objects.filter(role="student").first()
-                    if default_role:
-                        user.user_roles.add(default_role)
-                        print("Default role assigned")  # DEBUG
-
-                # Update OTP for existing user
-                if not created:
-                    user.otp = str(otp)
-                    user.save()
-                    print("OTP updated for existing user")  # DEBUG
-
-            except Exception as e:
-                print("Database Exception:", e)
-                traceback.print_exc()
-                return Response({
-                    'error': 'Database error',
-                    'details': str(e)
-                }, status=500)
-
-            # -------------------------
-            # SMS: Send OTP via Fast2SMS
-            api_key = getattr(settings, "FAST2SMS_API_KEY", None)
-            print("API key:", api_key)  # DEBUG
-            if not api_key:
-                return Response({'error': 'API key missing'}, status=500)
-
-            payload = {
-                "route": "otp",
-                "variables_values": str(otp),
-                "numbers": phone.replace('+91', '')  # 10-digit number
-            }
-            print("Payload for Fast2SMS:", payload)  # DEBUG
-
-            try:
-                response = requests.post(
-                    "https://www.fast2sms.com/dev/bulkV2",
-                    json=payload,
-                    headers={'authorization': api_key, 'Content-Type': "application/json"}
-                )
-                print("Fast2SMS response:", response.text)  # DEBUG
-
-                if response.status_code != 200:
-                    return Response({
-                        'error': 'Failed to send OTP',
-                        'status_code': response.status_code,
-                        'details': response.text
-                    }, status=500)
-
-            except Exception as e:
-                print("SMS Exception:", e)
-                traceback.print_exc()
-                return Response({
-                    'error': 'SMS sending failed',
-                    'details': str(e)
-                }, status=500)
-
-            return Response({'message': 'OTP sent successfully', 'otp': otp}, status=200)
-
+            user, created = LoginTable.objects.get_or_create(phone=phone)
+            user.otp = otp
+            user.save()
+            #need to change later
+            if created:
+                # 🔒 Assign 'USER' role to new user
+                user_role = UserRole.objects.get(role='USER')
+                user.user_roles.add(user_role)
+                user.save()
         except Exception as e:
-            print("Unhandled Exception:", e)
-            traceback.print_exc()
-            return Response({
-                'error': 'Something went wrong',
-                'details': str(e)
-            }, status=500)
+            return Response({'error': 'Database error.'}, status=status.HTTP_201_CREATED)
+        #need o chage later
+        try:
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            message = client.messages.create(
+                body=f'Your OTP is {otp}',
+                from_=settings.TWILIO_PHONE_NUMBER,
+                to=phone
+            )
+        except Exception as e:
+            return Response({'error': 'Failed to send SMS.'}, status=status.HTTP_201_CREATED)
+        
+        return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
+
+# class SendOTPView(APIView):
+#     def post(self, request):
+#         print("SendOTPView POST called")  # DEBUG: View is hit
+#         try:
+#             phone = request.data.get('phone')
+#             print("Phone received:", phone)  # DEBUG
+
+#             if not phone:
+#                 return Response({'error': 'Phone number is required.'}, status=400)
+
+#             otp = random.randint(1000, 9999)
+#             print("Generated OTP:", otp)  # DEBUG
+
+#             # -------------------------
+#             # Database: Create or update user
+#             try:
+#                 user, created = LoginTable.objects.get_or_create(
+#                     phone=phone,
+#                     defaults={
+#                         'username': phone,
+#                         'otp': str(otp)
+#                     }
+#                 )
+#                 print(f"User {'created' if created else 'exists'}:", user)  # DEBUG
+
+#                 # Assign default role if new user
+#                 if created and not user.user_roles.exists():
+#                     default_role = UserRole.objects.filter(role="student").first()
+#                     if default_role:
+#                         user.user_roles.add(default_role)
+#                         print("Default role assigned")  # DEBUG
+
+#                 # Update OTP for existing user
+#                 if not created:
+#                     user.otp = str(otp)
+#                     user.save()
+#                     print("OTP updated for existing user")  # DEBUG
+
+#             except Exception as e:
+#                 print("Database Exception:", e)
+#                 traceback.print_exc()
+#                 return Response({
+#                     'error': 'Database error',
+#                     'details': str(e)
+#                 }, status=500)
+
+#             # -------------------------
+#             # SMS: Send OTP via Fast2SMS
+#             api_key = getattr(settings, "FAST2SMS_API_KEY", None)
+#             print("API key:", api_key)  # DEBUG
+#             if not api_key:
+#                 return Response({'error': 'API key missing'}, status=500)
+
+#             payload = {
+#                 "route": "otp",
+#                 "variables_values": str(otp),
+#                 "numbers": phone.replace('+91', '')  # 10-digit number
+#             }
+#             print("Payload for Fast2SMS:", payload)  # DEBUG
+
+#             try:
+#                 response = requests.post(
+#                     "https://www.fast2sms.com/dev/bulkV2",
+#                     json=payload,
+#                     headers={'authorization': api_key, 'Content-Type': "application/json"}
+#                 )
+#                 print("Fast2SMS response:", response.text)  # DEBUG
+
+#                 if response.status_code != 200:
+#                     return Response({
+#                         'error': 'Failed to send OTP',
+#                         'status_code': response.status_code,
+#                         'details': response.text
+#                     }, status=500)
+
+#             except Exception as e:
+#                 print("SMS Exception:", e)
+#                 traceback.print_exc()
+#                 return Response({
+#                     'error': 'SMS sending failed',
+#                     'details': str(e)
+#                 }, status=500)
+
+#             return Response({'message': 'OTP sent successfully', 'otp': otp}, status=200)
+
+#         except Exception as e:
+#             print("Unhandled Exception:", e)
+#             traceback.print_exc()
+#             return Response({
+#                 'error': 'Something went wrong',
+#                 'details': str(e)
+#             }, status=500)
         
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]

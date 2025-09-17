@@ -25,4 +25,5 @@ urlpatterns = [
     path('waiterdashboard/', ordering, name='waiterdashboard'),
     path('authenticate_waiter/', authenticate_waiter, name='authenticate_waiter'),
     path('place_order/', place_order, name='place_order'),
+    path('get-variant/<int:item_id>/', views.get_variants, name='get_variant'),
 ]

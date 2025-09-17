@@ -468,7 +468,7 @@ class OrdersListView(View):
                     ),
                     "total": float(o.total_amount or 0),
                     "status": "accepted" if o.status else "completed", 
-                    "paymentStatus": o.payment.paymentstatus if o.payment else "Unpaid",
+                    "paymentStatus": o.payment if o.payment else "Unpaid",  # Fixed this line
                     "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
                     "address": "",
                     "items": [
@@ -483,33 +483,30 @@ class OrdersListView(View):
                     "deliveryBoy": o.deliveryboy.name if o.deliveryboy else ""
                 })
 
-
-          
             for o in OrderTable.objects.select_related("userid", "deliveryid", "coupon"):
-                    orders.append({
-                        "id": o.id,
-                        "customer": str(o.userid) if o.userid else "App User",
-                        "platform": "Appthrough",
-                        "total": float(o.totalamount or 0),
-                        "status": o.orderstatus.lower(),  
-                        "paymentStatus": o.paymentstatus.title(),
-                        "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
-                        "address": str(o.address) if o.address else "",
-                        "items": [
-                            {
-                                "name": i.itemname.name,
-                                "quantity": i.quantity,
-                                "price": str(i.price)
-                            }
-                            for i in getattr(o, "order_item", []).all()
-                        ] if hasattr(o, "order_item") else [],
-                        "rejectReason": "",
-                        "deliveryBoy": o.deliveryid.name if o.deliveryid else ""
-                    })
+                orders.append({
+                    "id": o.id,
+                    "customer": str(o.userid) if o.userid else "App User",
+                    "platform": "Appthrough",
+                    "total": float(o.totalamount or 0),
+                    "status": o.orderstatus.lower(),  
+                    "paymentStatus": o.paymentstatus.title(),
+                    "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                    "address": str(o.address) if o.address else "",
+                    "items": [
+                        {
+                            "name": i.itemname.name,
+                            "quantity": i.quantity,
+                            "price": str(i.price)
+                        }
+                        for i in getattr(o, "order_item", []).all()
+                    ] if hasattr(o, "order_item") else [],
+                    "rejectReason": "",
+                    "deliveryBoy": o.deliveryid.name if o.deliveryid else ""
+                })
 
             return JsonResponse({"orders": orders}, safe=False)
 
-        
         return render(request, "view-orders.html", {"delivery_boys": delivery_boys})
     
 class AcceptOrderView(View):
@@ -614,7 +611,7 @@ class StaffDetailView(View):
             except WaiterTable.DoesNotExist:
                 return JsonResponse({"error": "Staff not found"}, status=404)
 
-        elif prefix == "M":  # Manager
+        elif prefix == "M":  
             try:
                 staff = ManagerTable.objects.get(id=real_id)
                 staff_data = {
@@ -653,7 +650,6 @@ class AssignDeliveryBoyView(View):
             delivery_boy = DeliveryBoyTable.objects.get(id=delivery_boy_id)
         except (OrderTable.DoesNotExist, DeliveryBoyTable.DoesNotExist):
             return JsonResponse({"error": "Order or Delivery Boy not found"}, status=404)
-
         order.deliveryid = delivery_boy
         order.orderstatus = "ASSIGNED"
         order.save(update_fields=["deliveryid", "orderstatus"])
@@ -679,7 +675,7 @@ class RejectOrderView(View):
 
         # Update status
         order.orderstatus = 'REJECTED'
-        order.delivery_instructions = f"Rejected: {reason}"  # or create a dedicated field
+        order.delivery_instructions = f"Rejected: {reason}"  
         order.save(update_fields=["orderstatus", "delivery_instructions"])
 
         return JsonResponse({"success": True, "message": f"Order #{order_id} rejected"})

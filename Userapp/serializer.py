@@ -123,7 +123,7 @@ class CartSerializer(serializers.ModelSerializer):
         return [a.name for a in obj.addon.all()]
 
     def get_variant_name(self, obj):
-        return obj.variant.name if obj.variant else None
+        return obj.variant.variant_name if obj.variant else None
 
     def get_available_addons(self, obj):
         addons = AddonTable.objects.filter(item=obj.fooditem)

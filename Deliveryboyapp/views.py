@@ -223,7 +223,10 @@ class AssignedOrdersAPIView(APIView):
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+    
 class UpdateOrderStatusAPIView(APIView):
+    print("6666666666666666666666")
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -239,10 +242,13 @@ class UpdateOrderStatusAPIView(APIView):
             return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = InputSerializer(data=request.data)
         if not serializer.is_valid():
+            print("@@@@@@@@@@@@@@@@@")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # order_id = serializer.validated_data['order_id']
         if serializer.validated_data['order_id'] != order_id:
+           print('-------------->', order_id)
+           print('------serializer.validated_data-------->', serializer.validated_data['order_id'] )
            return Response({'error': 'Order ID mismatch'}, status=status.HTTP_400_BAD_REQUEST)
         new_status = serializer.validated_data['status']
         payment_done = serializer.validated_data.get('paymentDone', False)

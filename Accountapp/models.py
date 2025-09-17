@@ -182,7 +182,7 @@ class OrderTable(models.Model):
 
     orderstatus = models.CharField(max_length=50, choices=[
         ("PENDING", "Pending"), ("ACCEPTED", "Accepted"), ("REJECTED", "Rejected"),
-        ("CANCELLED", "Cancelled"), ("DELIVERED", "Delivered")
+        ("CANCELLED", "Cancelled"), ("DELIVERED", "Delivered"),("PICKED", "Picked"), ('ASSIGNED', "Assigned")
     ], default="PENDING")
 
     cooking_instructions = models.TextField(blank=True, null=True)
@@ -697,6 +697,6 @@ class OfflineOrderItems(models.Model):
     note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        variant_display = self.variant.variant_name if self.variant else "No Variant"
+        variant_display = self.variant.variant_name if self.variant else "No Variant" 
         return f"Order {self.order.id} - {self.item.name} ({variant_display}) x {self.quantity}"
 
