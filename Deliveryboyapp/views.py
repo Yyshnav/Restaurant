@@ -171,7 +171,7 @@ class DeliveryBoyLoginAPIView(APIView):
         return Response({
             'token': str(refresh.access_token),
             'refresh': str(refresh),
-            'user': {
+            'user': { 
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
@@ -200,7 +200,7 @@ class LatestPendingOrdersAPIView(APIView):
         # Get latest orders assigned to this delivery boy with status 'PENDING'
         orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED']).order_by('-id')
         serializer = OrderSerializer(orders, many=True)
-        # print("Orders:", serializer.data)
+        print("Orders:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -227,6 +227,7 @@ class UpdateOrderStatusAPIView(APIView):
 
     # def post(self, request):
     def post(self, request, order_id):
+        print("============================================================",request.body)
         user = request.user.id
         try:
             delivery_boy = DeliveryBoyTable.objects.get(userid=user)
@@ -234,6 +235,7 @@ class UpdateOrderStatusAPIView(APIView):
         except DeliveryBoyTable.DoesNotExist:
             return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = InputSerializer(data=request.data)
+        print(request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -241,11 +243,13 @@ class UpdateOrderStatusAPIView(APIView):
         if serializer.validated_data['order_id'] != order_id:
            return Response({'error': 'Order ID mismatch'}, status=status.HTTP_400_BAD_REQUEST)
         new_status = serializer.validated_data['status']
-        payment_done = serializer.validated_data.get('paymentDone', False)
-        payment_type = serializer.validated_data.get('paymentType')
+        payment_done = serializer.validated_data.get('payment_done', False)
+        payment_type = serializer.validated_data.get('payment_type')
+        print(f"Updating order {order_id} to status {new_status}, payment_done: {payment_done}, payment_type: {payment_type}")
 
         try:
             order = OrderTable.objects.get(id=order_id, deliveryid=delivery_boy)
+            print(f"Found Order: {order.__dict__}")
         except OrderTable.DoesNotExist:
             return Response({'error': 'Order not found or not assigned to you'}, status=status.HTTP_404_NOT_FOUND)
 

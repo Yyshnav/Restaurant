@@ -646,6 +646,13 @@ class UserFeedbackTable(models.Model):
         return f"Feedback for Order #{self.order.id} by Delivery Boy {self.delivery_boy.id}"
 
 
+class CreditUser(models.Model):
+    Name = models.CharField(max_length=100, null=True, blank=True)
+    Email = models.CharField(max_length=100, null=True, blank=True)
+    phone = models.IntegerField(null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    credit_limit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
 class OfflineOrders(models.Model):
     ORDER_TYPES = [
         ('DINE_IN', 'Dine In'),
@@ -661,6 +668,7 @@ class OfflineOrders(models.Model):
 
     # Delivery-related fields
     deliveryboy = models.ForeignKey("DeliveryBoyTable", on_delete=models.CASCADE, null=True, blank=True)
+    credit_user = models.ForeignKey("CreditUser", on_delete=models.CASCADE, null=True, blank=True)
 
     # Customer details (for takeaway & online)
     customer_name = models.CharField(max_length=100, null=True, blank=True)
@@ -668,7 +676,7 @@ class OfflineOrders(models.Model):
 
     # Payment & totals
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    payment = models.ForeignKey("PaymentTable", on_delete=models.CASCADE, null=True, blank=True)
+    payment = models.CharField(max_length=100, null=True, blank=True)
 
     # Meta info
     created_at = models.DateTimeField(auto_now_add=True)
@@ -691,11 +699,3 @@ class OfflineOrderItems(models.Model):
         return f"Order {self.order.id} - {self.item.name} ({variant_display}) x {self.quantity}"
 
 
-
-
-class CreditUser(models.Model):
-    Name = models.CharField(max_length=100, null=True, blank=True)
-    Email = models.CharField(max_length=100, null=True, blank=True)
-    phone = models.IntegerField(null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
-    credit_limit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

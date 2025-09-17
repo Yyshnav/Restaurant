@@ -149,11 +149,18 @@ class OrderSerializer(serializers.ModelSerializer):
             print(f"Error getting address: {e}")
             return None
 
+# class InputSerializer(serializers.Serializer):
+#         order_id = serializers.IntegerField()
+#         status = serializers.ChoiceField(choices=['ACCEPTED', 'DELIVERED'])
+#         paymentDone = serializers.BooleanField(default=False, required=False)
+#         paymentType = serializers.ChoiceField(choices=['CASH', 'ONLINE'], required=False, allow_null=True)
+
 class InputSerializer(serializers.Serializer):
-        order_id = serializers.IntegerField()
-        status = serializers.ChoiceField(choices=['ACCEPTED', 'DELIVERED'])
-        paymentDone = serializers.BooleanField(default=False, required=False)
-        paymentType = serializers.ChoiceField(choices=['CASH', 'ONLINE'], required=False, allow_null=True)
+    order_id = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=['ACCEPTED', 'DELIVERED'])
+    payment_done = serializers.BooleanField(default=False, required=False)
+    payment_type = serializers.ChoiceField(choices=['CASH', 'ONLINE'], required=False, allow_null=True)
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
