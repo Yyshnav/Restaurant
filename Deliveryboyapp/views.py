@@ -198,9 +198,13 @@ class LatestPendingOrdersAPIView(APIView):
             return Response({'error': 'DeliveryBoyTable not found for user'}, status=status.HTTP_404_NOT_FOUND)
         
         # Get latest orders assigned to this delivery boy with status 'PENDING'
-        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED']).order_by('-id')
+        orders = OrderTable.objects.filter(deliveryid=delivery_boy, orderstatus__in=['PENDING', 'ACCEPTED', 'ASSIGNED']).order_by('-id')
         serializer = OrderSerializer(orders, many=True)
-        print("Orders:", serializer.data)
+        print("DeliveryBoy:", delivery_boy.id)
+        print("Orders count:", orders.count())
+        print("All Orders for this delivery boy:", list(
+            OrderTable.objects.filter(deliveryid=delivery_boy).values('id','orderstatus')
+        ))
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -219,7 +223,10 @@ class AssignedOrdersAPIView(APIView):
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+    
 class UpdateOrderStatusAPIView(APIView):
+    print("6666666666666666666666")
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -237,10 +244,13 @@ class UpdateOrderStatusAPIView(APIView):
         serializer = InputSerializer(data=request.data)
         print(request.data)
         if not serializer.is_valid():
+            print("@@@@@@@@@@@@@@@@@")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # order_id = serializer.validated_data['order_id']
         if serializer.validated_data['order_id'] != order_id:
+           print('-------------->', order_id)
+           print('------serializer.validated_data-------->', serializer.validated_data['order_id'] )
            return Response({'error': 'Order ID mismatch'}, status=status.HTTP_400_BAD_REQUEST)
         new_status = serializer.validated_data['status']
         payment_done = serializer.validated_data.get('payment_done', False)

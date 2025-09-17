@@ -192,12 +192,7 @@
             
           </div>
           <div class="filter-group ms-3">
-            <select id="filterPaymentStatus" class="form-select" aria-label="Filter Orders by Payment Status">
-              <option value="all">All Payments</option>
-              <option value="paid">Paid</option>
-              <option value="unpaid">Unpaid</option>
-              <option value="refunded">Refunded</option>
-            </select>
+            
             <!-- <select id="filterPlatform" class="form-select" aria-label="Filter Orders by Platform">
               <option value="all">All Platforms</option>
               <option value="online">Online</option>
@@ -205,15 +200,7 @@
               <option value="dining">Dining</option>
               <option value="appthrough">Appthrough</option>
             </select> --> 
-            <select id="filterOrders" class="form-select" style="max-width: 200px;" aria-label="Filter Orders by Status">
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="rejected">Rejected</option>
-              <option value="assigned">Assigned</option>
-            </select>
+            
           </div>
         </div>
 
@@ -255,22 +242,30 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="orderModalLabel">Order Details</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
           </div>
-          <div class="modal-body">
-            <p><strong>Order ID:</strong> <span id="orderIdDetail"></span></p>
-            <p><strong>Customer:</strong> <span id="customerDetail"></span></p>
-            <p><strong>Platform:</strong> <span id="platformDetail"></span></p>
-            <p><strong>Address:</strong> <span id="addressDetail"></span></p>
-            <p><strong>Items:</strong></p>
-            <ul id="itemsList" class="list-group"></ul>
-            <p><strong>Total:</strong> <span id="totalDetail"></span></p>
-            <p><strong>Status:</strong> <span id="statusDetail"></span></p>
-            <p><strong>Payment Status:</strong> <span id="paymentStatusDetail"></span></p>
-            <p><strong>Rejection Reason:</strong> <span id="rejectReasonDetail"></span></p>
-            <p><strong>Delivery Boy:</strong> <span id="deliveryBoyDetail"></span></p>
-            <p><strong>Date:</strong> <span id="dateDetail"></span></p>
-          </div>
+          <div class="modal-body" id="printableOrder">
+              <p><strong>Order ID:</strong> <span id="orderIdDetail"></span></p>
+              <p><strong>Customer:</strong> <span id="customerDetail"></span></p>
+              <p><strong>Platform:</strong> <span id="platformDetail"></span></p>
+              <p><strong>Address:</strong> <span id="addressDetail"></span></p>
+              <p><strong>Items:</strong></p>
+              <ul id="itemsList" class="list-group"></ul>
+              <p><strong>Total:</strong> <span id="totalDetail"></span></p>
+              <p><strong>Status:</strong> <span id="statusDetail"></span></p>
+              <p><strong>Payment Status:</strong> <span id="paymentStatusDetail"></span></p>
+              <p><strong>Rejection Reason:</strong> <span id="rejectReasonDetail"></span></p>
+              <p><strong>Delivery Boy:</strong> <span id="deliveryBoyDetail"></span></p>
+              <p><strong>Date:</strong> <span id="dateDetail"></span></p>
+            </div>
+
+                <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="printOrder()">Print</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
         </div>
       </div>
     </div>
@@ -281,7 +276,10 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="paymentConfirmModalLabel">Confirm Payment Status Change</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
           </div>
           <div class="modal-body">
             <p>Are you sure you want to change the payment status of Order <strong><span id="paymentOrderId"></span></strong> to <strong><span id="newPaymentStatus"></span></strong>?</p>
@@ -301,7 +299,10 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="acceptModalLabel">Confirm Order Acceptance</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
           </div>
           <div class="modal-body">
             <p><strong>Order ID:</strong> <span id="acceptOrderId"></span></p>
@@ -325,7 +326,10 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="rejectModalLabel">Reject Order</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
           </div>
           <div class="modal-body">
             <p>Are you sure you want to reject Order <strong><span id="rejectOrderId"></span></strong>?</p>
@@ -342,33 +346,55 @@
       </div>
     </div>
 
-    <!-- Assign/Update Delivery Modal -->
-    <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true" inert>
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="assignModalLabel">Assign/Update Delivery Boy</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p><strong>Order ID:</strong> <span id="assignOrderId"></span></p>
-            <div class="mb-3">
-              <label for="deliveryBoySelect" class="form-label">Select Delivery Boy:</label>
-              <select class="form-select" id="deliveryBoySelect" aria-label="Select Delivery Boy">
-                <option value="">Select a Delivery Boy</option>
-                <option value="DB001">David Lee</option>
-                <option value="DB002">Emma White</option>
-                <option value="DB003">Frank Green</option>
-              </select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="confirmAssignBtn">Assign</button>
-          </div>
+   <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="assignModalLabel">Assign/Update Delivery Boy</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Order ID:</strong> <span id="assignOrderId"></span></p>
+        <div class="mb-3">
+          <label for="deliveryBoySelect" class="form-label">Select Delivery Boy:</label>
+          <select class="form-select" id="deliveryBoySelect" aria-label="Select Delivery Boy">
+            <option value="">Select a Delivery Boy</option>
+            {% for db in delivery_boys %}
+              <option value="{{ db.id }}">{{ db.name }}</option>
+            {% endfor %}
+          </select>
         </div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmAssignBtn">Assign</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Credit User Selection Modal -->
+<div class="modal fade" id="creditUserSelectModal" tabindex="-1" aria-labelledby="creditUserSelectModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="creditUserSelectModalLabel">Assign Credit User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Select a credit user for Order <span id="creditOrderId"></span>:</p>
+        <select class="form-select" id="creditUserSelect">
+          <option value="">--- Please Select User ---</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmCreditUserBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <!-- Toast Notification -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -392,164 +418,118 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      // Sample order data (replace with API call in production)
-      const orders = [
-        {
-          id: "1001",
-          customer: "John Doe",
-          platform: "Appthrough",
-          total: 29.99,
-          status: "pending",
-          paymentStatus: "Paid",
-          date: "2025-07-08",
-          address: "123 Main St, City",
-          items: [
-            { name: "Margherita Pizza", quantity: 1, price: "$15.00" },
-            { name: "Pepsi", quantity: 2, price: "$7.50" }
-          ],
-          rejectReason: "",
-          deliveryBoy: ""
-        },
-        {
-          id: "1002",
-          customer: "Jane Smith",
-          platform: "Takeaway",
-          total: 45.50,
-          status: "accepted",
-          paymentStatus: "Unpaid",
-          date: "2025-07-07",
-          address: "",
-          items: [
-            { name: "Burger", quantity: 2, price: "$20.00" },
-            { name: "Fries", quantity: 1, price: "$5.50" }
-          ],
-          rejectReason: "",
-          deliveryBoy: "David Lee"
-        },
-        {
-          id: "1003",
-          customer: "Michael Lee",
-          platform: "Dining",
-          total: 15.00,
-          status: "completed",
-          paymentStatus: "Refunded",
-          date: "2025-07-06",
-          address: "",
-          items: [
-            { name: "Salad", quantity: 1, price: "$10.00" },
-            { name: "Water", quantity: 1, price: "$5.00" }
-          ],
-          rejectReason: "",
-          deliveryBoy: ""
-        },
-        {
-          id: "0001",
-          customer: "Alice Brown",
-          platform: "Appthrough",
-          total: 35.75,
-          status: "rejected",
-          paymentStatus: "Unpaid",
-          date: "2025-07-12",
-          address: "123 Main St, City",
-          items: [
-            { name: "Pizza Margherita", quantity: 2, price: "$15.00" },
-            { name: "Coke", quantity: 1, price: "$5.75" }
-          ],
-          rejectReason: "Out of stock",
-          deliveryBoy: ""
-        },
-        {
-          id: "0002",
-          customer: "Bob Carter",
-          platform: "Online",
-          total: 22.50,
-          status: "cancelled",
-          paymentStatus: "Paid",
-          date: "2025-07-11",
-          address: "456 Oak Ave, City",
-          items: [
-            { name: "Burger", quantity: 1, price: "$10.00" },
-            { name: "Fries", quantity: 2, price: "$6.25" }
-          ],
-          rejectReason: "",
-          deliveryBoy: ""
-        },
-        {
-          id: "0003",
-          customer: "Clara Davis",
-          platform: "Appthrough",
-          total: 18.00,
-          status: "assigned",
-          paymentStatus: "Refunded",
-          date: "2025-07-10",
-          address: "789 Pine Rd, City",
-          items: [
-            { name: "Salad", quantity: 1, price: "$8.00" },
-            { name: "Juice", quantity: 1, price: "$10.00" }
-          ],
-          rejectReason: "",
-          deliveryBoy: "Emma White"
-        }
-      ];
+    let creditUsers = [];  
 
-      // Populate table
-      function populateTable() {
-        const tbody = $('#orderTableBody');
-        tbody.empty();
-        orders.forEach(order => {
-          const statusClass = {
-            pending: 'bg-warning text-dark',
-            accepted: 'bg-success text-white',
-            completed: 'bg-success text-white',
-            cancelled: 'bg-danger text-white',
-            rejected: 'bg-danger text-white',
-            assigned: 'bg-primary text-white'
-          }[order.status] || '';
-          const paymentStatusClass = {
-            Paid: 'bg-success text-white',
-            Unpaid: 'bg-warning text-dark',
-            Refunded: 'bg-danger text-white'
-          }[order.paymentStatus] || '';
-          let actions = `
-            <button class="btn btn-sm btn-primary view-btn" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#orderModal">View</button>
-          `;
-          if (order.platform.toLowerCase() !== 'online' && order.platform.toLowerCase() !== 'appthrough') {
-            actions += `
-              <select class="form-select payment-status-select ms-2" data-id="${order.id}" aria-label="Change Payment Status">
-                <option value="" disabled selected>Change Payment</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="refunded">Refunded</option>
-              </select>
-            `;
-          }
-          if (order.platform.toLowerCase() === 'appthrough') {
-            if (order.status === 'pending') {
-              actions += `
-                <button class="btn btn-sm btn-success accept-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#acceptModal">Accept</button>
-                <button class="btn btn-sm btn-danger reject-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#rejectModal">Reject</button>
+    function loadCreditUsers() {
+  return fetch('/credit-users/')
+    .then(res => res.json())
+    .then(data => {
+      creditUsers = data.credit_users || [];
+    })
+    .catch(err => {
+      console.error("Error fetching credit users:", err);
+      showToast('error', 'Failed to load credit users.');
+      creditUsers = [];
+    });
+}
+
+      let orders = [];
+
+function fetchOrders() {
+  fetch("/Managerapp/orders/?format=json")
+    .then(res => res.json())
+    .then(data => {
+      orders = data.orders;
+      populateTable();
+    })
+    .catch(err => {
+      console.error("Failed to fetch orders", err);
+      showToast("error", "Failed to load orders from server.");
+    });
+}
+
+// Call on page load
+$(document).ready(function() {
+  fetchOrders();
+});
+
+              // Populate table
+          function populateTable() {
+            const tbody = $('#orderTableBody');
+            tbody.empty();
+
+            orders.forEach(order => {
+              const statusClass = {
+                pending: 'bg-warning text-dark',
+                accepted: 'bg-success text-white',
+                completed: 'bg-success text-white',
+                cancelled: 'bg-danger text-white',
+                rejected: 'bg-danger text-white',
+                assigned: 'bg-primary text-white'
+              }[order.status] || '';
+
+              const paymentStatusClass = {
+                Paid: 'bg-success text-white',
+                Unpaid: 'bg-warning text-dark',
+                Refunded: 'bg-danger text-white',
+                Credit: 'bg-info text-white'
+              }[order.paymentStatus] || '';
+
+              // Default actions (view button)
+              let actions = `
+                <button class="btn btn-sm btn-primary view-btn" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#orderModal">
+                  View
+                </button>
               `;
-            } else if (order.status === 'accepted' || order.status === 'assigned') {
-              actions += `
-                <button class="btn btn-sm btn-primary assign-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#assignModal">${order.status === 'assigned' ? 'Update Delivery' : 'Assign Delivery'}</button>
+
+              // Offline orders (Dining / Takeaway / Online delivery)
+              if (order.platform.toLowerCase() !== 'online' && order.platform.toLowerCase() !== 'appthrough') {
+                actions += `
+                  <select class="form-select payment-status-select ms-2" data-id="${order.id}" aria-label="Change Payment Status">
+                    <option value="" disabled selected>Change Payment</option>
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="refunded">Refunded</option>
+                      <option value="credit">Credit User</option>
+                  </select>
+                `;
+              }
+
+              // App orders (Appthrough)
+              if (order.platform.toLowerCase() === 'appthrough') {
+                if (order.status === 'pending') {
+                  actions += `
+                    <button class="btn btn-sm btn-success accept-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                      Accept
+                    </button>
+                    <button class="btn btn-sm btn-danger reject-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                      Reject
+                    </button>
+                  `;
+                }
+                // ❌ No delivery assign/update buttons since you said not needed now
+              }
+
+              // Build table row
+              const row = `
+                <tr>
+                  <td data-label="Order ID">#${order.id}</td>
+                  <td data-label="Customer">${order.customer}</td>
+                  <td data-label="Platform">${order.platform}</td>
+                  <td data-label="Total">$${order.total.toFixed(2)}</td>
+                  <td data-label="Status"><span class="badge ${statusClass}">${order.status}</span></td>
+                  <td data-label="Payment Status"><span class="badge ${paymentStatusClass}">${order.paymentStatus}</span></td>
+                  <td data-label="Date">${order.date}</td>
+                  <td data-label="Actions">${actions}</td>
+                </tr>
               `;
-            }
+
+              tbody.append(row);
+            });
+
+            updateActions(); // rebind events
           }
-          const row = `
-            <tr>
-              <td data-label="Order ID">#${order.id}</td>
-              <td data-label="Customer">${order.customer}</td>
-              <td data-label="Platform">${order.platform}</td>
-              <td data-label="Total">$${order.total.toFixed(2)}</td>
-              <td data-label="Status"><span class="badge ${statusClass}">${order.status}</span></td>
-              <td data-label="Payment Status"><span class="badge ${paymentStatusClass}">${order.paymentStatus}</span></td>
-              <td data-label="Date">${order.date}</td>
-              <td data-label="Actions">${actions}</td>
-            </tr>`;
-          tbody.append(row);
-        });
-        updateActions();
-      }
+
 
       // Filter orders by status, platform, and payment status
       function filterTable(statusValue, platformValue, paymentStatusValue) {
@@ -636,6 +616,66 @@
         showToast('success', `Viewing details for Order #${orderId}`);
       }
 
+      function printOrder() {
+  const el = document.getElementById('printableOrder');
+  if (!el) {
+    alert("Nothing to print! The order container is missing.");
+    return;
+  }
+
+  const orderId = document.getElementById('orderIdDetail')?.innerText || 'N/A';
+  const dateTime = new Date().toLocaleString();
+
+  const printContents = `
+    <div style="font-family: 'Arial', sans-serif; width: 100%; text-align: center; margin-bottom: 10px;">
+      <h1 style="margin: 0;">Rawabi Restaurant</h1>
+      <h2 style="margin: 5px 0;">Order ${orderId}</h2>
+      <p style="margin: 0; font-size: 0.9em; color: #555;">${dateTime}</p>
+      <hr style="margin: 10px 0; border: 1px dashed #333;">
+    </div>
+
+    <div style="
+      width: 100%;
+      font-family: Arial, sans-serif;
+      text-align: left;   /* ✅ align details to left */
+      margin: 0 auto;
+      font-size: 14px;
+      line-height: 1.6;
+    ">
+      ${el.innerHTML}
+    </div>
+
+    <style>
+      body { font-size: 14px; color: #333; }
+      p { margin: 4px 0; }
+      ul { list-style-type: none; padding-left: 0; }
+      li { margin-bottom: 4px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+      th, td { border: 1px solid #333; padding: 6px; text-align: left; font-size: 13px; }
+      th { background-color: #f2f2f2; }
+      .badge { padding: 4px 8px; border-radius: 4px; color: #fff; display: inline-block; font-size: 12px; }
+      .pending { background-color: #ffc107; }
+      .accepted, .completed { background-color: #28a745; }
+      .cancelled, .rejected { background-color: #dc3545; }
+      .paid { background-color: #28a745; }
+      .unpaid { background-color: #ffc107; }
+      .refunded { background-color: #dc3545; }
+    </style>
+  `;
+
+  const printWindow = window.open('', '', 'height=800,width=800');
+  printWindow.document.write('<html><head><title>Print Order</title></head><body>');
+  printWindow.document.write(printContents);
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  printWindow.focus();
+
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 300);
+}
+
       // Show accept confirmation modal
       function showAcceptConfirmation(orderId) {
         const order = orders.find(o => o.id == orderId);
@@ -667,71 +707,128 @@
         $('#rejectModal').removeAttr('inert').modal('show');
       }
 
-      // Confirm accept action
-      function confirmAccept() {
-        const orderId = $('#confirmAcceptBtn').data('id');
-        if (!orderId) {
-          showToast('error', 'Invalid order ID.');
-          $('#acceptModal').modal('hide');
-          return;
-        }
-        const order = orders.find(o => o.id == orderId);
-        if (!order) {
-          showToast('error', `Order #${orderId} not found.`);
-          $('#acceptModal').modal('hide');
-          return;
-        }
-        if (order.platform.toLowerCase() !== 'appthrough') {
-          showToast('error', `Order #${orderId} cannot be accepted as it is not an Appthrough order.`);
-          $('#acceptModal').modal('hide');
-          return;
-        }
-        order.status = 'accepted';
-        order.rejectReason = '';
-        showToast('success', `Order #${orderId} accepted.`);
-        $('#acceptModal').modal('hide');
-        if (order.platform.toLowerCase() === 'appthrough') {
-          $('#assignOrderId').text(`#${orderId}`);
-          $('#deliveryBoySelect').val('');
-          setTimeout(() => {
-            $('#assignModal').removeAttr('inert').modal('show');
-          }, 300);
-        }
-        populateTable();
-        const statusValue = $('#filterOrders').val();
-        const platformValue = $('#filterPlatform').val();
-        const paymentStatusValue = $('#filterPaymentStatus').val();
-        filterTable(statusValue, platformValue, paymentStatusValue);
-      }
+        // Confirm accept action
+function confirmAccept() {
+  const orderId = $('#acceptOrderId').text().replace('#', '');
 
-      // Confirm reject action
-      function confirmReject() {
-        const orderId = $('#confirmRejectBtn').data('id');
-        if (!orderId) {
-          showToast('error', 'Invalid order ID.');
-          $('#rejectModal').modal('hide');
-          return;
-        }
-        const order = orders.find(o => o.id == orderId);
-        if (!order) {
-          showToast('error', `Order #${orderId} not found.`);
-          $('#rejectModal').modal('hide');
-          return;
-        }
-        if (!$('#rejectReason').val().trim()) {
-          showToast('error', 'Please provide a reason for rejection.');
-          return;
-        }
-        order.status = 'rejected';
-        order.rejectReason = $('#rejectReason').val().trim();
-        showToast('success', `Order #${orderId} rejected.`);
-        $('#rejectModal').modal('hide');
-        populateTable();
-        const statusValue = $('#filterOrders').val();
-        const platformValue = $('#filterPlatform').val();
-        const paymentStatusValue = $('#filterPaymentStatus').val();
-        filterTable(statusValue, platformValue, paymentStatusValue);
+  fetch(`/Managerapp/orders/accept/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+
+      // ✅ Close accept modal
+      $('#acceptModal').modal('hide');
+
+      // ✅ Open assign modal with the same orderId
+      $("#assignOrderId").text(`#${orderId}`);
+      $("#assignModal").modal("show");
+
+    } else {
+      showToast('error', data.error || 'Failed to accept order');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'Error occurred while accepting order.');
+  });
+}
+
+  
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // Does this cookie string begin with the name we want?
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
       }
+    }
+  }
+  return cookieValue;
+}
+
+
+
+// Confirm reject action
+function confirmReject() {
+  const orderId = $('#confirmRejectBtn').data('id');
+  const rejectReason = $('#rejectReason').val().trim();
+
+  if (!orderId) {
+    showToast('error', 'Invalid order ID.');
+    $('#rejectModal').modal('hide');
+    return;
+  }
+
+  if (!rejectReason) {
+    showToast('error', 'Please provide a reason for rejection.');
+    return;
+  }
+
+  const order = orders.find(o => o.id == orderId);
+  if (!order) {
+    showToast('error', `Order #${orderId} not found.`);
+    $('#rejectModal').modal('hide');
+    return;
+  }
+
+  // ✅ Call backend API
+  fetch(`/Managerapp/orders/reject/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      reason: rejectReason
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Update frontend state (temporary until reload)
+      order.status = 'REJECTED';
+      order.rejectReason = rejectReason;
+
+      showToast('success', data.message);
+      $('#rejectModal').modal('hide');
+
+      // ✅ Reload page after short delay so backend/frontend are in sync
+      setTimeout(() => {
+        location.reload();
+      }, 1000); // 1 second so user sees toast
+    } else {
+      showToast('error', data.error || 'Failed to reject order');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'An error occurred while rejecting order.');
+  });
+}
+$('#confirmCreditUserBtn').off('click').on('click', function () {
+  const orderId = $(this).data('id');
+  const selectedUserId = $('#creditUserSelect').val();
+  const selectedUser = creditUsers.find(u => u.id === selectedUserId);
+
+  if (selectedUser) {
+    showToast('success', `Order #${orderId} assigned to credit user ${selectedUser.name}`);
+    $('#creditUserSelectModal').modal('hide');
+  } else {
+    showToast('error', 'Please select a credit user');
+  }
+});
+
+
 
       // Confirm payment status change
       function confirmPayment() {
@@ -758,58 +855,109 @@
         filterTable(statusValue, platformValue, paymentStatusValue);
       }
 
-      // Assign/Update delivery boy
-      function confirmAssign() {
-        const orderId = $('#assignOrderId').text().replace('#', '');
-        const deliveryBoy = $('#deliveryBoySelect').val();
-        if (!deliveryBoy) {
-          showToast('error', 'Please select a delivery boy.');
-          return;
-        }
-        const order = orders.find(o => o.id == orderId);
-        if (!order) {
-          showToast('error', `Order #${orderId} not found.`);
-          $('#assignModal').modal('hide');
-          return;
-        }
-        if (order.platform.toLowerCase() !== 'appthrough') {
-          showToast('error', `Order #${orderId} cannot have a delivery boy assigned as it is not an Appthrough order.`);
-          $('#assignModal').modal('hide');
-          return;
-        }
-        if (order.status !== 'accepted' && order.status !== 'assigned') {
-          showToast('error', `Order #${orderId} must be accepted before assigning a delivery boy.`);
-          $('#assignModal').modal('hide');
-          return;
-        }
-        order.status = 'assigned';
-        order.deliveryBoy = $('#deliveryBoySelect option:selected').text();
-        showToast('success', `Delivery Boy ${order.deliveryBoy} ${order.status === 'assigned' ? 'updated' : 'assigned'} to Order #${orderId}`);
-        $('#assignModal').modal('hide');
-        populateTable();
-        const statusValue = $('#filterOrders').val();
-        const platformValue = $('#filterPlatform').val();
-        const paymentStatusValue = $('#filterPaymentStatus').val();
-        filterTable(statusValue, platformValue, paymentStatusValue);
-      }
+// Assign/Update delivery boy
+function confirmAssign() {
+  console.log("🔥 confirmAssign started");
 
-      // Update event listeners
-      function updateActions() {
-        $('.view-btn').off('click').on('click', function () {
-          const orderId = $(this).data('id');
-          showOrderDetails(orderId);
-        });
-        $('.payment-status-select').off('change').on('change', function () {
-          const orderId = $(this).data('id');
-          const newStatus = $(this).val();
-          if (newStatus) {
-            $('#paymentOrderId').text(`#${orderId}`);
-            $('#newPaymentStatus').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-            $('#confirmPaymentBtn').data('id', orderId).data('status', newStatus);
-            $('#paymentConfirmModal').removeAttr('inert').modal('show');
-            $(this).val('');
+  const orderId = $('#assignOrderId').text().replace('#', '');
+  const deliveryBoy = $('#deliveryBoySelect').val();
+
+  if (!deliveryBoy) {
+    showToast('error', 'Please select a delivery boy.');
+    return;
+  }
+
+  fetch(`/Managerapp/assigndeliveryboy/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      delivery_boy_id: deliveryBoy
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+      console.log("Delivery boy assigned:", deliveryBoy);
+
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } else {
+      showToast('error', data.error || 'Failed to assign delivery boy')
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'Error occurred while assigning delivery boy.')
+  });
+}
+
+// ---------------------
+// Bind buttons on ready
+// ---------------------
+$(document).ready(function () {
+  $("#confirmAcceptBtn").on("click", confirmAccept);
+  $("#confirmAssignBtn").on("click", confirmAssign);
+});   
+
+
+
+    function updateActions() {
+  $('.view-btn').off('click').on('click', function () {
+    const orderId = $(this).data('id');
+    showOrderDetails(orderId);
+  });
+
+  $('.payment-status-select').off('change').on('change', function () {
+  const orderId = $(this).data('id');
+  const newStatus = $(this).val();
+
+  if (newStatus) {
+    if (newStatus === 'credit') {
+      // Show Credit User selection modal
+      $('#creditOrderId').text(`#${orderId}`);
+      $('#creditUserSelect').empty().append('<option value="">Loading...</option>');
+
+      // Fetch credit users from backend
+        $.get('/Managerapp/credit-users/', function (response) {
+          $('#creditUserSelect').empty();
+
+          if (response.credit_users && response.credit_users.length > 0) {
+            // Always add default first option
+            $('#creditUserSelect').append('<option value="">Please select a credit user</option>');
+
+            response.credit_users.forEach(user => {
+              $('#creditUserSelect').append(`<option value="${user.id}">${user.Name}</option>`);
+            });
+          } else {
+            $('#creditUserSelect').append('<option value="">No credit users available</option>');
           }
+        }).fail(function () {
+          $('#creditUserSelect').empty().append('<option value="">Error loading users</option>');
         });
+
+
+      $('#confirmCreditUserBtn').data('id', orderId);
+      $('#creditUserSelectModal').removeAttr('inert').modal('show');
+      $(this).val('');
+    } else {
+      // Normal payment status flow
+      $('#paymentOrderId').text(`#${orderId}`);
+      $('#newPaymentStatus').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
+      $('#confirmPaymentBtn').data('id', orderId).data('status', newStatus);
+      $('#paymentConfirmModal').removeAttr('inert').modal('show');
+      $(this).val('');
+    }
+  }
+});
+
+
+
+
         $('.accept-btn').off('click').on('click', function () {
           const orderId = $(this).data('id');
           showAcceptConfirmation(orderId);
@@ -838,6 +986,7 @@
           $('#assignModal').removeAttr('inert').modal('show');
         });
       }
+
 
       // Initialize modals
       $('#orderModal').on('show.bs.modal', function () {

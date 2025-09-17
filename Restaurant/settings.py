@@ -78,6 +78,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         'CONFIG': {
             "hosts": [("127.0.0.1", 6379)],
+                "hosts": [("172.27.212.99", 6379)],
         },
     },
 }
@@ -187,7 +188,8 @@ STATICFILES_DIRS = [
 ]
 
 # Fast2SMS Key
-FAST2SMS_API_KEY = 'Q7C0LbOImoVgaJGy6dvfXl4zK3AZ28xD1puwMntNkWeEsjSrT984Ikom6vMReYLK12d7qTsQSV5DJOuU'
+# FAST2SMS_API_KEY = 'Q7C0LbOImoVgaJGy6dvfXl4zK3AZ28xD1puwMntNkWeEsjSrT984Ikom6vMReYLK12d7qTsQSV5DJOuU'
+FAST2SMS_API_KEY = 'abldEGHXZTKChJVturUNcpCg9kDU6bIQ9YhcrjsEXYfsif6dAxJx8Hn5IFpV'
 
 # Default Primary Key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

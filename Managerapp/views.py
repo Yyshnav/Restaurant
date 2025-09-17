@@ -2,10 +2,14 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from Accountapp.models import *
+from django.views.decorators.cache import never_cache
 from django.db.models import Min
+from django.utils.decorators import method_decorator
+
 
 # Create your views here.
 
+@method_decorator(never_cache, name='dispatch')
 class ManagerDash(LoginRequiredMixin, View):
     login_url = '/'  
     redirect_field_name = None  
@@ -18,10 +22,40 @@ class ManagerDash(LoginRequiredMixin, View):
         return redirect('/')
 
 
+
+
 class CrediUser(LoginRequiredMixin, View):
     login_url = '/'
+
     def get(self, request):
-        return render(request, 'crediusers.html')
+        if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
+            credit_users = list(CreditUser.objects.values())
+            return JsonResponse({"credit_users": credit_users}, safe=False)
+
+        return render(request, 'crediusers.html', {"credit_users": CreditUser.objects.all()})
+
+    def post(self, request):
+        Name = request.POST.get("Name")   
+        Email = request.POST.get("Email") 
+        phone = request.POST.get("phone")
+        address = request.POST.get("address")
+        credit_limit = request.POST.get("credit_limit")
+
+        CreditUser.objects.create(
+            Name=Name,
+            Email=Email,
+            phone=phone,
+            address=address,
+            credit_limit=credit_limit
+        )
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"message": "Credit User added successfully!"})
+
+        messages.success(request, "Credit User added successfully!")
+        return redirect("crediusers")
+
+
 
 class DishesView(LoginRequiredMixin, View):
     login_url = '/'
@@ -405,12 +439,94 @@ def save_order(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+from django.utils.dateformat import DateFormat
+from django.utils.formats import get_format
+
+from django.shortcuts import redirect
+
+def go_to_waiter(request):
+    # Allow Waiter access in session
+    request.session['waiter_access'] = True
+    return redirect('waiterdashboard')
+
+
     
-    
-class ViewOrderView(View):
+class OrdersListView(View):
     def get(self, request):
-        return render(request, 'view-orders.html')
+        delivery_boys = DeliveryBoyTable.objects.all()
+        if request.GET.get("format") == "json":
+            orders = []
+
+            for o in OfflineOrders.objects.select_related("table", "waiter", "deliveryboy"):
+                orders.append({
+                    "id": o.id,
+                    "customer": o.customer_name or (o.table and f"Table {o.table.table_number}") or "Guest",
+                    "platform": (
+                        "Dining" if o.order_type == "DINE_IN" else
+                        "Takeaway" if o.order_type == "TAKEAWAY" else
+                        "Online"
+                    ),
+                    "total": float(o.total_amount or 0),
+                    "status": "accepted" if o.status else "completed", 
+                    "paymentStatus": o.payment if o.payment else "Unpaid",  # Fixed this line
+                    "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                    "address": "",
+                    "items": [
+                        {
+                            "name": item.item.name,
+                            "quantity": item.quantity,
+                            "price": str(item.price)
+                        }
+                        for item in o.order_items.all()
+                    ],
+                    "rejectReason": "",
+                    "deliveryBoy": o.deliveryboy.name if o.deliveryboy else ""
+                })
+
+            for o in OrderTable.objects.select_related("userid", "deliveryid", "coupon"):
+                orders.append({
+                    "id": o.id,
+                    "customer": str(o.userid) if o.userid else "App User",
+                    "platform": "Appthrough",
+                    "total": float(o.totalamount or 0),
+                    "status": o.orderstatus.lower(),  
+                    "paymentStatus": o.paymentstatus.title(),
+                    "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                    "address": str(o.address) if o.address else "",
+                    "items": [
+                        {
+                            "name": i.itemname.name,
+                            "quantity": i.quantity,
+                            "price": str(i.price)
+                        }
+                        for i in getattr(o, "order_item", []).all()
+                    ] if hasattr(o, "order_item") else [],
+                    "rejectReason": "",
+                    "deliveryBoy": o.deliveryid.name if o.deliveryid else ""
+                })
+
+            return JsonResponse({"orders": orders}, safe=False)
+
+        return render(request, "view-orders.html", {"delivery_boys": delivery_boys})
     
+class AcceptOrderView(View):
+    def post(self, request, order_id):
+        print("AcceptOrderView called")
+        try:
+            order = OrderTable.objects.get(id=order_id)
+        except OrderTable.DoesNotExist:
+            return JsonResponse({"error": "Order not found"}, status=404)
+
+        if order.orderstatus != 'PENDING':
+            return JsonResponse({"error": "Only pending orders can be accepted"}, status=400)
+
+        # Update status
+        order.orderstatus = 'ACCEPTED'  # ✅ must match choices
+        order.save(update_fields=["orderstatus"])
+        return JsonResponse({"success": True, "message": f"Order #{order_id} accepted"})
+
+
+
 class ViewStaff(View):
     def get(self, request):
         # Fetch all staff
@@ -456,13 +572,12 @@ class ViewStaff(View):
 
 class StaffDetailView(View):
     def get(self, request, staff_id):
-        # staff_id will look like "DB1", "W2", "M3"
-        prefix = staff_id[0]  # First character tells which table
-        real_id = staff_id[1:]  # Extract the numeric part
+        prefix = staff_id[:2]   
+        real_id = int(staff_id[2:])  
 
         staff_data = {}
 
-        if prefix == "D":  # DeliveryBoy
+        if prefix == "DB":  
             try:
                 staff = DeliveryBoyTable.objects.get(id=real_id)
                 staff_data = {
@@ -470,10 +585,11 @@ class StaffDetailView(View):
                     "name": staff.name,
                     "role": "Delivery Boy",
                     "status": "Active",
-                    "join_date": "-",  # No created_at field, add if needed
+                    "join_date": "-",  # no created_at field in your model
                     "phone": staff.phone,
                     "email": staff.email,
                     "address": staff.address,
+                    "qualification": "-",  # not in model
                 }
             except DeliveryBoyTable.DoesNotExist:
                 return JsonResponse({"error": "Staff not found"}, status=404)
@@ -486,15 +602,16 @@ class StaffDetailView(View):
                     "name": staff.name,
                     "role": "Waiter",
                     "status": "Active",
-                    "join_date": staff.created_at.strftime("%Y-%m-%d") if staff.created_at else "-",
-                    "phone": staff.phone,
-                    "email": staff.email,
-                    "address": staff.address,
+                    "join_date": staff.created_at.strftime("%Y-%m-%d") if getattr(staff, "created_at", None) else "-",
+                    "phone": getattr(staff, "phone", "-"),
+                    "email": getattr(staff, "email", "-"),
+                    "address": getattr(staff, "address", "-"),
+                    "qualification": getattr(staff, "qualification", "-"),
                 }
             except WaiterTable.DoesNotExist:
                 return JsonResponse({"error": "Staff not found"}, status=404)
 
-        elif prefix == "M":  # Manager
+        elif prefix == "M":  
             try:
                 staff = ManagerTable.objects.get(id=real_id)
                 staff_data = {
@@ -502,16 +619,17 @@ class StaffDetailView(View):
                     "name": staff.name,
                     "role": "Manager",
                     "status": "Active",
-                    "join_date": staff.created_at.strftime("%Y-%m-%d") if staff.created_at else "-",
-                    "phone": staff.phone,
-                    "email": staff.email,
-                    "address": staff.address,
-                    "qualification": staff.qualification,
+                    "join_date": staff.created_at.strftime("%Y-%m-%d") if getattr(staff, "created_at", None) else "-",
+                    "phone": getattr(staff, "phone", "-"),
+                    "email": getattr(staff, "email", "-"),
+                    "address": getattr(staff, "address", "-"),
+                    "qualification": getattr(staff, "qualification", "-"),
                 }
             except ManagerTable.DoesNotExist:
                 return JsonResponse({"error": "Staff not found"}, status=404)
 
         return JsonResponse(staff_data)
+
 
 class DeleteTableView(View):
     def post(self, request, table_id):
@@ -521,3 +639,49 @@ class DeleteTableView(View):
             return JsonResponse({"success": True})
         except DiningTable.DoesNotExist:
             return JsonResponse({"error": "Table not found"}, status=404)
+        
+
+class AssignDeliveryBoyView(View):
+    def post(self, request, order_id):
+        print("AssignDeliveryBoyView called")
+        delivery_boy_id = request.POST.get("delivery_boy_id") or request.POST.get("deliveryBoyId")
+        try:
+            order = OrderTable.objects.get(id=order_id)
+            delivery_boy = DeliveryBoyTable.objects.get(id=delivery_boy_id)
+        except (OrderTable.DoesNotExist, DeliveryBoyTable.DoesNotExist):
+            return JsonResponse({"error": "Order or Delivery Boy not found"}, status=404)
+        order.deliveryid = delivery_boy
+        order.orderstatus = "ASSIGNED"
+        order.save(update_fields=["deliveryid", "orderstatus"])
+
+        return JsonResponse({
+            "success": True,
+            "message": f"Order #{order_id} assigned to Delivery Boy {delivery_boy.name}"
+        })
+
+
+
+class RejectOrderView(View):
+    def post(self, request, order_id):
+        try:
+            order = OrderTable.objects.get(id=order_id)
+        except OrderTable.DoesNotExist:
+            return JsonResponse({"error": "Order not found"}, status=404)
+
+        if order.orderstatus != 'PENDING':
+            return JsonResponse({"error": "Only pending orders can be rejected"}, status=400)
+
+        reason = request.POST.get("reason", "")
+
+        # Update status
+        order.orderstatus = 'REJECTED'
+        order.delivery_instructions = f"Rejected: {reason}"  
+        order.save(update_fields=["orderstatus", "delivery_instructions"])
+
+        return JsonResponse({"success": True, "message": f"Order #{order_id} rejected"})
+    
+
+class CreditUserListView(View):
+    def get(self, request):
+        users = list(CreditUser.objects.values("id", "Name"))
+        return JsonResponse({"credit_users": users})

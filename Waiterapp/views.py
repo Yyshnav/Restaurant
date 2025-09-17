@@ -14,6 +14,17 @@ from django.urls import reverse
 from django.contrib.auth.views import LoginView, LogoutView
 from django.utils import timezone
 import pytz
+from decimal import Decimal
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from Accountapp.models import *
+from django.utils.timezone import now, localtime
+
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
+from django.shortcuts import render
 
 from Accountapp.models import *
 
@@ -23,25 +34,38 @@ class WaiterView(View):
     def get(self, request):
         return render(request, 'waiter.html')
 # views.py
-from decimal import Decimal
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from Accountapp.models import *
-from django.utils.timezone import now, localtime
 
+
+@login_required(login_url='/')
+@never_cache
 def ordering(request):
-    # Ensure sample data if database is empty
+    # Only allow access if session flag is set
+    if not request.session.get('waiter_access', False):
+        return redirect('/')  # redirect to manager login/dashboard
+
+    # Clear session flag to prevent back navigation
+    request.session['waiter_access'] = False
+
+    # --- your existing code for items/tables/waiters ---
     if not ItemTable.objects.exists():
         category = CategoryTable.objects.get_or_create(name="food")[0]
         branch = BranchTable.objects.get_or_create(name="Main Branch")[0]
         DiningTable.objects.get_or_create(table_number="1", branch=branch)
         DiningTable.objects.get_or_create(table_number="2", branch=branch)
-        WaiterTable.objects.get_or_create(name="Waiter1", userid=User.objects.get_or_create(username="waiter1")[0])
-        WaiterTable.objects.get_or_create(name="Waiter2", userid=User.objects.get_or_create(username="waiter2")[0])
-        item1 = ItemTable.objects.get_or_create(name="Burger", price=5.99, category=category, images=[{"url": "default.jpg"}])[0]
-        item2 = ItemTable.objects.get_or_create(name="Pizza", price=8.99, category=category, images=[{"url": "default.jpg"}])[0]
+        WaiterTable.objects.get_or_create(
+            name="Waiter1", userid=User.objects.get_or_create(username="waiter1")[0]
+        )
+        WaiterTable.objects.get_or_create(
+            name="Waiter2", userid=User.objects.get_or_create(username="waiter2")[0]
+        )
+        item1 = ItemTable.objects.get_or_create(
+            name="Burger", price=5.99, category=category,
+            images=[{"url": "default.jpg"}]
+        )[0]
+        item2 = ItemTable.objects.get_or_create(
+            name="Pizza", price=8.99, category=category,
+            images=[{"url": "default.jpg"}]
+        )[0]
         ItemVariantTable.objects.get_or_create(item=item1, variant_name="Small", price=4.99)
         ItemVariantTable.objects.get_or_create(item=item1, variant_name="Large", price=7.99)
         ItemVariantTable.objects.get_or_create(item=item2, variant_name="Medium", price=6.99)
@@ -52,19 +76,18 @@ def ordering(request):
     waiters = WaiterTable.objects.all()
     branch = BranchTable.objects.first()
 
-    # Prepare items with their variants from ItemVariantTable
     items_with_variants = []
     for item in items:
         variants = list(item.variants.values('variant_name', 'price'))
-        print(variants)
         items_with_variants.append({
             'id': item.id,
             'name': item.name,
             'price': float(item.price),
             'category': item.category.name if item.category else 'uncategorized',
-            'images': item.images,  # Preserve your original images field
+            'images': item.images,
             'variants': variants if variants else [{'variant_name': 'Standard', 'price': float(item.price)}]
         })
+        print(variants)
 
     context = {
         'items': items_with_variants,
@@ -73,6 +96,41 @@ def ordering(request):
         'branch': branch,
     }
     return render(request, 'waiter.html', context)
+
+from django.views.decorators.http import require_GET
+
+
+@require_GET
+@csrf_exempt  # Temporarily disable CSRF for testing
+@csrf_exempt
+def get_variants(request, item_id):
+    print("------------------innnn----->")
+    try:
+        print(f"Fetching variants for item ID:----------------------- {item_id}")
+        
+        variants = ItemVariantTable.objects.filter(item_id=item_id)
+        print(f"Found {variants.count()} variants")
+        
+        variants_data = []
+        for variant in variants:
+            variants_data.append({
+                'id': variant.id,
+                'variant_name': variant.variant_name,
+                'price': float(variant.price)
+            })
+        
+        print(f"Returning data--------------: {variants_data}")
+        return JsonResponse(variants_data, safe=False)
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")  # Debug print
+        return JsonResponse({'error': str(e)}, status=500)
+
+
 
 @csrf_exempt
 def authenticate_waiter(request):
@@ -104,54 +162,11 @@ def place_order(request):
             return JsonResponse({'success': False, 'message': 'Invalid data'}, status=400)
 
         try:
-            branch = BranchTable.objects.first()
+            # Get waiter and branch
             waiter = WaiterTable.objects.get(id=waiter_id)
-
-            order = OrderTable.objects.create(
-                userid=None,
-                branch=branch,
-                subtotal=Decimal('0'),
-                tax=Decimal('0'),
-                discount=Decimal('0'),
-                totalamount=Decimal('0'),
-                paymentstatus='PENDING',
-                orderstatus='ACCEPTED',
-                payment_method='CASH',
-            )
-
-            subtotal = Decimal('0')
-            for it in items_data:
-                item_name = it.get('name')
-                quantity = int(it.get('quantity', 1))
-                instruction = it.get('note', '')
-                variant_name = it.get('variant', 'Standard')  # Changed from 'portion' to 'variant'
-
-                try:
-                    item = ItemTable.objects.get(name=item_name)
-                    variant = None
-                    unit_price = Decimal(item.price)
-                    if variant_name != 'Standard':
-                        variant = ItemVariantTable.objects.get(item=item, variant_name=variant_name)
-                        unit_price = Decimal(variant.price)
-                    item_total = unit_price * quantity
-                    subtotal += item_total
-
-                    OrderItemTable.objects.create(
-                        order=order,
-                        itemname=item,
-                        quantity=str(quantity),
-                        price=unit_price,
-                        instruction=instruction,
-                        variant=variant,
-                    )
-                except (ItemTable.DoesNotExist, ItemVariantTable.DoesNotExist):
-                    order.delete()
-                    return JsonResponse({'success': False, 'message': 'Invalid item or variant'}, status=400)
-
-            order.subtotal = subtotal
-            order.totalamount = subtotal
-            order.save()
-
+            branch = BranchTable.objects.first()  # Or get branch from request/session
+            
+            # Get table if selected
             table = None
             if selected_tables:
                 table_number = selected_tables[0]
@@ -160,23 +175,67 @@ def place_order(request):
                 except DiningTable.DoesNotExist:
                     pass
 
-            bill_number = 'BILL-' + str(order.id) + '-' + localtime(now()).strftime('%Y%m%d%H%M%S')
-            BillTable.objects.create(
-                order=order,
-                branch=branch,
+            # Create OfflineOrders instance
+            offline_order = OfflineOrders.objects.create(
+                order_type='DINE_IN',  # Default to Dine In
                 table=table,
                 waiter=waiter,
-                bill_number=bill_number,
-                subtotal=order.subtotal,
-                tax=order.tax,
-                discount=order.discount,
-                total_amount=order.totalamount,
-                status='PENDING',
-                payment_method='COD',
-                payment_channel='BY_HAND',
+                total_amount=total,
+                payment='PENDING'  # Default payment status
             )
 
-            return JsonResponse({'success': True, 'message': 'Order placed successfully!'})
+            # Create OfflineOrderItems for each item
+            for item_data in items_data:
+                item_name = item_data.get('name')
+                quantity = int(item_data.get('quantity', 1))
+                note = item_data.get('note', '')
+                variant_name = item_data.get('variant', 'Standard')
+                price = Decimal(item_data.get('price', '0'))
+
+                try:
+                    # Get the item
+                    item = ItemTable.objects.get(name=item_name)
+                    
+                    # Get variant if specified
+                    variant = None
+                    if variant_name != 'Standard':
+                        variant = ItemVariantTable.objects.get(
+                            item=item, 
+                            variant_name=variant_name
+                        )
+                    
+                    # Create order item
+                    OfflineOrderItems.objects.create(
+                        order=offline_order,
+                        item=item,
+                        variant=variant,
+                        quantity=quantity,
+                        price=price,
+                        note=note
+                    )
+                    
+                except ItemTable.DoesNotExist:
+                    offline_order.delete()
+                    return JsonResponse({
+                        'success': False, 
+                        'message': f'Item "{item_name}" does not exist'
+                    }, status=400)
+                except ItemVariantTable.DoesNotExist:
+                    offline_order.delete()
+                    return JsonResponse({
+                        'success': False, 
+                        'message': f'Variant "{variant_name}" for item "{item_name}" does not exist'
+                    }, status=400)
+
+            return JsonResponse({
+                'success': True, 
+                'message': 'Order placed successfully!',
+                'order_id': offline_order.id
+            })
+            
         except WaiterTable.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Invalid waiter'}, status=400)
-    return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
