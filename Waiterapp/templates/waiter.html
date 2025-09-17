@@ -164,13 +164,16 @@
           {% endfor %} -->
           <!-- templates/ordering.html (corrected part for item images) -->
 {% for item in items %}
-<div class="col-6 col-sm-4 col-lg-3 product-item" data-category="{{ item.category.name|lower|default:'uncategorized' }}" >
+<div class="col-6 col-sm-4 col-lg-3 product-item"
+     data-id="{{ item.id }}"
+     data-category="{{ item.category.name|lower|default:'uncategorized' }}">
+     
   <div class="product-card">
     <div class="product-image-container">
       {% if item.images.first %}
         <img src="{{ item.images.first.image.url }}" alt="{{ item.name }}">
       {% else %}
-        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80" alt="{{ item.name }}">
+        <img src="https://via.placeholder.com/150" alt="{{ item.name }}">
       {% endif %}
     </div>
     <div class="product-name">{{ item.name }}</div>
@@ -439,63 +442,128 @@ function updateCartItemQuantity(item, quantity) {
 
 
 function handleProductClick() {
-  const name = this.querySelector('.product-name').textContent;
-  const price = parseFloat(this.querySelector('.price').textContent.replace('$', ''));
-  const category = this.closest('.product-item').getAttribute('data-category');
-  isFoodProduct = (category === "food");
+  const productEl = this.closest('.product-item');
+  const productId = productEl.dataset.id;
+  const productName = productEl.querySelector('.product-name').innerText;
+  const basePrice = parseFloat(productEl.querySelector('.price').innerText.replace('$', ''));
+  const category = productEl.dataset.category; // Store category in a variable
+  
+  console.log("Fetching variants for productId:", productId);
 
-  selectedProduct = { name, price, category };
-  document.getElementById('popup-product-name').textContent = name;
+  // Show loading state
+  document.getElementById("popup-product-name").innerText = "Loading variants...";
+  document.getElementById("quantity-popup").style.display = "flex";
   
-  const variantGrid = document.getElementById('portion-grid');
-  variantGrid.innerHTML = '';
+  // Get CSRF token
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   
-  // Fetch variants directly from ItemVariantTable data passed via data-variants
-  const variants = this.closest('.product-item').dataset.variants ? JSON.parse(this.closest('.product-item').dataset.variants) : [];
-  
-  if (isFoodProduct && variants.length > 0) {
-    variants.forEach(variant => {
-      const option = document.createElement('div');
-      option.classList.add('portion-option');
-      if (variant.variant_name === variants[0].variant_name) option.classList.add('selected');
-      option.setAttribute('data-variant', variant.variant_name);
-      option.setAttribute('data-price', variant.price);
+  fetch(`/Waiterapp/get-variant/${productId}/`, {
+    headers: {
+      'X-CSRFToken': csrfToken
+    }
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(variants => {
+      console.log("Variants received:", variants);
       
-      option.innerHTML = `
-        <div class="portion-title">${variant.variant_name}</div>
-        <div class="price">$ ${variant.price}</div>
-      `;
-      variantGrid.appendChild(option);
+      const variantGrid = document.getElementById('portion-grid');
+      variantGrid.innerHTML = '';
+      
+      // Check if we got a valid response
+      if (variants && Array.isArray(variants)) {
+        if (variants.length > 0) {
+          // Create variant options
+          variants.forEach((variant, index) => {
+            const option = document.createElement('div');
+            option.classList.add('portion-option');
+            if (index === 0) {
+              option.classList.add('selected');
+              selectedPortion = variant.variant_name;
+            }
+            option.dataset.variant = variant.variant_name;
+            option.dataset.price = variant.price;
+            
+            option.innerHTML = `
+              <div class="portion-title">${variant.variant_name}</div>
+              <div class="price">$ ${parseFloat(variant.price).toFixed(2)}</div>
+            `;
+            
+            option.addEventListener('click', function() {
+              document.querySelectorAll('.portion-option').forEach(opt => opt.classList.remove('selected'));
+              this.classList.add('selected');
+              selectedPortion = this.dataset.variant;
+              selectedProduct.price = parseFloat(this.dataset.price);
+            });
+            
+            variantGrid.appendChild(option);
+          });
+          
+          document.getElementById("popup-product-name").innerText = productName;
+          selectedProduct = { 
+            name: productName, 
+            price: parseFloat(variants[0].price),
+            category: category
+          };
+        } else {
+          // No variants available
+          showNoVariants(variantGrid, productName, basePrice, category);
+        }
+      } else {
+        // Invalid response format
+        showNoVariants(variantGrid, productName, basePrice, category);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching variants:', error);
+      const variantGrid = document.getElementById('portion-grid');
+      showNoVariants(variantGrid, productName, basePrice, category);
     });
-    
-    // Add variant selection event listeners
-    document.querySelectorAll('.portion-option').forEach(option => {
-      option.addEventListener('click', function() {
-        document.querySelector('.portion-option.selected').classList.remove('selected');
-        this.classList.add('selected');
-        selectedPortion = this.getAttribute('data-variant');
-      });
-    });
-  } else {
-    const option = document.createElement('div');
-    option.classList.add('portion-option', 'selected');
-    option.setAttribute('data-variant', 'Standard');
-    option.setAttribute('data-price', price.toFixed(2));
-    
-    option.innerHTML = `
-      <div class="portion-title">Standard</div>
-      <div class="price">$ ${price.toFixed(2)}</div>
-    `;
-    variantGrid.appendChild(option);
-    selectedPortion = "Standard";
-  }
 
   // Reset quantity to 1
   currentQuantity = 1;
   document.getElementById('quantity-input').value = "1";
-
   editingCartItem = null;
-  document.getElementById('quantity-popup').style.display = 'flex';
+}
+
+function showNoVariants(variantGrid, productName, basePrice, category) {
+  variantGrid.innerHTML = `
+    <div class="no-variant-msg text-muted p-2" style="grid-column: 1 / -1;">
+      No variants available. Using standard pricing.
+    </div>
+  `;
+  
+  const option = document.createElement('div');
+  option.classList.add('portion-option', 'selected');
+  option.dataset.variant = 'Standard';
+  console.log("======================================",variantGrid);
+  
+  option.dataset.price = basePrice;
+  
+  option.innerHTML = `
+    <div class="portion-title">Standard</div>
+    <div class="price">$ ${basePrice.toFixed(2)}</div>
+  `;
+  
+  option.addEventListener('click', function() {
+    document.querySelectorAll('.portion-option').forEach(opt => opt.classList.remove('selected'));
+    this.classList.add('selected');
+    selectedPortion = this.dataset.variant;
+    selectedProduct.price = parseFloat(this.dataset.price);
+  });
+  
+  variantGrid.appendChild(option);
+  selectedPortion = 'Standard';
+  document.getElementById("popup-product-name").innerText = productName;
+  selectedProduct = { 
+    name: productName, 
+    price: basePrice,
+    category: category
+  };
 }
 // Product click handler
 // function handleProductClick() {
@@ -945,7 +1013,7 @@ function authenticateWaiter() {
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-  fetch('/authenticate_waiter/', {
+  fetch('/Waiterapp/authenticate_waiter/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1060,7 +1128,7 @@ function handlePlaceOrder() {
     return;
   }
 
-  // Collect cart items
+  // Collect cart items with variant information
   const items = [];
   document.querySelectorAll('#cart-items .item').forEach(item => {
     const name = item.querySelector('.item-name').textContent;
@@ -1068,11 +1136,22 @@ function handlePlaceOrder() {
     const price = parseFloat(item.querySelector('.item-price').textContent.replace('$ ', ''));
     const note = item.querySelector('.item-note').textContent;
     const detail = item.querySelector('.item-detail').textContent;
-    let portion = null;
-    if (detail.includes('Portion:')) {
-      portion = detail.split('Portion: ')[1].trim();
+    
+    // Extract variant from detail text
+    let variant = 'Standard';
+    if (detail.includes('Variant:')) {
+      variant = detail.split('Variant: ')[1].trim();
+    } else if (detail.includes('Portion:')) {
+      variant = detail.split('Portion: ')[1].trim();
     }
-    items.push({ name, quantity, price: price.toFixed(2), note, portion });
+    
+    items.push({ 
+      name, 
+      quantity, 
+      price: price.toFixed(2), 
+      note, 
+      variant  // Changed from 'portion' to 'variant'
+    });
   });
 
   const total = parseFloat(document.querySelector('#cart-total span').textContent);
@@ -1080,13 +1159,18 @@ function handlePlaceOrder() {
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-  fetch('/place_order/', {
+  fetch('/Waiterapp/place_order/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-CSRFToken': csrfToken
     },
-    body: JSON.stringify({ items, total: total.toFixed(2), selected_tables: selectedTables, waiter_id: waiterId })
+    body: JSON.stringify({ 
+      items, 
+      total: total.toFixed(2), 
+      selected_tables: selectedTables, 
+      waiter_id: waiterId 
+    })
   })
   .then(response => response.json())
   .then(data => {
@@ -1127,14 +1211,91 @@ function handlePlaceOrder() {
     showMessage("An error occurred. Please try again.");
   });
 }
-  history.pushState(null, "", location.href);
-  window.onpopstate = function () {
-      location.replace(location.href);
-  };
+
+// Add this function if you don't have it already
+function updateSelectedTablesDisplay() {
+  const desktopDisplay = document.getElementById("desktop-selected-tables");
+  const mobileDisplay = document.getElementById("mobile-selected-tables");
+
+  desktopDisplay.innerHTML = "";
+  mobileDisplay.innerHTML = "";
+
+  if (selectedTables.length === 0) {
+    desktopDisplay.innerHTML = '<span class="no-tables-selected">No tables selected</span>';
+    mobileDisplay.innerHTML = '<span class="no-tables-selected">No tables selected</span>';
+    return;
+  }
+
+  selectedTables.forEach((table) => {
+    const tagHTML = `Table ${table} <span class="remove" data-table="${table}">×</span>`;
+
+    // Desktop tag
+    const desktopTag = document.createElement("span");
+    desktopTag.className = "table-tag";
+    desktopTag.innerHTML = tagHTML;
+    desktopTag.querySelector(".remove").addEventListener("click", removeTable);
+
+    // Mobile tag
+    const mobileTag = document.createElement('span');
+    mobileTag.className = "table-tag";
+    mobileTag.innerHTML = tagHTML;
+    mobileTag.querySelector(".remove").addEventListener("click", removeTable);
+
+    desktopDisplay.appendChild(desktopTag);
+    mobileDisplay.appendChild(mobileTag);
+  });
+}
+
+// Add this function if you don't have it already
+function removeTable(e) {
+  const tableToRemove = e.target.getAttribute("data-table");
+  selectedTables = selectedTables.filter((t) => t !== tableToRemove);
+  updateSelectedTablesDisplay();
+}
+
+// Add this function if you don't have it already
+function updateTotal() {
+  let total = 0;
+  
+  // Desktop cart
+  document.querySelectorAll('#cart-items .item-price').forEach(priceEl => {
+    total += parseFloat(priceEl.textContent.replace('$', ''));
+  });
+  document.querySelector('#cart-total span').textContent = total.toFixed(2);
+  
+  // Mobile cart
+  document.querySelector('#mobile-cart-total span').textContent = total.toFixed(2);
+}
+
+// Add this function if you don't have it already
+function updateCartBadge() {
+  const cartCount = document.querySelectorAll('#cart-items .item').length;
+  document.getElementById('cart-badge').textContent = cartCount;
+}
+
+// Add this function if you don't have it already
+function updateProductHighlighting() {
+  document.querySelectorAll('.product-card').forEach(card => {
+    const name = card.querySelector('.product-name').textContent;
+    card.classList.toggle('in-cart', productsInCart.has(name));
+  });
+}
+
+// Add this function if you don't have it already
+function showMessage(message) {
+  document.getElementById('popup-msg-text').textContent = message;
+  document.getElementById('popup-msg').style.display = 'block';
+}
+
+// History management
+history.pushState(null, "", location.href);
+window.onpopstate = function () {
+  location.replace(location.href);
+};
 
 
 document.addEventListener('DOMContentLoaded', initApp);
 </script>
 
 </body>
-</html>
+</html> 
