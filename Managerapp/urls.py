@@ -29,6 +29,9 @@ urlpatterns = [
     path('orders/reject/<int:order_id>/', RejectOrderView.as_view(), name='reject_order'),
     path('go-to-waiter/', go_to_waiter, name='go_to_waiter'),
     path('credit-users/', CreditUserListView.as_view(), name='credit_users'),
+    path('cashorders/', CashOrdersListView.as_view(), name='cashorders'),
+    path('cashnav/', CashnavView.as_view(), name='cashnav'),
+    path('cashiertakeorders/', CashierTakeOrdersView.as_view(), name='cashiertakeorders'),
 
 
 

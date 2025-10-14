@@ -6,6 +6,8 @@ from django.views.decorators.cache import never_cache
 from django.db.models import Min
 from django.utils.decorators import method_decorator
 
+from Deliveryboyapp.fcm_utils import send_fcm_notification
+
 
 # Create your views here.
 
@@ -521,9 +523,22 @@ class AcceptOrderView(View):
             return JsonResponse({"error": "Only pending orders can be accepted"}, status=400)
 
         # Update status
-        order.orderstatus = 'ACCEPTED'  # ✅ must match choices
+        order.orderstatus = 'ACCEPTED'
         order.save(update_fields=["orderstatus"])
-        return JsonResponse({"success": True, "message": f"Order #{order_id} accepted"})
+
+       
+        try:
+            if order.userid and hasattr(order.userid.loginid, "notification_token") and order.userid.loginid.notification_token:
+                branch_name = order.branch.name if order.branch else "the branch"
+                send_fcm_notification(
+                    token=order.userid.loginid.notification_token,
+                    title="Order Accepted ✅",
+                    body=f"Your order #{order.id} has been accepted by {branch_name}. Current status: {order.get_orderstatus_display()}"
+                )
+        except Exception as e:
+            print("❌ Notification Error:", e)
+
+        return JsonResponse({"success": True, "message": f"Order #{order_id} accepted and user notified"})
 
 
 
@@ -641,25 +656,108 @@ class DeleteTableView(View):
             return JsonResponse({"error": "Table not found"}, status=404)
         
 
+# class AssignDeliveryBoyView(View):
+#     def post(self, request, order_id):
+#         print("AssignDeliveryBoyView called")
+#         delivery_boy_id = request.POST.get("delivery_boy_id") or request.POST.get("deliveryBoyId")
+#         try:
+#             order = OrderTable.objects.get(id=order_id)
+#             delivery_boy = DeliveryBoyTable.objects.get(id=delivery_boy_id)
+#         except (OrderTable.DoesNotExist, DeliveryBoyTable.DoesNotExist):
+#             return JsonResponse({"error": "Order or Delivery Boy not found"}, status=404)
+
+#         # Assign delivery boy and update status
+#         order.deliveryid = delivery_boy
+#         order.orderstatus = "ASSIGNED"
+#         order.save(update_fields=["deliveryid", "orderstatus"])
+
+#         # -----------------------------
+#         # 🔔 Send Notification to user
+#         # -----------------------------
+#         try:
+#             if order.userid and hasattr(order.userid.loginid, "notification_token") and order.userid.loginid.notification_token:
+#                 send_fcm_notification(
+#                     token=order.userid.loginid.notification_token,
+#                     title="Delivery Boy Assigned 🚚",
+#                     body=f"Your order #{order.id} has been assigned to {delivery_boy.name}. Current status: {order.get_orderstatus_display()}"
+#                 )
+#         except Exception as e:
+#             print("❌ Notification Error:", e)
+
+#         return JsonResponse({
+#             "success": True,
+#             "message": f"Order #{order_id} assigned to Delivery Boy {delivery_boy.name} and user notified"
+#         })
+
 class AssignDeliveryBoyView(View):
     def post(self, request, order_id):
-        print("AssignDeliveryBoyView called")
+        print("✅ AssignDeliveryBoyView called")
+
+        # Get delivery boy ID from POST
         delivery_boy_id = request.POST.get("delivery_boy_id") or request.POST.get("deliveryBoyId")
+        print("📦 Delivery Boy ID:", delivery_boy_id)
+
+        # Fetch order and delivery boy objects
         try:
             order = OrderTable.objects.get(id=order_id)
             delivery_boy = DeliveryBoyTable.objects.get(id=delivery_boy_id)
         except (OrderTable.DoesNotExist, DeliveryBoyTable.DoesNotExist):
             return JsonResponse({"error": "Order or Delivery Boy not found"}, status=404)
+
+        # Assign delivery boy and update status
         order.deliveryid = delivery_boy
         order.orderstatus = "ASSIGNED"
         order.save(update_fields=["deliveryid", "orderstatus"])
+        print(f"📦 Order #{order.id} assigned to {delivery_boy.name}")
 
+        # -----------------------------
+        # 🔔 Send Notification to USER
+        # -----------------------------
+        try:
+            user_token = getattr(order.userid.loginid, "notification_token", None)
+            print("👤 User token:", user_token)
+
+            if user_token:
+                send_fcm_notification(
+                    token=user_token,
+                    title="Delivery Boy Assigned 🚚",
+                    body=f"Your order #{order.id} has been assigned to {delivery_boy.name}. "
+                         f"Current status: {order.get_orderstatus_display()}",
+                    project="user"
+                )
+                print("✅ User notification sent")
+            else:
+                print("⚠️ No notification token for user")
+        except Exception as e:
+            print("❌ User Notification Error:", e)
+
+        # -----------------------------
+        # 🔔 Send Notification to DELIVERY BOY
+        # -----------------------------
+        try:
+            delivery_token = getattr(delivery_boy.userid, "notification_token", None)
+            print("🛵 Delivery Boy token:", delivery_token)
+
+            if delivery_token:
+                send_fcm_notification(
+                    token=delivery_token,
+                    title="New Delivery Assigned 🛵",
+                    body=f"You have a new delivery assignment for order #{order.id}.",
+                    project="delivery"
+                )
+                print("✅ Delivery Boy notification sent")
+            else:
+                print("⚠️ No notification token for delivery boy")
+        except Exception as e:
+            print("❌ Delivery Boy Notification Error:", e)
+
+        # Final response
         return JsonResponse({
             "success": True,
-            "message": f"Order #{order_id} assigned to Delivery Boy {delivery_boy.name}"
+            "message": f"Order #{order_id} assigned to {delivery_boy.name}. Notifications sent.",
         })
 
-
+    
 
 class RejectOrderView(View):
     def post(self, request, order_id):
@@ -678,10 +776,137 @@ class RejectOrderView(View):
         order.delivery_instructions = f"Rejected: {reason}"  
         order.save(update_fields=["orderstatus", "delivery_instructions"])
 
-        return JsonResponse({"success": True, "message": f"Order #{order_id} rejected"})
+        # -----------------------------
+        # 🔔 Send Notification to user
+        # -----------------------------
+        try:
+            if order.userid and hasattr(order.userid.loginid, "notification_token") and order.userid.loginid.notification_token:
+                branch_name = order.branch.name if order.branch else "the branch"
+                reason_text = f" Reason: {reason}" if reason else ""
+                send_fcm_notification(
+                    token=order.userid.loginid.notification_token,
+                    title="Order Rejected ❌",
+                    body=f"Your order #{order.id} from {branch_name} has been rejected.{reason_text}"
+                )
+        except Exception as e:
+            print("❌ Notification Error:", e)
+
+        return JsonResponse({"success": True, "message": f"Order #{order_id} rejected and user notified"})
     
 
 class CreditUserListView(View):
     def get(self, request):
         users = list(CreditUser.objects.values("id", "Name"))
         return JsonResponse({"credit_users": users})
+    
+
+class CashOrdersListView(View):
+    def get(self, request):
+        delivery_boys = DeliveryBoyTable.objects.all()
+        if request.GET.get("format") == "json":
+            orders = []
+
+            for o in OfflineOrders.objects.select_related("table", "waiter", "deliveryboy"):
+                orders.append({
+                    "id": o.id,
+                    "customer": o.customer_name or (o.table and f"Table {o.table.table_number}") or "Guest",
+                    "platform": (
+                        "Dining" if o.order_type == "DINE_IN" else
+                        "Takeaway" if o.order_type == "TAKEAWAY" else
+                        "Online"
+                    ),
+                    "total": float(o.total_amount or 0),
+                    "status": "accepted" if o.status else "completed", 
+                    "paymentStatus": o.payment if o.payment else "Unpaid",  # Fixed this line
+                    "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                    "address": "",
+                    "items": [
+                        {
+                            "name": item.item.name,
+                            "quantity": item.quantity,
+                            "price": str(item.price)
+                        }
+                        for item in o.order_items.all()
+                    ],
+                    "rejectReason": "",
+                    "deliveryBoy": o.deliveryboy.name if o.deliveryboy else ""
+                })
+
+            for o in OrderTable.objects.select_related("userid", "deliveryid", "coupon"):
+                orders.append({
+                    "id": o.id,
+                    "customer": str(o.userid) if o.userid else "App User",
+                    "platform": "Appthrough",
+                    "total": float(o.totalamount or 0),
+                    "status": o.orderstatus.lower(),  
+                    "paymentStatus": o.paymentstatus.title(),
+                    "date": DateFormat(o.created_at).format(get_format("DATE_FORMAT")),
+                    "address": str(o.address) if o.address else "",
+                    "items": [
+                        {
+                            "name": i.itemname.name,
+                            "quantity": i.quantity,
+                            "price": str(i.price)
+                        }
+                        for i in getattr(o, "order_item", []).all()
+                    ] if hasattr(o, "order_item") else [],
+                    "rejectReason": "",
+                    "deliveryBoy": o.deliveryid.name if o.deliveryid else ""
+                })
+
+            return JsonResponse({"orders": orders}, safe=False)
+
+        return render(request, "cashierorders.html", {"delivery_boys": delivery_boys})
+    
+
+class CashnavView(View):
+    def get(self, request):
+        return render(request, 'cashierNav.html')
+    
+
+class CashierTakeOrdersView(View):
+    def get(self, request):
+        if request.GET.get('format') == 'json':
+            items = ItemTable.objects.prefetch_related("images", "variants").all()
+            dishes = []
+
+            for item in items:
+                image_url = item.images.first().image.url if item.images.exists() else "https://via.placeholder.com/160"
+                variants = [
+                    {
+                        "id": v.id,                         # ✅ send id
+                        "name": v.variant_name,
+                        "price": float(v.price)
+                    }
+                    for v in item.variants.all()
+                ]
+
+                dishes.append({
+                    "id": item.id,
+                    "name": item.name,
+                    "price": float(item.price) if item.price else 0,
+                    "category": item.category.name if item.category else "",
+                    "image": image_url,
+                    "variants": variants
+                })
+
+            waiters = list(WaiterTable.objects.values("id", "name"))
+            tables = list(DiningTable.objects.values("id", "table_number", "floor", "seating_capacity", "is_available"))
+            delivery_boys = list(DeliveryBoyTable.objects.values("id", "name"))
+
+            return JsonResponse({
+                "dishes": dishes,
+                "waiters": waiters,
+                "tables": tables,
+                "delivery_boys": delivery_boys,
+            })
+
+        # Normal HTML render
+        waiters = WaiterTable.objects.all()
+        tables = DiningTable.objects.all()
+        delivery_boys = DeliveryBoyTable.objects.all()
+        return render(request, "cashiertakeorders.html", {
+            "waiters": waiters,
+            "tables": tables,
+            "delivery_boys": delivery_boys
+        })
