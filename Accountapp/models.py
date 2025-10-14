@@ -194,18 +194,7 @@ class OrderTable(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def calculate_totals(self):
-        # Ensure all arithmetic uses Decimal
-        subtotal = sum(
-            item.price * Decimal(item.quantity)
-            for item in self.order_item.all()
-            if item.quantity and item.quantity.strip().isdigit()
-        )
-        self.subtotal = subtotal
-        self.tax = subtotal * Decimal('0.05')  # 5% tax as Decimal
-        self.discount = self.coupon.discount_amount if self.coupon else Decimal('0')
-        self.totalamount = self.subtotal + self.tax - self.discount
-        self.save()
+    
 
     def __str__(self):
         return f"Order #{self.id} by {self.userid}"
@@ -359,12 +348,12 @@ class RatingTable(models.Model):
     itemid = models.ForeignKey(ItemTable, on_delete=models.CASCADE, related_name='ratings', null=True, blank=True)
     rating_type = models.CharField(max_length=10, choices=RATING_TYPE_CHOICES, null=True, blank=True)  # 'DISH' for food items, 'SERVICE' for delivery or service ratings
     rating = models.CharField(max_length=10,null=True, blank=True)
-    comment = models.CharField(max_length=100, null=True, blank=True)  # Show textbox if rating == 1 in frontend
+    comment = models.CharField(max_length=100, null=True, blank=True) 
     createdat = models.DateTimeField(auto_now_add=True)
     updatedat = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        target = self.itemid if self.rating_type == 'DISH' else self.userid
+        target = self.itemid if self.rating_type == 'DISH' else self.userid,
         return f"{self.userid} rated {target} ({self.rating_type}) - {self.rating}"
     
 class CartTable(models.Model):
@@ -700,3 +689,9 @@ class OfflineOrderItems(models.Model):
         variant_display = self.variant.variant_name if self.variant else "No Variant" 
         return f"Order {self.order.id} - {self.item.name} ({variant_display}) x {self.quantity}"
 
+# class DeliveryComplaintTable(models.Model):
+#     order = models.ForeignKey(OrderTable, on_delete=models.CASCADE, related_name="complaints")
+#     deliveryboy = models.ForeignKey(DeliveryBoyTable, on_delete=models.CASCADE, related_name="complaints", name=True, blank=True)
+#     description = models.TextField()
+#     image = models.ImageField(upload_to="complaints/", blank=True, null=True)
+#     created_at = models.DateTimeField(auto_now_add=True)

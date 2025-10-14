@@ -8,10 +8,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import random
-from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OfferTable, OrderItemTable, OrderTable, PaymentTable, SpotlightTable, UserRole, WishlistTable
+from Accountapp.models import AddonTable, AddressTable, BranchTable, CarouselTable, CartTable, CouponTable, DeliveryBoyTable, ItemTable, ItemVariantTable, LoginTable, OfferTable, OrderItemTable, OrderTable, PaymentTable, RatingTable, SpotlightTable, UserRole, WishlistTable
 from django.conf import settings
 from Adminapp.serializer import BranchTableSerializer, CarouselSerializer, CarouselWithOffersSerializer, CouponSerializer, ItemSerializer, ItemVariantSerializer, OfferTableSerializer, OrderTableSerializer, SpotlightSerializer
 # from Deliveryboyapp.serializer import OrderSerializer
+from Deliveryboyapp.fcm_utils import send_fcm_notification
 from Deliveryboyapp.serializer import TrackOrderSerializer
 from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, OrderHistorySerializer, PlaceOrderSerializer, ProfileTableSerializer, UserOrderSerializer
 from Userapp.serializer import AddressTableSerializer, AddressUpdateSerializer, OrderRetrieveSerializer, PlaceOrderSerializer, ProfileTableSerializer, RatingSerializer, UserOrderSerializer
@@ -503,7 +504,7 @@ class ItemListAPIView(APIView):
     
 def calculate_distance(lat1, lon1, lat2, lon2):
 
-    R = 6371  # Radius of Earth in KM
+    R = 6371   
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -518,17 +519,14 @@ class BranchItemsAPIView(APIView):
         selected_branch_id = request.data.get('branch_id')
         print(request.data)
 
-        # Get all branches
         all_branches = BranchTable.objects.exclude(latitude=None).exclude(longitude=None)
 
-        # If branch_id is provided, use that branch
         if selected_branch_id:
             try:
                 selected_branch = BranchTable.objects.get(id=selected_branch_id)
             except BranchTable.DoesNotExist:
                 return Response({'error': 'Branch not found'}, status=404)
         else:
-            # Calculate nearest branch using user location
             if not user_lat or not user_lon:
                 return Response({'error': 'Location is required if branch_id not provided'}, status=400)
 
@@ -556,46 +554,7 @@ class BranchItemsAPIView(APIView):
             'all_branches': BranchTableSerializer(all_branches, many=True).data,
             'items': ItemSerializer(items, many=True, context={'request': request}).data, 
         })
-  
-# class WishlistAPIView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def get(self, request):
-#         userid = request.query_params.get('userid')
-#         if not userid:
-#             return Response({"error": "User ID is required."}, status=400)
-
-#         wishlist = WishlistTable.objects.filter(userid_id=userid)
-#         serializer = WishlistSerializer(wishlist, many=True)
-#         return Response(serializer.data)
-
-#     def post(self, request):
-#         userid = request.data.get('userid')
-#         fooditem_id = request.data.get('fooditem')
-
-#         if not userid or not fooditem_id:
-#             return Response({"error": "User ID and food item ID are required."}, status=400)
-
-#         # Prevent duplicate wishlist entries
-#         exists = WishlistTable.objects.filter(userid_id=userid, fooditem_id=fooditem_id).exists()
-#         if exists:
-#             return Response({"message": "Item already in wishlist."}, status=200)
-
-#         WishlistTable.objects.create(userid_id=userid, fooditem_id=fooditem_id)
-#         return Response({"message": "Item added to wishlist."}, status=201)
-
-#     def delete(self, request):
-#         wishlist_id = request.data.get('id')
-#         if not wishlist_id:
-#             return Response({"error": "Wishlist ID is required."}, status=400)
-
-#         try:
-#             wishlist = WishlistTable.objects.get(id=wishlist_id)
-#             wishlist.delete()
-#             return Response({"message": "Item removed from wishlist."}, status=200)
-#         except WishlistTable.DoesNotExist:
-#             return Response({"error": "Wishlist item not found."}, status=404)
-    
+ 
 class WishlistAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -611,6 +570,7 @@ class WishlistAPIView(APIView):
             serializer.save(userid=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
 class WishlistDeleteAPIView(APIView):
     permission_classes = [AllowAny]
@@ -618,12 +578,12 @@ class WishlistDeleteAPIView(APIView):
     def delete(self, request, id):
         return self._delete_item(request, id)
 
-    def get(self, request, id):   # allow GET as delete (if you want GET also)
+    def get(self, request, id):  
         return self._delete_item(request, id)
 
     def _delete_item(self, request, id):
         try:
-            print(f"Attempting to delete wishlist items with FoodItem ID: {id}")
+            print(f"Attempting to delete wishlist itemhs with FoodItem ID: {id}")
 
             # Fetch all matching rows
             wishlist_items = WishlistTable.objects.filter(userid=request.user, fooditem_id=id)
@@ -642,39 +602,6 @@ class WishlistDeleteAPIView(APIView):
             print("Error while deleting wishlist:", str(e))
             return Response({"error": "Something went wrong."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-
-
-# class CartAPIView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         cart_items = CartTable.objects.filter(userid=request.user)
-#         serializer = CartSerializer(cart_items, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     def post(self, request):
-#         serializer = CartSerializer(data=request.data)
-#         print(request.data)
-#         if serializer.is_valid():
-#             fooditem = serializer.validated_data.get('fooditem')
-#             quantity = serializer.validated_data.get('quantity', 1)
-#             addon = serializer.validated_data.get('addon', None)
-
-#             # Calculate price securely from backend
-#             # base_price = fooditem.price or 0
-#             # addon_price = addon.price if addon and hasattr(addon, 'price') else 0
-
-#             # total_price = (base_price + addon_price) * quantity
-#             base_price = float(fooditem.price) if fooditem and hasattr(fooditem, 'price') else 0.0
-#             addon_price = float(addon.price) if addon and hasattr(addon, 'price') else 0.0
-#             quantity = int(quantity)
-#             total_price = (base_price + addon_price) * quantity
-
-#             serializer.save(userid=request.user, total_price=total_price)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CartAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -700,7 +627,6 @@ class CartAPIView(APIView):
         addon_ids = request.data.get('addon', [])  # expect list of IDs
         quantity = request.data.get('quantity')
 
-        # ✅ Validate quantity
         try:
             quantity = int(quantity)
             if quantity < 1:
@@ -708,13 +634,11 @@ class CartAPIView(APIView):
         except (ValueError, TypeError):
             return Response({'error': 'Invalid quantity'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Validate food item
         try:
             fooditem = ItemTable.objects.get(id=fooditem_id)
         except ItemTable.DoesNotExist:
             return Response({'error': 'Food item not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Variant (optional)
         variant = None
         if variant_id:
             try:
@@ -722,14 +646,12 @@ class CartAPIView(APIView):
             except ItemVariantTable.DoesNotExist:
                 return Response({'error': 'Variant not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Addons (optional)
         addons = []
         if addon_ids:
             addons = list(AddonTable.objects.filter(id__in=addon_ids))
-            if len(addons) != len(addon_ids):  # some invalid IDs
+            if len(addons) != len(addon_ids):  
                 return Response({'error': 'Some addons not found'}, status=status.HTTP_400_BAD_REQUEST)
         print('addons', addons)
-        # ✅ Check for existing cart item (food + variant + exact addons)
         existing_item = CartTable.objects.filter(userid=user, fooditem=fooditem, variant=variant).first()
 
         if existing_item:
@@ -784,36 +706,7 @@ class CartDeleteAPIView(APIView):
             return Response({"message": "Cart item and its addons deleted from DB."}, status=status.HTTP_204_NO_CONTENT)
         except CartTable.DoesNotExist:
             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-# class CartDeleteAPIView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def put(self, request, pk):
-#         try:
-#             cart_item = CartTable.objects.get(id=pk, userid=request.user)
-#         except CartTable.DoesNotExist:
-#             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
-
-#         serializer = CartSerializer(cart_item, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             quantity = int(request.data.get('quantity', cart_item.quantity))
-#             price = float(request.data.get('price', cart_item.price))
-#             total_price = price * quantity
-#             serializer.save(total_price=total_price)
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#     def delete(self, request, pk):
-#         """Delete the entire cart item"""
-#         try:
-#             cart_item = CartTable.objects.get(id=pk, userid=request.user)
-#             cart_item.delete()
-#             return Response({"message": "Cart item removed."}, status=status.HTTP_204_NO_CONTENT)
-#         except CartTable.DoesNotExist:
-#             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
+ 
 class CartAddonDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -982,7 +875,10 @@ class UpdateUserProfileByIdAPIView(APIView):
 
 class CouponListAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
+        print("#####################################################################",request.data)
+
         coupons = CouponTable.objects.filter(is_active=True)
         serializer = CouponSerializer(coupons, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1026,59 +922,52 @@ class ApplyCouponAPIView(APIView):
 
         except CouponTable.DoesNotExist:
             return Response({'error': 'Invalid coupon code.'}, status=404)
+        
     
+# class UpdateFCMTokenView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def post(self, request):
+#         print('#######################################################-------------------------------------->')
+#         token = request.data.get('fcm_token')
+#         if not token:
+#             return Response({'error': 'FCM token is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         try:
+#             user = request.user
+#             user.notification_token = token
+#             user.save()
+#             return Response({'message': 'FCM token updated successfully.'}, status=status.HTTP_200_OK)
+#         except Exception as e:
+#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 class UpdateFCMTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print('Received FCM token update request')
         token = request.data.get('fcm_token')
+
         if not token:
             return Response({'error': 'FCM token is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = request.user
+            print(f"User {user.username if hasattr(user, 'username') else user.id} updating token to {token}")
+
             user.notification_token = token
-            user.save()
+            user.save(update_fields=['notification_token'])
+
             return Response({'message': 'FCM token updated successfully.'}, status=status.HTTP_200_OK)
+
         except Exception as e:
+            print("❌ Error updating FCM token:", e)
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
 
 
-# class PlaceOrderAPIView(APIView):
-#     permission_classes = [IsAuthenticated]
 
-#     def post(self, request, *args, **kwargs):
-#         print("Request Data:", request.data)
-#         serializer = OrderSerializer(data=request.data, context={"request": request})
-#         if serializer.is_valid():
-#             order = serializer.save()
-#             return Response({"message": "Order placed successfully", "order_id": order.id})
-#         return Response(serializer.errors, status=400)
 
-# class PlaceOrderAPIView(APIView):
-#     permission_classes = [IsAuthenticated]
 
-#     def post(self, request, *args, **kwargs):
-#         print("Request Data:", request.data)
-        
-#         # Create a mutable copy of request.data
-#         data = request.data.copy()
-#         data['userid'] = request.user.id
-
-#         serializer = OrderSerializer(data=data, context={"request": request})
-#         if serializer.is_valid():
-#             try:
-#                 with transaction.atomic():
-#                     order = serializer.save()
-#                     order.calculate_totals()  # Calculate totals after order creation
-#                     return Response({
-#                         "message": "Order placed successfully",
-#                         "order_id": order.id
-#                     }, status=status.HTTP_201_CREATED)
-#             except Exception as e:
-#                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # class PlaceOrderAPIView(APIView):
@@ -1086,33 +975,80 @@ class UpdateFCMTokenView(APIView):
 
 #     def post(self, request, *args, **kwargs):
 #         print("Request Data:", request.data)
-#         print("Authenticated User:", request.user)
-#         print("Request User ID:", request.user.id)
 
 #         if not request.user.is_authenticated:
 #             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
 
-#         # Create a mutable copy of request.data
-#         data = request.data.copy()
-#         data['userid'] = request.user.id
-#         print(data['userid'])
-#         print("Modified Data:", data)
+#         try:
+#             profile = ProfileTable.objects.get(loginid=request.user)
+#         except ProfileTable.DoesNotExist:
+#             return Response({"error": "Profile not found for this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # ✅ Make a plain dict instead of QueryDict
+#         data = dict(request.data)
+        
+#         # Fix items (string JSON → Python list of dicts)
+#         if "items" in data:
+#             items_raw = data["items"]
+#             if isinstance(items_raw, list) and len(items_raw) == 1:
+#                 try:
+#                     data["items"] = json.loads(items_raw[0])
+#                 except Exception as e:
+#                     print("❌ Items JSON decode failed:", e)
+#                     return Response({"error": "Invalid items format"}, status=400)
+
+#         # Convert scalar values from lists
+#         for key in ["latitude", "longitude", "address", "cooking_instructions", "coupon_code",
+#                     "delivery_instructions", "payment_method", "branchid",
+#                     "grand_total", "subtotal", "discount", "audio"]:
+#             if key in data and isinstance(data[key], list) and len(data[key]) == 1:
+#                 data[key] = data[key][0]
+
+#         # Cast numeric values
+#         if "latitude" in data: data["latitude"] = float(data["latitude"])
+#         if "longitude" in data: data["longitude"] = float(data["longitude"])
+#         if "subtotal" in data: data["subtotal"] = float(data["subtotal"])
+#         if "discount" in data: data["discount"] = float(data["discount"])
+#         if "grand_total" in data: data["grand_total"] = float(data["grand_total"])
+
+#         # Add user id
+#         data["userid"] = profile.loginid.id
+
+#         print("Modified Data (clean):", data)
 
 #         serializer = UserOrderSerializer(data=data, context={"request": request})
 #         if serializer.is_valid():
+#             order = serializer.save()
+#             print(f"✅ Saved Order: ID={order.id}, UserID={order.userid_id}, Branch={order.branch_id}")
+
+#             # -----------------------------
+#             # 🔔 Send Notifications
+#             # -----------------------------
 #             try:
-#                 with transaction.atomic():
-#                     order = serializer.save()
-#                     order.calculate_totals()
-#                     print(f"Saved Order: ID={order.id}, UserID={order.userid_id}, Branch={order.branch_id}, Address={order.address_id}, Coupon={order.coupon_id}")
-#                     return Response({
-#                         "message": "Order placed successfully",
-#                         "order_id": order.id
-#                     }, status=status.HTTP_201_CREATED)
+#                 # Notify user (confirmation)
+#                 if hasattr(request.user, "notification_token") and request.user.notification_token:
+#                     send_fcm_notification(
+#                         token=request.user.notification_token,
+#                         title="Order Placed ✅",
+#                         body=f"Your order #{order.id} has been placed successfully.Current status {order.orderstatus}"
+#                     )
+
+#                 # Notify branch (new order)
+#                 if order.branch and hasattr(order.branch, "loginid") and order.branch.loginid.notification_token:
+#                     send_fcm_notification(
+#                         token=order.branch.loginid.notification_token,
+#                         title="New Order 🛎️",
+#                         body=f"A new order #{order.id} has been placed at your branch."
+#                     )
 #             except Exception as e:
-#                 print(f"Error during order creation: {str(e)}")
-#                 return Response({"error": f"Failed to create order: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#         print("Serializer Errors:", serializer.errors)
+#                 print("❌ Notification Error:", e)
+
+#             return Response({
+#                 "message": "Order placed successfully",
+#                 "order_id": order.id
+#             }, status=status.HTTP_201_CREATED)
+
+#         print("❌ Serializer Errors:", serializer.errors)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PlaceOrderAPIView(APIView):
@@ -1120,39 +1056,176 @@ class PlaceOrderAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         print("Request Data:", request.data)
-        print("Authenticated User:", request.user)
-        print("Request User ID:", request.user.id)
 
         if not request.user.is_authenticated:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            # ✅ Fetch the related ProfileTable instance
             profile = ProfileTable.objects.get(loginid=request.user)
         except ProfileTable.DoesNotExist:
             return Response({"error": "Profile not found for this user"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create a mutable copy of request.data
-        data = request.data.copy()
-        data['userid'] = profile.loginid.id # ✅ Set correct ProfileTable ID
-        print("Modified Data:", data)
+        # ✅ Make a plain dict instead of QueryDict
+        data = dict(request.data)
+        
+        # Fix items (string JSON → Python list of dicts)
+        if "items" in data:
+            items_raw = data["items"]
+            if isinstance(items_raw, list) and len(items_raw) == 1:
+                try:
+                    data["items"] = json.loads(items_raw[0])
+                except Exception as e:
+                    print("❌ Items JSON decode failed:", e)
+                    return Response({"error": "Invalid items format"}, status=400)
+
+        # Convert scalar values from lists
+        for key in ["latitude", "longitude", "address", "cooking_instructions", "coupon_code",
+                    "delivery_instructions", "payment_method", "branchid",
+                    "grand_total", "subtotal", "discount", "audio"]:
+            if key in data and isinstance(data[key], list) and len(data[key]) == 1:
+                data[key] = data[key][0]
+
+        # Cast numeric values
+        if "latitude" in data: data["latitude"] = float(data["latitude"])
+        if "longitude" in data: data["longitude"] = float(data["longitude"])
+        if "subtotal" in data: data["subtotal"] = float(data["subtotal"])
+        if "discount" in data: data["discount"] = float(data["discount"])
+        if "grand_total" in data: data["grand_total"] = float(data["grand_total"])
+
+        # Add user id
+        data["userid"] = profile.loginid.id
+
+        print("Modified Data (clean):", data)
 
         serializer = UserOrderSerializer(data=data, context={"request": request})
         if serializer.is_valid():
+            order = serializer.save()
+            print(f"✅ Saved Order: ID={order.id}, UserID={order.userid_id}, Branch={order.branch_id}")
+
+            # -----------------------------
+            # 🔔 Send Notifications
+            # -----------------------------
             try:
-                with transaction.atomic():
-                    order = serializer.save()
-                    order.calculate_totals()
-                    print(f"Saved Order: ID={order.id}, UserID={order.userid_id}, Branch={order.branch_id}, Address={order.address_id}, Coupon={order.coupon_id}")
-                    return Response({
-                        "message": "Order placed successfully",
-                        "order_id": order.id
-                    }, status=status.HTTP_201_CREATED)
+                # Notify user (confirmation)
+                if hasattr(request.user, "notification_token") and request.user.notification_token:
+                    send_fcm_notification(
+                        token=request.user.notification_token,
+                        title="Order Placed ✅",
+                        body=f"Your order #{order.id} has been placed successfully. Current status: {order.orderstatus}"
+                    )
+
+                # Notify branch (new order)
+                if order.branch and hasattr(order.branch, "loginid") and order.branch.loginid.notification_token:
+                    send_fcm_notification(
+                        token=order.branch.loginid.notification_token,
+                        title="New Order 🛎️",
+                        body=f"A new order #{order.id} has been placed at your branch."
+                    )
             except Exception as e:
-                print(f"Error during order creation: {str(e)}")
-                return Response({"error": f"Failed to create order: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        print("Serializer Errors:", serializer.errors)
+                print("❌ Notification Error:", e)
+
+            # -----------------------------
+            # 🛒 Clear Cart
+            # -----------------------------
+            try:
+                deleted_count, _ = CartTable.objects.filter(userid=profile.loginid).delete()
+                print(f"🗑️ Cleared {deleted_count} cart items for user {profile.loginid}")
+            except Exception as e:
+                print("❌ Error clearing cart:", e)
+
+            return Response({
+                "message": "Order placed successfully",
+                "order_id": order.id
+            }, status=status.HTTP_201_CREATED)
+
+        print("❌ Serializer Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class PlaceOrderAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, *args, **kwargs):
+#         print("Request Data:", request.data)
+
+#         if not request.user.is_authenticated:
+#             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         try:
+#             profile = ProfileTable.objects.get(loginid=request.user)
+#         except ProfileTable.DoesNotExist:
+#             return Response({"error": "Profile not found for this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # ✅ Handle multiple orders
+#         orders_data = request.data.get("orders") 
+#         if not orders_data:
+#             return Response({"error": "No orders provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         if isinstance(orders_data, str):
+#             try:
+#                 orders_data = json.loads(orders_data) 
+#             except Exception as e:
+#                 return Response({"error": f"Invalid orders format: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         if not isinstance(orders_data, list):
+#             return Response({"error": "Orders should be a list"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         created_orders = []
+
+#         for order_data in orders_data:
+#             for key in ["latitude", "longitude", "address", "cooking_instructions", "coupon_code",
+#                         "delivery_instructions", "payment_method", "branchid",
+#                         "grand_total", "subtotal", "discount", "audio"]:
+#                 if key in order_data and isinstance(order_data[key], list) and len(order_data[key]) == 1:
+#                     order_data[key] = order_data[key][0]
+
+#             # Cast numeric values safely
+#             if "latitude" in order_data: order_data["latitude"] = float(order_data["latitude"])
+#             if "longitude" in order_data: order_data["longitude"] = float(order_data["longitude"])
+#             if "subtotal" in order_data: order_data["subtotal"] = float(order_data["subtotal"])
+#             if "discount" in order_data: order_data["discount"] = float(order_data["discount"])
+#             if "grand_total" in order_data: order_data["grand_total"] = float(order_data["grand_total"])
+
+#             # Add user id
+#             order_data["userid"] = profile.loginid.id
+
+#             serializer = UserOrderSerializer(data=order_data, context={"request": request})
+#             if serializer.is_valid():
+#                 order = serializer.save()
+#                 created_orders.append(order.id)
+
+#                 # -----------------------------
+#                 # 🔔 Send Notifications
+#                 # -----------------------------
+#                 try:
+#                     # Notify user
+#                     if hasattr(request.user, "notification_token") and request.user.notification_token:
+#                         send_fcm_notification(
+#                             token=request.user.notification_token,
+#                             title="Order Placed ✅",
+#                             body=f"Your order #{order.id} has been placed successfully. Current status {order.orderstatus}"
+#                         )
+
+#                     # Notify branch
+#                     if order.branch and hasattr(order.branch, "loginid") and order.branch.loginid.notification_token:
+#                         send_fcm_notification(
+#                             token=order.branch.loginid.notification_token,
+#                             title="New Order 🛎️",
+#                             body=f"A new order #{order.id} has been placed at your branch."
+#                         )
+#                 except Exception as e:
+#                     print("❌ Notification Error:", e)
+
+#             else:
+#                 print("❌ Serializer Errors:", serializer.errors)
+#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#         return Response({
+#             "message": "Orders placed successfully",
+#             "order_ids": created_orders
+#         }, status=status.HTTP_201_CREATED)
+
+
 
 class UserAddressView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1177,7 +1250,7 @@ class UserAddressView(APIView):
                 print(f"Retrieved {len(addresses)} addresses for user ID {request.user.id}")
                 return Response({
                     "message": "Addresses retrieved successfully",
-                    "data": serializer.data
+                    "data": serializer.data 
                 }, status=status.HTTP_200_OK)
         except AddressTable.DoesNotExist:
             print(f"Address ID {address_id} not found for user ID {request.user.id}")
@@ -1189,22 +1262,26 @@ class UserAddressView(APIView):
 class TrackAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, orderid):
-        # print('------------------------------------------------------')
-        # print(f"Tracking order ID: {orderid} for user ID: {request.user.id}")
+    def get(self, request, orderid=None):
         try:
             profile = ProfileTable.objects.get(loginid=request.user)
         except ProfileTable.DoesNotExist:
             return Response({'success': False, 'message': 'User profile not found'}, status=404)
-        
-        try:
-            order = OrderTable.objects.get(id=orderid, userid_id=profile)
-            # print("User orders:", order)
-            serializer = TrackOrderSerializer(order)
-            print(f"Order details for tracking: {serializer.data}")
+
+        if orderid:  
+            # ✅ Single order tracking
+            try:
+                order = OrderTable.objects.get(id=orderid, userid=profile)
+                serializer = TrackOrderSerializer(order)
+                return Response({'success': True, 'data': serializer.data})
+            except OrderTable.DoesNotExist:
+                return Response({'success': False, 'message': 'Order not found'}, status=404)
+        else:
+            orders = OrderTable.objects.filter(userid=profile).order_by('-created_at')
+            serializer = TrackOrderSerializer(orders, many=True)
+            print('Tracking multiple orders:', serializer.data)
             return Response({'success': True, 'data': serializer.data})
-        except OrderTable.DoesNotExist:
-            return Response({'success': False, 'message': 'Order not found'}, status=404)
+
         
     class OrderHistoryView(APIView):
         permission_classes = [IsAuthenticated]
@@ -1232,15 +1309,11 @@ class UserOrdersView(APIView):
     def get(self, request):
         print("Fetching user orders...")
         try:
-            # Fetch the profile of the authenticated user
             profile = get_object_or_404(ProfileTable, loginid=request.user)
-            # Fetch orders associated with the user's profile
             orders = OrderTable.objects.filter(userid=profile).order_by('-created_at')
-            # Serialize the orders
             serializer = OrderRetrieveSerializer(orders, many=True)
             print(serializer.data)
             return Response(serializer.data, status=status.HTTP_200_OK)
-            print(serializer.data)
         except Exception as e:
             return Response(
                 {"error": str(e)},
@@ -1254,34 +1327,74 @@ class FeedbackView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        ratings = request.data.get('ratings', [])
-        if not isinstance(ratings, list):
-            return Response(
-                {'status': 'error', 'message': 'Ratings must be a list'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        print('----------------------------------------------> Raw Request Data:', request.data)
 
+        order_id = request.data.get('order_id')
+        ratings = request.data.get('ratings', [])
+
+        if not order_id:
+            return Response({'status': 'error', 'message': 'order_id is required'}, status=400)
+
+        if not isinstance(ratings, list):
+            return Response({'status': 'error', 'message': 'Ratings must be a list'}, status=400)
+
+        # Fetch the order
+        try:
+            order = OrderTable.objects.get(id=order_id)
+            print(f"✅ Found Order: {order.id}")
+        except OrderTable.DoesNotExist:
+            return Response({'status': 'error', 'message': 'Order not found'}, status=404)
+
+        # Use the userid from the order
+        order_profile = order.userid.loginid  # LoginTable instance
+        print(f"👤 Using LoginTable userid: {order_profile.id} ( {order_profile.phone if hasattr(order_profile, 'phone') else ''} )")
+
+        # Fetch items in the order
+        order_items_qs = order.order_item.all()  # related_name from OrderItemTable
+        order_items = list(order_items_qs)
+        print(f"📦 Order has {len(order_items)} items:", order_items)
+
+        if not order_items:
+            print("❌ No items found in order")
+        
         response_data = []
+
         for rating_data in ratings:
+            rating_type = rating_data.get('rating_type')
+            print(f"➡️ Processing rating: {rating_data}")
+
+            # Assign itemid for DISH ratings
+            if rating_type == 'DISH':
+                if order_items:
+                    # Map first item for example (you can expand to match ratings to items)
+                    rating_data['itemid'] = order_items[0].itemname.id
+                    print(f"📦 Assigned itemid for DISH rating: {rating_data['itemid']}")
+                else:
+                    return Response(
+                        {'status': 'error', 'message': 'No items found in order for DISH rating'},
+                        status=400
+                    )
+
+            # Inject userid into data before validation
+            rating_data['userid'] = order_profile.id
+
+            # Validate and save
             serializer = RatingSerializer(data=rating_data)
             if serializer.is_valid():
-                serializer.save(userid=request.user)  # set authenticated user
+                serializer.save()  # userid and itemid are already in validated_data
                 response_data.append(serializer.data)
+                print("✅ Saved rating:", serializer.data)
             else:
-                return Response(
-                    {'status': 'error', 'message': serializer.errors},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                print("❌ Serializer errors:", serializer.errors)
+                return Response({'status': 'error', 'message': serializer.errors}, status=400)
 
-        return Response(
-            {'status': 'success', 'data': response_data},
-            status=status.HTTP_201_CREATED
-        )
+        return Response({'status': 'success', 'data': response_data}, status=201)
+
+
+
 
 class CarouselOffersAPIView(APIView):
-    """
-    Fetch the carousel with the linked offer and item
-    """
+ 
 
     def get(self, request, carousel_id):
         now = timezone.now()
@@ -1292,4 +1405,11 @@ class CarouselOffersAPIView(APIView):
             return Response({'error': 'No active offer linked to this carousel'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = CarouselWithOffersSerializer(carousel)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class ViewFeedbackAndRating(APIView):
+    def get(self, request):
+        c = RatingTable.objects.all()
+        serializer = RatingSerializer(c, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

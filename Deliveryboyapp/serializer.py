@@ -112,12 +112,12 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_delivery_details(self, obj):
         try:
-            # print(f"Getting delivery for order: {obj.id}")
+            print(f"Getting delivery for order: {obj.id}")
             delivery = DeliveryTable.objects.filter(order=obj).first()
             if delivery:
                 return DeliveryTableSerializer(delivery).data
             return {
-                'name': obj.phone_number or 'Unknown',
+                'name': obj.userid.name or 'Unknown',
                 'phone': obj.phone_number or '',
                 'address': {
                     'address': obj.address.address if obj.address else 'Unknown Address',
@@ -130,7 +130,7 @@ class OrderSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error getting delivery: {e}")
             return {
-                'name': obj.phone_number or 'Unknown',
+                'name': obj.userid.name or 'Unknown',
                 'phone': obj.phone_number or '',
                 'address': {
                     'address': obj.address.address if obj.address else 'Unknown Address',
@@ -153,7 +153,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class InputSerializer(serializers.Serializer):
         order_id = serializers.IntegerField()
-        status = serializers.ChoiceField(choices=['ACCEPTED', 'DELIVERED'])
+        status = serializers.ChoiceField(choices=['ACCEPTED', 'DELIVERED', 'ASSIGNED', 'PICKED'])
         paymentDone = serializers.BooleanField(default=False, required=False)
         paymentType = serializers.ChoiceField(choices=['CASH', 'ONLINE'], required=False, allow_null=True)
 

@@ -22,7 +22,7 @@ urlpatterns = [
     path('verifyOTPAPIView/',VerifyOTPAPIView.as_view(), name='verifyOTPAPIView'),  
     path('resetPasswordAPIView/',ResetPasswordAPIView.as_view(), name='resetPasswordAPIView'),  
     # path('notifi/',SendTestNotification.as_view(), name='notifi'), 
-    path('chatHistoryAPIView/<int:order_id>/', ChatHistoryAPIView.as_view(), name='chatHistoryAPIView'),
+    path('chatHistoryAPIView/<int:order_id>/', ChatHistoryAPIView.as_view(), name='chatHistoryAPIView'), 
         
     path('send-notification/', send_notification_view, name='send_notification'), 
 

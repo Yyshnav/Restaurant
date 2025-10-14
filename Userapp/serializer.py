@@ -11,6 +11,10 @@ from Accountapp.serializer import LoginTableSerializer
 from Adminapp.serializer import AddonSerializer, ItemSerializer, ItemVariantSerializer, OrderTableSerializer
 # from Adminapp.serializer import AddonSerializer, ItemSerializer, OrderTableSerializer
 # from Deliveryboyapp.serializer import DeliveryBoyTableSerializer
+from django.core.files.base import ContentFile
+from pydub import AudioSegment
+import os
+import io
 
 LoginTable = get_user_model()
 
@@ -109,11 +113,12 @@ class AddonSerializer(serializers.ModelSerializer):
 
 class CartSerializer(serializers.ModelSerializer):
     fooditem_name = serializers.CharField(source='fooditem.name', read_only=True)
-    fooditem_price = serializers.FloatField(source='fooditem.price', read_only=True)
+    fooditem_price = serializers.SerializerMethodField()  # ✅ use method field
     addon = AddonSerializer(many=True, read_only=True)
     addon_name = serializers.SerializerMethodField()
     is_veg = serializers.BooleanField(source='fooditem.is_veg', read_only=True)
     variant_name = serializers.SerializerMethodField()
+    total_price = serializers.SerializerMethodField()  # ✅ includes addons now
 
     class Meta:
         model = CartTable
@@ -125,9 +130,26 @@ class CartSerializer(serializers.ModelSerializer):
     def get_variant_name(self, obj):
         return obj.variant.variant_name if obj.variant else None
 
-    def get_available_addons(self, obj):
-        addons = AddonTable.objects.filter(item=obj.fooditem)
-        return AddonSerializer(addons, many=True).data
+    def get_fooditem_price(self, obj):
+        # ✅ Use variant price if available, else base food item price
+        if obj.variant:
+            return obj.variant.price
+        if obj.fooditem:
+            return obj.fooditem.price
+        return 0  # fallback if no fooditem
+
+    def get_total_price(self, obj):
+        # ✅ Base price (fooditem/variant)
+        base_price = self.get_fooditem_price(obj)
+
+        # ✅ Addons price
+        addon_total = sum(addon.price for addon in obj.addon.all())
+
+        # ✅ Apply quantity
+        quantity = int(obj.quantity or 1)
+        return (base_price + addon_total) * quantity
+
+
 
 class ProfileNameUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -372,119 +394,147 @@ class UserOrderItemSerializer(serializers.Serializer):
 #             print(f"Order item creation failed: {str(e)}")
 #             raise serializers.ValidationError(f"Failed to create order item: {str(e)}")
 #         return order
+
+import base64
+import decimal
     
+import io
+import base64
+from django.core.files.base import ContentFile
+from pydub import AudioSegment
+import os
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
 class UserOrderSerializer(serializers.ModelSerializer):
     items = UserOrderItemSerializer(many=True)
-    coupon = serializers.PrimaryKeyRelatedField(queryset=CouponTable.objects.all(), required=False, allow_null=True)
-    branch = serializers.PrimaryKeyRelatedField(queryset=BranchTable.objects.all())
+    branchid = serializers.PrimaryKeyRelatedField(source="branch", queryset=BranchTable.objects.all())
+    coupon_code = serializers.PrimaryKeyRelatedField(source="coupon", queryset=CouponTable.objects.all(), required=False, allow_null=True)
+
+    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    discount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    grand_total = serializers.DecimalField(source="totalamount", max_digits=10, decimal_places=2)
+
+    # Audio file
+    audio = serializers.FileField(
+        source="voice_instruction",
+        required=False,
+        allow_null=True,
+        use_url=True
+    )
+
+    userid = serializers.IntegerField(write_only=True)
     address = serializers.CharField(write_only=True)
     latitude = serializers.FloatField(write_only=True)
     longitude = serializers.FloatField(write_only=True)
-    userid = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = OrderTable
         fields = [
-            'latitude', 'longitude', 'items', 'payment_method', 'coupon',
-            'branch', 'delivery_instructions', 'address', 'userid'
+            'latitude', 'longitude', 'address', 'items',
+            'payment_method', 'coupon_code', 'branchid',
+            'delivery_instructions', 'cooking_instructions',
+            'audio', 'userid', 'subtotal', 'discount', 'grand_total'
         ]
 
     def validate(self, data):
-        items = data.get('items', [])
-        if not items:
-            raise serializers.ValidationError("At least one item is required to place an order.")
+        if not data.get("items"):
+            raise serializers.ValidationError("At least one item is required.")
 
-        branch = data.get('branch')
-        if not BranchTable.objects.filter(id=branch.id).exists():
-            raise serializers.ValidationError(f"Branch with id {branch.id} does not exist.")
-
-        coupon = data.get('coupon')
-        if coupon and not CouponTable.objects.filter(id=coupon.id, is_active=True).exists():
-            raise serializers.ValidationError(f"Coupon with id {coupon.id} does not exist or is inactive.")
-
-        if not data.get('address'):
-            raise serializers.ValidationError("Address is required.")
-        if data.get('latitude') is None or data.get('longitude') is None:
-            raise serializers.ValidationError("Latitude and longitude are required.")
-
-        userid = data.get('userid')
+        userid = data.get("userid")
         if not ProfileTable.objects.filter(loginid_id=userid).exists():
             raise serializers.ValidationError(f"Profile for user id {userid} does not exist.")
 
         return data
 
     def create(self, validated_data):
-        request = self.context.get("request")
         items_data = validated_data.pop("items")
         address = validated_data.pop("address")
         latitude = validated_data.pop("latitude")
         longitude = validated_data.pop("longitude")
-        coupon = validated_data.pop("coupon", None)
-        branch = validated_data.pop("branch")
         userid = validated_data.pop("userid")
 
+        # ✅ Profile lookup
         try:
             profile = ProfileTable.objects.get(loginid_id=userid)
-            user = profile.loginid  # This is the LoginTable instance
+            user = profile.loginid
         except ProfileTable.DoesNotExist:
             raise serializers.ValidationError(f"Profile for user id {userid} does not exist.")
 
-        address_data = {
-            'address': address,
-            'latitude': latitude,
-            'longitude': longitude,
-            'city': validated_data.get('city', 'Kozhikode'),
-            'state': validated_data.get('state', 'Kerala'),
-            'postal_code': validated_data.get('postal_code', '673004'),
-            'country': validated_data.get('country', 'India'),
-            'name': validated_data.get('name', user.username),
-            'phone': validated_data.get('phone', user.phone or '')
-        }
+        # ✅ Address save/update
+        address_instance, _ = AddressTable.objects.update_or_create(
+            userid=user,
+            address=address,
+            defaults={
+                "latitude": latitude,
+                "longitude": longitude,
+                "city": "Kozhikode",
+                "state": "Kerala",
+                "postal_code": "673004",
+                "country": "India",
+                "name": user.username,
+                "phone": user.phone or ""
+            }
+        )
 
-        try:
-            address_instance = AddressTable.objects.filter(
-                userid_id=userid,
-                address=address_data['address']
-            ).first()
-            if not address_instance:
-                address_instance = AddressTable.objects.create(
-                    userid=user,
-                    **address_data
+        # ✅ Totals
+        subtotal = decimal.Decimal(validated_data.pop("subtotal", 0))
+        discount = decimal.Decimal(validated_data.pop("discount", 0))
+        totalamount = decimal.Decimal(validated_data.pop("totalamount", 0))
+
+        # ✅ Create order
+        order = OrderTable.objects.create(
+            userid=profile,
+            address=address_instance,
+            subtotal=subtotal,
+            discount=discount,
+            totalamount=totalamount,
+            latitude=latitude,
+            longitude=longitude,
+            phone_number=address_instance.phone,
+            **validated_data
+        )
+
+        # ✅ Audio conversion (AAC → MP3, trim 30s)
+        audio_data = validated_data.pop("voice_instruction", None)
+        if audio_data:
+            try:
+                audio_file = audio_data.file
+                audio_segment = AudioSegment.from_file(audio_file, format="aac")
+                trimmed_audio = audio_segment[:30 * 1000]
+
+                mp3_io = io.BytesIO()
+                trimmed_audio.export(mp3_io, format="mp3")
+                mp3_io.seek(0)
+
+                mp3_file = InMemoryUploadedFile(
+                    mp3_io,
+                    None,
+                    f"voice_instruction_{order.id}.mp3",
+                    'audio/mpeg',
+                    mp3_io.getbuffer().nbytes,
+                    None
                 )
-        except Exception as e:
-            raise serializers.ValidationError(f"Failed to create or retrieve address: {str(e)}")
+                order.voice_instruction.save(f"voice_instruction_{order.id}.mp3", mp3_file)
+                order.save()
+            except Exception as e:
+                print(f"Audio conversion failed: {e}")
 
-        try:
-            order = OrderTable.objects.create(
-                userid=profile,
-                branch=branch,
-                address=address_instance,
-                coupon=coupon,
-                latitude=latitude,
-                longitude=longitude,
-                payment_method=validated_data.get('payment_method'),
-                delivery_instructions=validated_data.get('delivery_instructions', ''),
-                phone_number=address_data['phone']
+        # ✅ Save order items
+        for item_data in items_data:
+            OrderItemTable.objects.create(
+                order=order,
+                itemname=item_data["itemname"],
+                price=item_data["price"],
+                quantity=str(item_data["quantity"]),
+                variant_id=item_data.get("variant"),
+                instruction=item_data.get("instruction", ""),
+                addon_id=item_data.get("addon_id")
             )
-        except Exception as e:
-            raise serializers.ValidationError(f"Failed to create order: {str(e)}")
-
-        try:
-            for item_data in items_data:
-                item = item_data['itemname']
-                OrderItemTable.objects.create(
-                    order=order,
-                    itemname=item,
-                    price=item_data['price'],
-                    quantity=str(item_data['quantity']),
-                    variant_id=item_data.get('variant_id'),
-                    instruction=item_data.get('instruction', ''),
-                    addon_id=item_data.get('addon_id')
-                )
-        except Exception as e:
-            raise serializers.ValidationError(f"Failed to create order item: {str(e)}")
 
         return order
+
+
+
     
 class OrderHistorySerializer(serializers.ModelSerializer):
     items = OrderItemTableSerializer(many=True, source='orderitemtable_set', read_only=True)
@@ -540,8 +590,8 @@ class OrderRetrieveSerializer(serializers.ModelSerializer):
 class RatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = RatingTable
-        fields = ['userid', 'rating_type', 'rating', 'comment']  # include userid
-        read_only_fields = ['userid']  # prevent user from overriding
+        fields = ['userid', 'itemid', 'rating_type', 'rating', 'comment']
+        read_only_fields = []  
         extra_kwargs = {
             'rating_type': {'required': True},
             'rating': {'required': True},
@@ -549,18 +599,20 @@ class RatingSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        if data['rating_type'] not in ['SERVICE', 'DISH']:
+        rating_type = data.get('rating_type')
+        if rating_type not in ['SERVICE', 'DISH']:
             raise serializers.ValidationError({
                 'rating_type': 'Invalid rating type. Must be SERVICE or DISH.'
             })
 
-        if data['rating_type'] == 'SERVICE':
+        rating = str(data.get('rating', '')).strip() 
+
+        if rating_type == 'SERVICE':
             valid_ratings = ['1', '2', '3', '4', '5', 'Good', 'Not Good']
-            if data['rating'] not in valid_ratings:
+            if rating not in valid_ratings:
                 raise serializers.ValidationError({
                     'rating': 'Invalid rating for SERVICE. Must be 1-5 or Good/Not Good.'
                 })
-        return data
 
-    def create(self, validated_data):
-        return RatingTable.objects.create(**validated_data)
+        data['rating'] = rating
+        return data

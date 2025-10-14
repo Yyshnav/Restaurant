@@ -1,0 +1,1071 @@
+{% extends "cashierNav.html" %}
+{% block body %}
+
+
+    <style>
+      body {
+        font-family: 'Muli', sans-serif;
+      }
+      .app-content {
+        padding: 15px;
+        background: #f8f9fa;
+      }
+      .content-header {
+        padding: 15px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .content-header-title {
+        font-family: 'Comfortaa', cursive;
+        font-size: 1.5rem;
+        color: #333;
+        margin-bottom: 0;
+      }
+      .filter-group {
+        display: flex;
+        gap: 10px;
+      }
+      .type-btn-group {
+        padding: 10px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .type-btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        border-radius: 5px;
+      }
+      .type-btn.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
+      .table-responsive {
+        overflow-x: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .table {
+        margin-bottom: 0;
+        background: #fff;
+      }
+      .table th,
+      .table td {
+        padding: 10px;
+        vertical-align: middle;
+      }
+      .table thead th {
+        background: #007bff;
+        color: #fff;
+        border-bottom: none;
+      }
+      .table tbody tr {
+        transition: background 0.2s;
+      }
+      .table tbody tr:hover {
+        background: #f1f5f9;
+      }
+      .badge {
+        font-size: 0.9rem;
+        padding: 0.4em 0.8em;
+        border-radius: 10px;
+      }
+      .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+        transition: transform 0.2s;
+      }
+      .btn-sm:hover {
+        transform: scale(1.05);
+      }
+      .payment-status-select {
+        width: 120px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+        margin-left: 5px;
+      }
+      .modal-dialog {
+        max-width: 500px;
+      }
+      .modal-content {
+        padding: 15px;
+        border-radius: 10px;
+      }
+      .modal-body p {
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .modal-footer {
+        justify-content: center;
+        gap: 10px;
+      }
+      .toast-container {
+        z-index: 1100;
+      }
+      .toast {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      @media (max-width: 768px) {
+        .content-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .filter-group {
+          flex-direction: column;
+          gap: 5px;
+          width: 100%;
+        }
+        .form-select {
+          width: 100%;
+        }
+        .type-btn-group {
+          padding: 5px;
+        }
+        .table thead {
+          display: none;
+        }
+        .table tr {
+          display: block;
+          margin-bottom: 1rem;
+          border: 1px solid #dee2e6;
+          padding: 10px;
+        }
+        .table td {
+          display: block;
+          text-align: left;
+          padding: 5px;
+        }
+        .table td::before {
+          content: attr(data-label);
+          font-weight: bold;
+          display: block;
+        }
+        .table td:last-child {
+          text-align: center;
+        }
+        .modal-dialog {
+          margin: 5px;
+        }
+        .btn-sm {
+          width: 100%;
+          margin-bottom: 5px;
+        }
+        .payment-status-select {
+          width: 100%;
+          margin-left: 0;
+          margin-bottom: 5px;
+        }
+      }
+    </style>
+  </head>
+
+
+
+    <!-- Main Content -->
+    <div class="app-content content">
+      <div class="content-wrapper">
+        <div class="content-header">
+          <div class="d-flex align-items-center">
+           
+            <!-- <select id="filterOrders" class="form-select" style="max-width: 200px;" aria-label="Filter Orders by Status">
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="accepted">Accepted</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="rejected">Rejected</option>
+              <option value="assigned">Assigned</option>
+            </select> -->
+            <h3>view Orders</h3>
+            
+          </div>
+          <div class="filter-group ms-3">
+            
+            <!-- <select id="filterPlatform" class="form-select" aria-label="Filter Orders by Platform">
+              <option value="all">All Platforms</option>
+              <option value="online">Online</option>
+              <option value="takeaway">Takeaway</option>
+              <option value="dining">Dining</option>
+              <option value="appthrough">Appthrough</option>
+            </select> --> 
+            
+          </div>
+        </div>
+
+        <div class="type-btn-group">
+          <button class="btn btn-outline-primary type-btn active" data-type="all">All</button>
+          <button class="btn btn-outline-primary type-btn" data-type="online">Online</button>
+          <button class="btn btn-outline-primary type-btn" data-type="takeaway">Takeaway</button>
+          <button class="btn btn-outline-primary type-btn" data-type="dining">Dining</button>
+          <button class="btn btn-outline-primary type-btn" data-type="appthrough">Appthrough</button>
+        </div>
+
+        <div class="content-body">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Platform</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Payment Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orderTableBody">
+                <!-- Orders populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true" inert>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="orderModalLabel">Order Details</h5>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
+          </div>
+          <div class="modal-body" id="printableOrder">
+              <p><strong>Order ID:</strong> <span id="orderIdDetail"></span></p>
+              <p><strong>Customer:</strong> <span id="customerDetail"></span></p>
+              <p><strong>Platform:</strong> <span id="platformDetail"></span></p>
+              <p><strong>Address:</strong> <span id="addressDetail"></span></p>
+              <p><strong>Items:</strong></p>
+              <ul id="itemsList" class="list-group"></ul>
+              <p><strong>Total:</strong> <span id="totalDetail"></span></p>
+              <p><strong>Status:</strong> <span id="statusDetail"></span></p>
+              <p><strong>Payment Status:</strong> <span id="paymentStatusDetail"></span></p>
+              <p><strong>Rejection Reason:</strong> <span id="rejectReasonDetail"></span></p>
+              <p><strong>Delivery Boy:</strong> <span id="deliveryBoyDetail"></span></p>
+              <p><strong>Date:</strong> <span id="dateDetail"></span></p>
+            </div>
+
+                <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="printOrder()">Print</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Status Confirmation Modal -->
+    <div class="modal fade" id="paymentConfirmModal" tabindex="-1" aria-labelledby="paymentConfirmModalLabel" aria-hidden="true" inert>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="paymentConfirmModalLabel">Confirm Payment Status Change</h5>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to change the payment status of Order <strong><span id="paymentOrderId"></span></strong> to <strong><span id="newPaymentStatus"></span></strong>?</p>
+            <p>This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmPaymentBtn">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accept Order Modal -->
+    <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true" inert>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="acceptModalLabel">Confirm Order Acceptance</h5>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
+          </div>
+          <div class="modal-body">
+            <p><strong>Order ID:</strong> <span id="acceptOrderId"></span></p>
+            <p><strong>Customer:</strong> <span id="acceptCustomer"></span></p>
+            <p><strong>Address:</strong> <span id="acceptAddress"></span></p>
+            <p><strong>Menu:</strong></p>
+            <ul id="acceptItemsList" class="list-group mb-3"></ul>
+            <p>Are you sure you want to accept this order?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmAcceptBtn">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Confirmation Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" inert>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="rejectModalLabel">Reject Order</h5>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+  <span aria-hidden="true">&times;</span>
+</button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to reject Order <strong><span id="rejectOrderId"></span></strong>?</p>
+            <div class="mb-3">
+              <label for="rejectReason" class="form-label">Reason for Rejection:</label>
+              <textarea class="form-control" id="rejectReason" rows="3" placeholder="Enter reason for rejection"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmRejectBtn">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="assignModalLabel">Assign/Update Delivery Boy</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Order ID:</strong> <span id="assignOrderId"></span></p>
+        <div class="mb-3">
+          <label for="deliveryBoySelect" class="form-label">Select Delivery Boy:</label>
+          <select class="form-select" id="deliveryBoySelect" aria-label="Select Delivery Boy">
+            <option value="">Select a Delivery Boy</option>
+            {% for db in delivery_boys %}
+              <option value="{{ db.id }}">{{ db.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmAssignBtn">Assign</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Credit User Selection Modal -->
+<div class="modal fade" id="creditUserSelectModal" tabindex="-1" aria-labelledby="creditUserSelectModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="creditUserSelectModalLabel">Assign Credit User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Select a credit user for Order <span id="creditOrderId"></span>:</p>
+        <select class="form-select" id="creditUserSelect">
+          <option value="">--- Please Select User ---</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmCreditUserBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <strong class="me-auto">Success</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+      <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <strong class="me-auto">Error</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    let creditUsers = [];  
+
+    function loadCreditUsers() {
+  return fetch('/credit-users/')
+    .then(res => res.json())
+    .then(data => {
+      creditUsers = data.credit_users || [];
+    })
+    .catch(err => {
+      console.error("Error fetching credit users:", err);
+      showToast('error', 'Failed to load credit users.');
+      creditUsers = [];
+    });
+}
+
+      let orders = [];
+
+function fetchOrders() {
+  fetch("/Managerapp/orders/?format=json")
+    .then(res => res.json())
+    .then(data => {
+      orders = data.orders;
+      populateTable();
+    })
+    .catch(err => {
+      console.error("Failed to fetch orders", err);
+      showToast("error", "Failed to load orders from server.");
+    });
+}
+
+// Call on page load
+$(document).ready(function() {
+  fetchOrders();
+});
+
+              // Populate table
+          function populateTable() {
+            const tbody = $('#orderTableBody');
+            tbody.empty();
+
+            orders.forEach(order => {
+              const statusClass = {
+                pending: 'bg-warning text-dark',
+                accepted: 'bg-success text-white',
+                completed: 'bg-success text-white',
+                cancelled: 'bg-danger text-white',
+                rejected: 'bg-danger text-white',
+                assigned: 'bg-primary text-white'
+              }[order.status] || '';
+
+              const paymentStatusClass = {
+                Paid: 'bg-success text-white',
+                Unpaid: 'bg-warning text-dark',
+                Refunded: 'bg-danger text-white',
+                Credit: 'bg-info text-white'
+              }[order.paymentStatus] || '';
+
+              // Default actions (view button)
+              let actions = `
+                <button class="btn btn-sm btn-primary view-btn" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#orderModal">
+                  View
+                </button>
+              `;
+
+              // Offline orders (Dining / Takeaway / Online delivery)
+              if (order.platform.toLowerCase() !== 'online' && order.platform.toLowerCase() !== 'appthrough') {
+                actions += `
+                  <select class="form-select payment-status-select ms-2" data-id="${order.id}" aria-label="Change Payment Status">
+                    <option value="" disabled selected>Change Payment</option>
+                    <option value="paid">Paid</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="refunded">Refunded</option>
+                      <option value="credit">Credit User</option>
+                  </select>
+                `;
+              }
+
+              // App orders (Appthrough)
+              if (order.platform.toLowerCase() === 'appthrough') {
+                if (order.status === 'pending') {
+                  actions += `
+                    <button class="btn btn-sm btn-success accept-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                      Accept
+                    </button>
+                    <button class="btn btn-sm btn-danger reject-btn ms-2" data-id="${order.id}" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                      Reject
+                    </button>
+                  `;
+                }
+                // ❌ No delivery assign/update buttons since you said not needed now
+              }
+
+              // Build table row
+              const row = `
+                <tr>
+                  <td data-label="Order ID">#${order.id}</td>
+                  <td data-label="Customer">${order.customer}</td>
+                  <td data-label="Platform">${order.platform}</td>
+                  <td data-label="Total">$${order.total.toFixed(2)}</td>
+                  <td data-label="Status"><span class="badge ${statusClass}">${order.status}</span></td>
+                  <td data-label="Payment Status"><span class="badge ${paymentStatusClass}">${order.paymentStatus}</span></td>
+                  <td data-label="Date">${order.date}</td>
+                  <td data-label="Actions">${actions}</td>
+                </tr>
+              `;
+
+              tbody.append(row);
+            });
+
+            updateActions(); // rebind events
+          }
+
+
+      // Filter orders by status, platform, and payment status
+      function filterTable(statusValue, platformValue, paymentStatusValue) {
+        $('#orderTableBody tr').each(function () {
+          const status = $(this).find('td[data-label="Status"] .badge').text().toLowerCase();
+          const platform = $(this).find('td[data-label="Platform"]').text().toLowerCase();
+          const paymentStatus = $(this).find('td[data-label="Payment Status"] .badge').text().toLowerCase();
+          const statusMatch = (statusValue === 'all' || status === statusValue);
+          const platformMatch = (platformValue === 'all' || platform === platformValue);
+          const paymentStatusMatch = (paymentStatusValue === 'all' || paymentStatus === paymentStatusValue);
+          if (statusMatch && platformMatch && paymentStatusMatch) {
+            $(this).show();
+          } else {
+            $(this).hide();
+          }
+        });
+      }
+
+      // Filter orders by status
+      $('#filterOrders').on('change', function () {
+        const statusValue = $(this).val();
+        const platformValue = $('#filterPlatform').val();
+        const paymentStatusValue = $('#filterPaymentStatus').val();
+        filterTable(statusValue, platformValue, paymentStatusValue);
+      });
+
+      // Filter orders by payment status
+      $('#filterPaymentStatus').on('change', function () {
+        const statusValue = $('#filterOrders').val();
+        const platformValue = $('#filterPlatform').val();
+        const paymentStatusValue = $(this).val();
+        filterTable(statusValue, platformValue, paymentStatusValue);
+      });
+
+      // Filter orders by platform
+      $('#filterPlatform').on('change', function () {
+        const statusValue = $('#filterOrders').val();
+        const platformValue = $(this).val();
+        const paymentStatusValue = $('#filterPaymentStatus').val();
+        filterTable(statusValue, platformValue, paymentStatusValue);
+      });
+
+      // Filter orders by type (via buttons)
+      $('.type-btn').on('click', function () {
+        $('.type-btn').removeClass('active');
+        $(this).addClass('active');
+        const platformValue = $(this).data('type');
+        const statusValue = $('#filterOrders').val();
+        const paymentStatusValue = $('#filterPaymentStatus').val();
+        filterTable(statusValue, platformValue, paymentStatusValue);
+      });
+
+      // Show order details
+      function showOrderDetails(orderId) {
+        const order = orders.find(o => o.id == orderId) || {};
+        $('#orderIdDetail').text(`#${orderId}`);
+        $('#customerDetail').text(order.customer || 'N/A');
+        $('#platformDetail').text(order.platform || 'N/A');
+        $('#addressDetail').text(order.address || 'N/A');
+        $('#totalDetail').text(order.total ? `$${order.total.toFixed(2)}` : 'N/A');
+        const statusClass = {
+          pending: 'bg-warning text-dark',
+          accepted: 'bg-success text-white',
+          completed: 'bg-success text-white',
+          cancelled: 'bg-danger text-white',
+          rejected: 'bg-danger text-white',
+          assigned: 'bg-primary text-white'
+        }[order.status] || '';
+        $('#statusDetail').html(`<span class="badge ${statusClass}">${order.status || 'N/A'}</span>`);
+        const paymentStatusClass = {
+          Paid: 'bg-success text-white',
+          Unpaid: 'bg-warning text-dark',
+          Refunded: 'bg-danger text-white'
+        }[order.paymentStatus] || '';
+        $('#paymentStatusDetail').html(`<span class="badge ${paymentStatusClass}">${order.paymentStatus || 'N/A'}</span>`);
+        $('#rejectReasonDetail').text(order.rejectReason || 'N/A');
+        $('#deliveryBoyDetail').text(order.deliveryBoy || 'N/A');
+        $('#dateDetail').text(order.date || 'N/A');
+        $('#itemsList').empty();
+        (order.items || []).forEach(item => {
+          $('#itemsList').append(`<li class="list-group-item">${item.name} (x${item.quantity}) - ${item.price}</li>`);
+        });
+        $('#orderModal').removeAttr('inert').modal('show');
+        showToast('success', `Viewing details for Order #${orderId}`);
+      }
+
+      function printOrder() {
+  const el = document.getElementById('printableOrder');
+  if (!el) {
+    alert("Nothing to print! The order container is missing.");
+    return;
+  }
+
+  const orderId = document.getElementById('orderIdDetail')?.innerText || 'N/A';
+  const dateTime = new Date().toLocaleString();
+
+  const printContents = `
+    <div style="font-family: 'Arial', sans-serif; width: 100%; text-align: center; margin-bottom: 10px;">
+      <h1 style="margin: 0;">Rawabi Restaurant</h1>
+      <h2 style="margin: 5px 0;">Order ${orderId}</h2>
+      <p style="margin: 0; font-size: 0.9em; color: #555;">${dateTime}</p>
+      <hr style="margin: 10px 0; border: 1px dashed #333;">
+    </div>
+
+    <div style="
+      width: 100%;
+      font-family: Arial, sans-serif;
+      text-align: left;   /* ✅ align details to left */
+      margin: 0 auto;
+      font-size: 14px;
+      line-height: 1.6;
+    ">
+      ${el.innerHTML}
+    </div>
+
+    <style>
+      body { font-size: 14px; color: #333; }
+      p { margin: 4px 0; }
+      ul { list-style-type: none; padding-left: 0; }
+      li { margin-bottom: 4px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+      th, td { border: 1px solid #333; padding: 6px; text-align: left; font-size: 13px; }
+      th { background-color: #f2f2f2; }
+      .badge { padding: 4px 8px; border-radius: 4px; color: #fff; display: inline-block; font-size: 12px; }
+      .pending { background-color: #ffc107; }
+      .accepted, .completed { background-color: #28a745; }
+      .cancelled, .rejected { background-color: #dc3545; }
+      .paid { background-color: #28a745; }
+      .unpaid { background-color: #ffc107; }
+      .refunded { background-color: #dc3545; }
+    </style>
+  `;
+
+  const printWindow = window.open('', '', 'height=800,width=800');
+  printWindow.document.write('<html><head><title>Print Order</title></head><body>');
+  printWindow.document.write(printContents);
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  printWindow.focus();
+
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 300);
+}
+
+      // Show accept confirmation modal
+      function showAcceptConfirmation(orderId) {
+        const order = orders.find(o => o.id == orderId);
+        if (!order) {
+          showToast('error', `Order #${orderId} not found.`);
+          return;
+        }
+        $('#acceptOrderId').text(`#${orderId}`);
+        $('#acceptCustomer').text(order.customer || 'N/A');
+        $('#acceptAddress').text(order.address || 'N/A');
+        $('#acceptItemsList').empty();
+        (order.items || []).forEach(item => {
+          $('#acceptItemsList').append(`<li class="list-group-item">${item.name} (x${item.quantity}) - ${item.price}</li>`);
+        });
+        $('#confirmAcceptBtn').data('id', orderId);
+        $('#acceptModal').removeAttr('inert').modal('show');
+      }
+
+      // Show reject confirmation modal
+      function showRejectConfirmation(orderId) {
+        const order = orders.find(o => o.id == orderId);
+        if (!order) {
+          showToast('error', `Order #${orderId} not found.`);
+          return;
+        }
+        $('#rejectOrderId').text(`#${orderId}`);
+        $('#rejectReason').val('');
+        $('#confirmRejectBtn').data('id', orderId);
+        $('#rejectModal').removeAttr('inert').modal('show');
+      }
+
+        // Confirm accept action
+function confirmAccept() {
+  const orderId = $('#acceptOrderId').text().replace('#', '');
+
+  fetch(`/Managerapp/orders/accept/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+
+      // ✅ Close accept modal
+      $('#acceptModal').modal('hide');
+
+      // ✅ Open assign modal with the same orderId
+      $("#assignOrderId").text(`#${orderId}`);
+      $("#assignModal").modal("show");
+
+    } else {
+      showToast('error', data.error || 'Failed to accept order');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'Error occurred while accepting order.');
+  });
+}
+
+  
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // Does this cookie string begin with the name we want?
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+
+
+// Confirm reject action
+function confirmReject() {
+  const orderId = $('#confirmRejectBtn').data('id');
+  const rejectReason = $('#rejectReason').val().trim();
+
+  if (!orderId) {
+    showToast('error', 'Invalid order ID.');
+    $('#rejectModal').modal('hide');
+    return;
+  }
+
+  if (!rejectReason) {
+    showToast('error', 'Please provide a reason for rejection.');
+    return;
+  }
+
+  const order = orders.find(o => o.id == orderId);
+  if (!order) {
+    showToast('error', `Order #${orderId} not found.`);
+    $('#rejectModal').modal('hide');
+    return;
+  }
+
+  // ✅ Call backend API
+  fetch(`/Managerapp/orders/reject/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      reason: rejectReason
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Update frontend state (temporary until reload)
+      order.status = 'REJECTED';
+      order.rejectReason = rejectReason;
+
+      showToast('success', data.message);
+      $('#rejectModal').modal('hide');
+
+      // ✅ Reload page after short delay so backend/frontend are in sync
+      setTimeout(() => {
+        location.reload();
+      }, 1000); // 1 second so user sees toast
+    } else {
+      showToast('error', data.error || 'Failed to reject order');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'An error occurred while rejecting order.');
+  });
+}
+$('#confirmCreditUserBtn').off('click').on('click', function () {
+  const orderId = $(this).data('id');
+  const selectedUserId = $('#creditUserSelect').val();
+  const selectedUser = creditUsers.find(u => u.id === selectedUserId);
+
+  if (selectedUser) {
+    showToast('success', `Order #${orderId} assigned to credit user ${selectedUser.name}`);
+    $('#creditUserSelectModal').modal('hide');
+  } else {
+    showToast('error', 'Please select a credit user');
+  }
+});
+
+
+
+      // Confirm payment status change
+      function confirmPayment() {
+        const orderId = $('#confirmPaymentBtn').data('id');
+        const newStatus = $('#confirmPaymentBtn').data('status');
+        if (!orderId || !newStatus) {
+          showToast('error', 'Invalid order ID or payment status.');
+          $('#paymentConfirmModal').modal('hide');
+          return;
+        }
+        const order = orders.find(o => o.id == orderId);
+        if (!order) {
+          showToast('error', `Order #${orderId} not found.`);
+          $('#paymentConfirmModal').modal('hide');
+          return;
+        }
+        order.paymentStatus = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+        showToast('success', `Payment status for Order #${orderId} updated to ${order.paymentStatus}`);
+        $('#paymentConfirmModal').modal('hide');
+        populateTable();
+        const statusValue = $('#filterOrders').val();
+        const platformValue = $('#filterPlatform').val();
+        const paymentStatusValue = $('#filterPaymentStatus').val();
+        filterTable(statusValue, platformValue, paymentStatusValue);
+      }
+
+// Assign/Update delivery boy
+function confirmAssign() {
+  console.log("🔥 confirmAssign started");
+
+  const orderId = $('#assignOrderId').text().replace('#', '');
+  const deliveryBoy = $('#deliveryBoySelect').val();
+
+  if (!deliveryBoy) {
+    showToast('error', 'Please select a delivery boy.');
+    return;
+  }
+
+  fetch(`/Managerapp/assigndeliveryboy/${orderId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      delivery_boy_id: deliveryBoy
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+      console.log("Delivery boy assigned:", deliveryBoy);
+
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } else {
+      showToast('error', data.error || 'Failed to assign delivery boy')
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    showToast('error', 'Error occurred while assigning delivery boy.')
+  });
+}
+
+// ---------------------
+// Bind buttons on ready
+// ---------------------
+$(document).ready(function () {
+  $("#confirmAcceptBtn").on("click", confirmAccept);
+  $("#confirmAssignBtn").on("click", confirmAssign);
+});   
+
+
+
+    function updateActions() {
+  $('.view-btn').off('click').on('click', function () {
+    const orderId = $(this).data('id');
+    showOrderDetails(orderId);
+  });
+
+  $('.payment-status-select').off('change').on('change', function () {
+  const orderId = $(this).data('id');
+  const newStatus = $(this).val();
+
+  if (newStatus) {
+    if (newStatus === 'credit') {
+      // Show Credit User selection modal
+      $('#creditOrderId').text(`#${orderId}`);
+      $('#creditUserSelect').empty().append('<option value="">Loading...</option>');
+
+      // Fetch credit users from backend
+        $.get('/Managerapp/credit-users/', function (response) {
+          $('#creditUserSelect').empty();
+
+          if (response.credit_users && response.credit_users.length > 0) {
+            // Always add default first option
+            $('#creditUserSelect').append('<option value="">Please select a credit user</option>');
+
+            response.credit_users.forEach(user => {
+              $('#creditUserSelect').append(`<option value="${user.id}">${user.Name}</option>`);
+            });
+          } else {
+            $('#creditUserSelect').append('<option value="">No credit users available</option>');
+          }
+        }).fail(function () {
+          $('#creditUserSelect').empty().append('<option value="">Error loading users</option>');
+        });
+
+
+      $('#confirmCreditUserBtn').data('id', orderId);
+      $('#creditUserSelectModal').removeAttr('inert').modal('show');
+      $(this).val('');
+    } else {
+      // Normal payment status flow
+      $('#paymentOrderId').text(`#${orderId}`);
+      $('#newPaymentStatus').text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
+      $('#confirmPaymentBtn').data('id', orderId).data('status', newStatus);
+      $('#paymentConfirmModal').removeAttr('inert').modal('show');
+      $(this).val('');
+    }
+  }
+});
+
+
+
+
+        $('.accept-btn').off('click').on('click', function () {
+          const orderId = $(this).data('id');
+          showAcceptConfirmation(orderId);
+        });
+        $('.reject-btn').off('click').on('click', function () {
+          const orderId = $(this).data('id');
+          showRejectConfirmation(orderId);
+        });
+        $('.assign-btn').off('click').on('click', function () {
+          const orderId = $(this).data('id');
+          const order = orders.find(o => o.id == orderId);
+          if (!order) {
+            showToast('error', `Order #${orderId} not found.`);
+            return;
+          }
+          if (order.platform.toLowerCase() !== 'appthrough') {
+            showToast('error', `Order #${orderId} cannot have a delivery boy assigned as it is not an Appthrough order.`);
+            return;
+          }
+          if (order.status !== 'accepted' && order.status !== 'assigned') {
+            showToast('error', `Order #${orderId} must be accepted before assigning a delivery boy.`);
+            return;
+          }
+          $('#assignOrderId').text(`#${orderId}`);
+          $('#deliveryBoySelect').val(order.deliveryBoy ? order.deliveryBoy.split(' ').join('_') : '');
+          $('#assignModal').removeAttr('inert').modal('show');
+        });
+      }
+
+
+      // Initialize modals
+      $('#orderModal').on('show.bs.modal', function () {
+        $(this).removeAttr('inert');
+      });
+      $('#orderModal').on('hide.bs.modal', function () {
+        $(this).attr('inert', '');
+      });
+
+      $('#paymentConfirmModal').on('show.bs.modal', function () {
+        $(this).removeAttr('inert');
+      });
+      $('#paymentConfirmModal').on('shown.bs.modal', function () {
+        $('#confirmPaymentBtn').focus();
+      });
+      $('#paymentConfirmModal').on('hide.bs.modal', function () {
+        $('#confirmPaymentBtn').removeData('id').removeData('status');
+        $(this).attr('inert', '');
+      });
+
+      $('#acceptModal').on('show.bs.modal', function () {
+        $(this).removeAttr('inert');
+      });
+      $('#acceptModal').on('shown.bs.modal', function () {
+        $('#confirmAcceptBtn').focus();
+      });
+      $('#acceptModal').on('hide.bs.modal', function () {
+        $('#confirmAcceptBtn').removeData('id');
+        $(this).attr('inert', '');
+      });
+
+      $('#rejectModal').on('show.bs.modal', function () {
+        $(this).removeAttr('inert');
+      });
+      $('#rejectModal').on('shown.bs.modal', function () {
+        $('#confirmRejectBtn').focus();
+      });
+      $('#rejectModal').on('hide.bs.modal', function () {
+        $('#confirmRejectBtn').removeData('id');
+        $(this).attr('inert', '');
+      });
+
+      $('#assignModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const orderId = button.data('id');
+        const order = orders.find(o => o.id === orderId);
+        if (!order) {
+          showToast('error', `Order #${orderId} not found.`);
+          return;
+        }
+        $(this).find('#assignOrderId').text(`#${orderId}`);
+        $('#deliveryBoySelect').val(order.deliveryBoy ? order.deliveryBoy.split(' ').join('_') : '');
+        $(this).removeAttr('inert');
+      });
+      $('#assignModal').on('shown.bs.modal', function () {
+        $('#confirmAssignBtn').focus();
+      });
+      $('#assignModal').on('hide.bs.modal', function () {
+        $(this).attr('inert', '');
+      });
+
+      // Show toast notification
+      function showToast(type, message) {
+        const toast = $(`#${type}Toast`);
+        toast.find('.toast-body').text(message);
+        toast.toast({ delay: 3000 });
+        toast.toast('show');
+      }
+
+      // Initial setup
+      $(document).ready(function () {
+        populateTable();
+        $('.toast').toast({ animation: true, autohide: true, delay: 3000 });
+        filterTable('all', 'all', 'all');
+        $('#confirmAcceptBtn').off('click').on('click', confirmAccept);
+        $('#confirmRejectBtn').off('click').on('click', confirmReject);
+        $('#confirmPaymentBtn').off('click').on('click', confirmPayment);
+        $('#confirmAssignBtn').off('click').on('click', confirmAssign);
+      });
+    </script>
+
+{% endblock %}

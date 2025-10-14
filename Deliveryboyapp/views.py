@@ -226,53 +226,102 @@ class AssignedOrdersAPIView(APIView):
 
     
 class UpdateOrderStatusAPIView(APIView):
-    print("6666666666666666666666")
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    
-
-    # def post(self, request):
     def post(self, request, order_id):
+        print(f"------------------- Update Order Request for ID {order_id} -------------------")
         user = request.user.id
+
+        # Validate delivery boy profile
         try:
             delivery_boy = DeliveryBoyTable.objects.get(userid=user)
-            print(f"Delivery Boy: {delivery_boy}")
+            print(f"✅ Delivery Boy Found: {delivery_boy}")
         except DeliveryBoyTable.DoesNotExist:
+            print("❌ Delivery Boy Profile Not Found")
             return Response({'error': 'Delivery boy profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate input
         serializer = InputSerializer(data=request.data)
         if not serializer.is_valid():
-            print("@@@@@@@@@@@@@@@@@")
+            print("❌ Serializer Validation Failed:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # order_id = serializer.validated_data['order_id']
-        if serializer.validated_data['order_id'] != order_id:
-           print('-------------->', order_id)
-           print('------serializer.validated_data-------->', serializer.validated_data['order_id'] )
-           return Response({'error': 'Order ID mismatch'}, status=status.HTTP_400_BAD_REQUEST)
-        new_status = serializer.validated_data['status']
-        payment_done = serializer.validated_data.get('paymentDone', False)
-        payment_type = serializer.validated_data.get('paymentType')
+        data = serializer.validated_data
+        print(f"✅ Validated Data: {data}")
 
+        if data['order_id'] != order_id:
+            print(f"❌ Order ID Mismatch: URL={order_id}, Body={data['order_id']}")
+            return Response({'error': 'Order ID mismatch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get order
         try:
             order = OrderTable.objects.get(id=order_id, deliveryid=delivery_boy)
+            print(f"✅ Order Found: {order}")
         except OrderTable.DoesNotExist:
+            print("❌ Order not found or not assigned to this delivery boy")
             return Response({'error': 'Order not found or not assigned to you'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update order status and payment details
+        new_status = data['status']
+        payment_done = data.get('paymentDone', False)
+        payment_type = data.get('paymentType')
 
         order.orderstatus = new_status
         if payment_done and payment_type:
-           order.paymentstatus = 'PAID'
-           order.payment_method = payment_type
+            order.paymentstatus = 'PAID'
+            order.payment_method = payment_type
         elif payment_done:
+            print("❌ Payment type required when payment is done")
             return Response({'error': 'Payment type is required when payment is done'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             order.paymentstatus = 'PENDING'
             order.payment_method = 'PENDING'
+
         order.save()
-        print(f"Updated Order: {order.__dict__}")
-        # return Response({'success': f'Order status updated to {new_status}'}, status=status.HTTP_200_OK)
-        serializer = OrderSerializer(order)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        print(f"✅ Order Updated: status={order.orderstatus}, paymentstatus={order.paymentstatus}")
+
+        # ------------------------------
+        # 🔔 Send Notification to User
+        # ------------------------------
+        try:
+            user_login = order.userid.loginid  # Profile → LoginTable
+            user_token = getattr(user_login, "notification_token", None)
+            print(f"📱 User Login: {user_login}, Token: {user_token}")
+
+            if user_token:
+                if new_status == 'PICKED':
+                    title = "Order Picked 🚚"
+                    body = f"Your order #{order.id} has been picked up by {delivery_boy.name}."
+                elif new_status == 'DELIVERED':
+                    title = "Order Delivered 🎉"
+                    body = f"Your order #{order.id} has been successfully delivered."
+                elif new_status == 'ACCEPTED':
+                    title = "Order Accepted ✅"
+                    body = f"Your order #{order.id} has been accepted and will be prepared soon."
+                elif new_status == 'ASSIGNED':
+                    title = "Order Assigned 👨‍🍳"
+                    body = f"Your order #{order.id} has been assigned to {delivery_boy.name}."
+                else:
+                    title = "Order Update 📦"
+                    body = f"Your order #{order.id} status has been updated to {new_status}."
+
+                send_fcm_notification(
+                    token=user_token,
+                    title=title,
+                    body=body,
+                    project="user"
+                )
+                print(f"✅ Notification Sent: {title}")
+            else:
+                print("⚠️ No notification token found for user.")
+        except Exception as e:
+            print(f"❌ Error Sending Notification: {e}")
+
+        # Return updated order
+        order_serializer = OrderSerializer(order)
+        return Response(order_serializer.data, status=status.HTTP_200_OK)
+
     
 
 class OrderDetailAPIView(APIView):
